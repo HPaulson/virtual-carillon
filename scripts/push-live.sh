@@ -4,10 +4,17 @@ set -Eeuo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 REMOTE_HOST="${REMOTE_HOST:-your-ssh-host}"
-HA_COMPONENT_PARENT="${HA_COMPONENT_PARENT:-/path/to/homeassistant/custom_components}"
 HA_CONTAINER="${HA_CONTAINER:-home-assistant-container}"
 BRANCH="$(git -C "$ROOT_DIR" branch --show-current)"
 COMMIT_MESSAGE="${1:-Update Virtual Carillon}"
+LOCAL_ARCHIVE="$(mktemp -t virtual-carillon-ha.XXXXXX.tar.gz)"
+REMOTE_ARCHIVE="/tmp/virtual-carillon-ha-$$.tar.gz"
+
+cleanup() {
+  rm -f "$LOCAL_ARCHIVE"
+  ssh "$REMOTE_HOST" "rm -f '$REMOTE_ARCHIVE'" >/dev/null 2>&1 || true
+}
+trap cleanup EXIT
 
 cd "$ROOT_DIR"
 
@@ -27,14 +34,18 @@ echo "==> Pushing $BRANCH to GitHub"
 git push origin "$BRANCH"
 
 echo "==> Copying the complete Home Assistant integration to $REMOTE_HOST"
-ssh "$REMOTE_HOST" "test -d '$HA_COMPONENT_PARENT'"
-tar \
+COPYFILE_DISABLE=1 tar \
+  --exclude='._*' \
+  --exclude='*/._*' \
   --exclude='virtual_carillon/__pycache__' \
   --exclude='virtual_carillon/**/*.pyc' \
-  -czf - \
+  -czf "$LOCAL_ARCHIVE" \
   -C "$ROOT_DIR/homeassistant/custom_components" \
-  virtual_carillon \
-  | ssh "$REMOTE_HOST" "tar --extract --gzip --no-same-owner --no-same-permissions --file=- --directory='$HA_COMPONENT_PARENT'"
+  virtual_carillon
+scp "$LOCAL_ARCHIVE" "$REMOTE_HOST:$REMOTE_ARCHIVE"
+ssh "$REMOTE_HOST" "docker cp '$REMOTE_ARCHIVE' '$HA_CONTAINER:/tmp/virtual-carillon-ha.tar.gz'"
+ssh "$REMOTE_HOST" "docker exec '$HA_CONTAINER' tar --extract --gzip --no-same-owner --no-same-permissions --file=/tmp/virtual-carillon-ha.tar.gz --directory=/config/custom_components"
+ssh "$REMOTE_HOST" "docker exec '$HA_CONTAINER' rm -f /tmp/virtual-carillon-ha.tar.gz"
 
 echo "==> Restarting Home Assistant"
 ssh "$REMOTE_HOST" "docker restart '$HA_CONTAINER' >/dev/null"
