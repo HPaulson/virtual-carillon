@@ -58,5 +58,5 @@ node dist/cli/index.js import --name "My Church Angelus" --file /path/to/angelus
 - Preserve separation between audio, library, database, and Home Assistant code.
 - Add or update tests for synthesis, database behavior, and API behavior when those areas change.
 - Use `apply_patch` for source edits. Do not commit generated `dist/`, `node_modules/`, `.data/`, or local `data/` contents.
-- When adding an asset, add its definition, a stable cache key, and a test or manual render check.
+- When adding an asset, add its definition, a stable cache key, a rights/provenance note, and a test or manual render check.
 - Keep API errors explicit. Unknown assets should not silently become a medium bell.

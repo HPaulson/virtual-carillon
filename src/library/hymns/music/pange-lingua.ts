@@ -6,7 +6,7 @@ export const pangeLingua = defineHymn({
   name: 'Pange lingua',
   source: 'Graduale Romanum / Liber Usualis, Gregorian chant Mode III',
   sourceUrl: 'https://www.gregorianum.org/wiki/Pange_lingua_%28Tantum_ergo%29',
-  license: 'Public-domain chant; source notation and transcriber credited in the bundled GABC',
+  license: 'Public-domain chant; project transcription from cited source; source edition not bundled',
   liturgical: {
     categories: ['eucharistic', 'christological'],
     seasons: ['General', 'Ordinary Time'],

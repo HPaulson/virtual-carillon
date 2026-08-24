@@ -7,7 +7,7 @@ export const reginaCaeli = defineHymn({
   source:
     'Antiphonale Monasticum, Solesmes 1934, p. 176, Gregorian chant Mode VI; sung from Easter through Pentecost',
   sourceUrl: 'https://www.gregorianum.org/wiki/Regina_Caeli_%28Tonus_Solemnis_-_Monasticum%29',
-  license: 'Public-domain chant; source notation and transcriber credited in the bundled GABC',
+  license: 'Public-domain chant; project transcription from cited source; source edition not bundled',
   liturgical: {
     categories: ['marian', 'resurrection'],
     seasons: ['Easter'],

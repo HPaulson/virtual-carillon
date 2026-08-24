@@ -4,10 +4,10 @@ import { melody, measure, note } from '../notation/index.js';
 export const awayInAManger = defineHymn({
   id: 'away-in-a-manger',
   name: 'Away in a Manger',
-  source: "Traditional carol, Reader's Digest Merry Christmas Songbook transcription",
+  source: 'Traditional carol; public ABC melody source from the Paul Hardy collection',
   sourceUrl:
-    'https://abcnotation.com/tunePage?a=trillian.mit.edu%2F~jc%2Fmusic%2Fabc%2Fmirror%2Ffolkinfo.org%2FAway_In_A_Manger_3%2F0000',
-  license: 'Public-domain melody; ABC source transcription credited in this asset',
+    'https://abcnotation.com/tunePage?a=pghardy.net%2Ftunebooks%2Fpgh_xmas_tunebook%2F0006',
+  license: 'Public-domain melody; project transcription from a public ABC source',
   liturgical: {
     categories: ['christological', 'incarnation'],
     seasons: ['Christmas'],

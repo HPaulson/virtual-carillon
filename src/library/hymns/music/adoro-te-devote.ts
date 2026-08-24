@@ -7,7 +7,7 @@ export const adoroTeDevote = defineHymn({
   source: 'The Liber Usualis, 1961, p. 1855, Gregorian hymn Mode V',
   sourceUrl:
     'https://www.gregorianum.org/index.php?mobileaction=toggle_view_mobile&title=Adoro_te_devote',
-  license: 'Public-domain chant; source notation and transcriber credited in the bundled GABC',
+  license: 'Public-domain chant; project transcription from cited source; source edition not bundled',
   liturgical: {
     categories: ['eucharistic', 'passion', 'christological'],
     seasons: ['Lent', 'General'],

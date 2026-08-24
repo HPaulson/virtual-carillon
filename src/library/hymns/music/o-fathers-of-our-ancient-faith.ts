@@ -7,7 +7,7 @@ export const oFathersOfOurAncientFaith = defineHymn({
   source:
     'Text by the Benedictine Nuns of Stanbrook Abbey (Divine Office, 1974), set to the anonymous Creator Alme Siderum tune',
   sourceUrl: 'https://universalis.com/USA.Hartford/20260824/lauds.htm',
-  license: 'Public-domain traditional melody; hymn text source and transcription credited in this asset',
+  license: 'Public-domain traditional melody; the modern hymn text is not bundled',
   liturgical: {
     categories: ['apostles', 'saints'],
     seasons: ['General', 'Ordinary Time'],

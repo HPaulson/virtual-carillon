@@ -21,7 +21,7 @@ The current implementation is a usable MVP, not the complete long-term product d
 - The generated bell timbres remain a procedural model rather than recordings of a particular foundry; user-imported licensed recordings can still provide hardware-specific authenticity.
 - Westminster absolute tuning varies by installation; the project uses the documented E–D–C–G phrase in a clock-bell family and keeps its source attribution explicit.
 - Linux PipeWire/Bluetooth behavior requires hardware/session validation; macOS tests use CoreAudio fallback.
-- Home Assistant metadata currently uses placeholder documentation/issue URLs in `manifest.json`; replace them before publishing to HACS.
+- Home Assistant packaging still needs a release/versioning process and HACS metadata review before publishing to HACS.
 
 ## Suggested next increments
 

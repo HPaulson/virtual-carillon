@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+# Reset the hosted Virtual Carillon hymn history for today or a supplied date.
+
 set -Eeuo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

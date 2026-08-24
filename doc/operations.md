@@ -4,10 +4,10 @@
 
 ### Publish changes and update Home Assistant
 
-From the repository root, copy `.env.example` to `.env` and set `REMOTE_HOST` to your SSH host alias and `HA_CONTAINER` to the Home Assistant container name. The `.env` file is ignored by Git. Then run the publish helper with an optional commit message:
+From the repository root, copy `dev.env.example` to `dev.env` and set `REMOTE_HOST` to your SSH host alias and `HA_CONTAINER` to the Home Assistant container name. Keep deployment secrets in that ignored file. Then run the publish helper with an optional commit message:
 
 ```bash
-cp .env.example .env
+cp dev.env.example dev.env
 ./scripts/push-live.sh "Describe the change"
 ```
 

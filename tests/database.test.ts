@@ -43,4 +43,18 @@ describe('carillon database schedule state', () => {
     database.close();
     await rm(directory, { recursive: true, force: true });
   });
+
+  it('includes successfully played events in the daily hymn exclusion list', async () => {
+    const directory = await mkdtemp(path.join(tmpdir(), 'virtual-carillon-db-'));
+    const database = new CarillonDatabase(path.join(directory, 'carillon.sqlite'));
+
+    database.addEvent({ asset: 'aeterna-christi-munera', status: 'played', createdAt: '2026-08-24T23:30:00.000Z' });
+    database.addEvent({ asset: 'failed-hymn', status: 'failed', createdAt: '2026-08-24T23:31:00.000Z' });
+
+    expect(database.completedScheduleAssets('2026-08-24')).toContain('aeterna-christi-munera');
+    expect(database.completedScheduleAssets('2026-08-24')).not.toContain('failed-hymn');
+
+    database.close();
+    await rm(directory, { recursive: true, force: true });
+  });
 });

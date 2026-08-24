@@ -7,7 +7,7 @@ export const almaRedemptorisMater = defineHymn({
   source: 'Antiphonale Monasticum, Solesmes 1934, p. 173, Gregorian chant Mode V',
   sourceUrl:
     'https://www.gregorianum.org/wiki/Alma_Redemptoris_Mater_%28Tonus_Solemnis_-_Monasticum%29',
-  license: 'Public-domain chant; source notation and transcriber credited in the bundled GABC',
+  license: 'Public-domain chant; project transcription from cited source; source edition not bundled',
   liturgical: {
     categories: ['marian', 'incarnation'],
     seasons: ['Advent', 'Christmas'],

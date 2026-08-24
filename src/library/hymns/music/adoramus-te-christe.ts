@@ -6,7 +6,7 @@ export const adoramusTeChriste = defineHymn({
   name: 'Adoramus te, Christe',
   source: 'The Liber Usualis, 1961, p. 746, Gregorian chant Mode I',
   sourceUrl: 'https://www.gregorianum.org/wiki/Adoramus_te_Christe_%28Antiphona%29',
-  license: 'Public-domain chant; source notation and transcriber credited in the bundled GABC',
+  license: 'Public-domain chant; project transcription from cited source; source edition not bundled',
   liturgical: {
     categories: ['passion', 'christological'],
     seasons: ['Lent'],

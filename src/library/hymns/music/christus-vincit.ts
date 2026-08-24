@@ -6,7 +6,7 @@ export const christusVincit = defineHymn({
   name: 'Christus vincit',
   source: 'Traditional Laudes Regiae acclamation; GregoBase transcription, Aloys Kunc version',
   sourceUrl: 'https://gregobase.selapa.net/chant.php?id=18832',
-  license: 'Public-domain chant; source notation and transcriber credited in the bundled GABC',
+  license: 'Public-domain chant; project transcription from cited source; source edition not bundled',
   liturgical: {
     categories: ['christological', 'praise'],
     seasons: ['General', 'Ordinary Time'],

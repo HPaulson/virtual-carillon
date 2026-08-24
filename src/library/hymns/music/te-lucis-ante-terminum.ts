@@ -7,7 +7,7 @@ export const teLucisAnteTerminum = defineHymn({
   source: 'Liber Hymnarius, Solesmes 1983, p. 241, Mode VIII',
   sourceUrl:
     'https://www.gregorianum.org/index.php?mobileaction=toggle_view_mobile&title=Te_lucis_ante_terminum_%28ad_Completorium%29',
-  license: 'Public-domain chant; source GABC and transcriber credited by Gregorianum.org',
+  license: 'Public-domain hymn and traditional melody; project transcription from the cited source',
   liturgical: {
     categories: ['christological', 'confidence'],
     seasons: ['General', 'Ordinary Time'],

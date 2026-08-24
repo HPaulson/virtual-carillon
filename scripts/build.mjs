@@ -1,3 +1,5 @@
+// Clear generated audio cache and compile the TypeScript application to dist/.
+
 import { rm } from 'node:fs/promises';
 import path from 'node:path';
 import { spawn } from 'node:child_process';

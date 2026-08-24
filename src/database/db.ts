@@ -27,12 +27,24 @@ export class CarillonDatabase {
     const rows = (reset?.resetAt
       ? this.db.prepare("SELECT payload FROM schedule_runs WHERE status IN ('claimed', 'completed') AND slot_key LIKE ? AND COALESCE(completed_at, claimed_at) > ?").all(`${date}T%`, reset.resetAt)
       : this.db.prepare("SELECT payload FROM schedule_runs WHERE status IN ('claimed', 'completed') AND slot_key LIKE ?").all(`${date}T%`)) as Array<{ payload?: string }>;
-    return rows.flatMap((row) => {
+    const reservedAssets = rows.flatMap((row) => {
       try {
         const actions = JSON.parse(row.payload ?? '[]') as Array<{ asset?: string }>;
         return actions.flatMap((action) => action.asset ? [action.asset] : []);
       } catch { return []; }
     });
+    // Home Assistant records the actual playback through /api/play. Include
+    // those successful events as well, so a hymn remains excluded even if a
+    // schedule run was completed by an older server or its claim row was not
+    // persisted. Events are stored as ISO timestamps; the schedule date is
+    // the local date and normally has the same ISO date in this deployment.
+    const playedEvents = this.db.prepare(
+      "SELECT asset FROM events WHERE status = 'played' AND created_at LIKE ?",
+    ).all(`${date}T%`) as Array<{ asset?: string }>;
+    return [...new Set([
+      ...reservedAssets,
+      ...playedEvents.flatMap((event) => event.asset ? [event.asset] : []),
+    ])];
   }
   resetHymnDay(date: string, now = new Date().toISOString()) {
     this.db.prepare('INSERT INTO hymn_day_resets (date, reset_at) VALUES (?, ?) ON CONFLICT(date) DO UPDATE SET reset_at = excluded.reset_at').run(date, now);

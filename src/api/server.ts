@@ -171,19 +171,10 @@ export async function createServer(services: ServerServices): Promise<FastifyIns
       const stored = currentStoredSchedule(services);
       const time = localScheduleTime(parsed.data.at);
       const actions = await scheduledPlaybacks(time, stored.config, services, hymnCatalog, 'home_assistant');
-      if (!actions.length) {
-        if (time.minute % 15 === 0) {
-          console.info(`[schedule] ${parsed.data.at} due=false actions=none`);
-        }
-        return { due: false, actions: [] };
-      }
+      if (!actions.length) return { due: false, actions: [] };
       const slotKey = scheduleSlotKey(time, stored.updatedAt, 'home_assistant');
       const claimed = services.database.claimScheduleRun(slotKey, JSON.stringify(actions));
       if (claimed) logSelectionAudits(actions);
-      const summary = actions
-        .map((action) => `${action.asset} -> ${action.mediaPlayers.join(',') || 'native'}`)
-        .join('; ');
-      console.info(`[schedule] ${parsed.data.at} due=true claimed=${claimed} slot=${slotKey} actions=${claimed ? summary : 'none (slot already claimed)'}`);
       return { due: true, claimed, slotKey, actions: claimed ? actions : [] };
     } catch (error) {
       return reply.code(400).send({ error: error instanceof Error ? error.message : String(error) });
@@ -193,7 +184,6 @@ export async function createServer(services: ServerServices): Promise<FastifyIns
     const parsed = ScheduleCompleteSchema.safeParse(request.body);
     if (!parsed.success) return reply.code(400).send({ error: parsed.error.flatten() });
     services.database.completeScheduleRun(parsed.data.slotKey, parsed.data.status, parsed.data.message ?? undefined);
-    console.info(`[schedule] complete slot=${parsed.data.slotKey} status=${parsed.data.status}${parsed.data.message ? ` message=${parsed.data.message}` : ''}`);
     return { ok: true };
   });
   app.post('/api/schedule/run', async (request, reply) => {
@@ -461,6 +451,7 @@ async function playScheduledNatively(actions: SchedulePlayback[], outputOverride
     if (targets.some((target, index) => requestedOutputs[index] !== undefined && !target)) {
       throw new Error(`Unknown native output: ${requestedOutputs.find((requested) => !available.some((item) => item.id === requested || item.name === requested))}`);
     }
+    if (!action.selectionAudit) console.info(`Playing: ${playbackLabel(action)}`);
     for (const target of targets) {
       const result = await services.library.playAsset(action.asset, target);
       services.database.addEvent({ asset: action.asset, output: target?.name, status: 'played' });
@@ -468,6 +459,10 @@ async function playScheduledNatively(actions: SchedulePlayback[], outputOverride
     }
     if (action.waitAfterSeconds > 0) await sleepSeconds(action.waitAfterSeconds);
   }
+}
+
+function playbackLabel(action: SchedulePlayback): string {
+  return action.selectionAudit?.split(' • ', 1)[0] ?? action.asset;
 }
 
 function sleepSeconds(seconds: number): Promise<void> {
@@ -500,7 +495,7 @@ async function resolveScheduleAsset(
   const details = selectedContributions || 'no scoring contributions (0)';
   return {
     asset: asset.id,
-    selectionAudit: `${asset.name ?? asset.id} • ${details} - ${total}, #${rank}`,
+    selectionAudit: `Playing: ${asset.name ?? asset.id} • ${details} - ${total}, #${rank}`,
   };
 }
 

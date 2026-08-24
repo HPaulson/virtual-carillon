@@ -6,7 +6,7 @@ export const psalm51Miserere = defineHymn({
   name: 'Psalm 51 (Miserere mei, Deus)',
   source: 'Graduale Simplex, 1988, Psalmus 50 in the Vulgate numbering, Tone I f',
   sourceUrl: 'https://www.gregorianum.org/wiki/Psalmus_50%2C_Miserere_mei%2C_Deus_%28Tonus_I_f%29',
-  license: 'Public-domain chant; source notation and transcriber credited in the bundled GABC',
+  license: 'Public-domain psalm and traditional chant formula; source edition is not bundled',
   liturgical: {
     categories: ['penitential', 'psalm'],
     seasons: ['Lent'],

@@ -6,7 +6,7 @@ export const salveReginaSimpleTone = defineHymn({
   name: 'Salve Regina (Tonus Simplex)',
   source: 'The Liber Usualis, Solesmes 1961, p. 279, Gregorian chant Mode V',
   sourceUrl: 'https://www.gregorianum.org/wiki/Salve_Regina_%28tono_simplex%29',
-  license: 'Public-domain chant; source notation and transcriber credited in the bundled GABC',
+  license: 'Public-domain chant; project transcription from cited source; source edition not bundled',
   liturgical: {
     categories: ['marian'],
     seasons: ['General', 'Ordinary Time'],

@@ -7,7 +7,7 @@ export const animaChristi = defineHymn({
   source:
     'Chants of the Church, 1956, p. 83, Eucharistic post-Communion prayer in Gregorian chant Mode VIII',
   sourceUrl: 'https://www.gregorianum.org/wiki/Anima_Christi',
-  license: 'Public-domain chant; source notation and transcriber credited in the bundled GABC',
+  license: 'Public-domain chant; project transcription from cited source; source edition not bundled',
   liturgical: {
     categories: ['eucharistic', 'christological'],
     seasons: ['General', 'Ordinary Time'],

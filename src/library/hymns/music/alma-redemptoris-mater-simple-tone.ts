@@ -6,7 +6,7 @@ export const almaRedemptorisMaterSimpleTone = defineHymn({
   name: 'Alma Redemptoris Mater (Tonus Simplex)',
   source: 'The Liber Usualis, 1961, p. 277, Gregorian chant Mode V',
   sourceUrl: 'https://www.gregorianum.org/wiki/Alma_Redemptoris_Mater_%28Tono_simplex%29',
-  license: 'Public-domain chant; source notation and transcriber credited in the bundled GABC',
+  license: 'Public-domain chant; project transcription from cited source; source edition not bundled',
   liturgical: {
     categories: ['marian', 'incarnation'],
     seasons: ['Advent', 'Christmas'],

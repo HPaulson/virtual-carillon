@@ -56,12 +56,8 @@ class ScheduleRunner:
                 existing_players = [player for player in media_players if player in queued_players]
                 if existing_players:
                     await self._wait_for_players(existing_players, actions[action_index - 1])
-                _LOGGER.info(
-                    "Schedule action: asset=%s players=%s serialized=%s",
-                    action.get("asset"),
-                    media_players,
-                    existing_players,
-                )
+                if not action.get("selectionAudit"):
+                    _LOGGER.info("Now playing: %s", action.get("asset"))
                 if new_players:
                     await self.coordinator.async_play(
                         action["asset"], new_players, refresh=False, volume=action.get("volume")
