@@ -7,8 +7,6 @@ services:
     restart: unless-stopped
     expose:
       - "9876"
-    ports:
-      - "9876:9876"
     env_file: .env
     volumes:
       - virtual-carillon-data:/app/.data

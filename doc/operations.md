@@ -11,9 +11,9 @@ docker compose ps
 docker compose logs -f virtual-carillon
 ```
 
-The database and rendered audio cache live in the `virtual-carillon-data` Docker volume. The health endpoint is `http://127.0.0.1:9876/health`.
+The database and rendered audio cache live in the `virtual-carillon-data` Docker volume. The container-local health endpoint is `http://127.0.0.1:9876/health`; services on the shared Docker network use `http://virtual-carillon:9876/health`.
 
-For a remote or Dokploy deployment, set `VIRTUAL_CARILLON_API_TOKEN` in the server environment to a long random value, then expose the service through an HTTPS domain. `/health` is public for health checks; all `/api/*` calls require the bearer token.
+For a remote or Dokploy deployment, set `VIRTUAL_CARILLON_API_TOKEN` in the server environment to a long random value and attach Home Assistant to the same Docker network. The default deployment does not publish a host port or require a public domain; all `/api/*` calls require the bearer token.
 
 See [`docs/docker.md`](../docs/docker.md) for the Dokploy and Home Assistant deployment procedure. The container needs no host ALSA, PipeWire, PulseAudio, Bluetooth, or speaker-device access.
 
@@ -21,8 +21,8 @@ See [`docs/docker.md`](../docs/docker.md) for the Dokploy and Home Assistant dep
 
 - Same host/native engine: `http://127.0.0.1:9876`
 - Same Compose network: `http://virtual-carillon:9876`
-- Separate hosts: use the engine host's reachable address and firewall port 9876 appropriately; enter the matching API token in the HA config flow.
-- Dokploy: use the HTTPS domain mapped to container port `9876`; enter the matching `VIRTUAL_CARILLON_API_TOKEN` in HA.
+- Separate hosts: add an explicit private network path or reverse proxy only if needed; enter the matching API token in the HA config flow.
+- Dokploy HA-first deployment: attach Home Assistant to the service's Docker network and use `http://virtual-carillon:9876` with the matching API token.
 
 ## Common failures
 

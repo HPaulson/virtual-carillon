@@ -13,7 +13,7 @@ docker compose up -d --build
 docker compose ps
 ```
 
-The API listens on port 9876. `/health` is public for container health checks; `/api/*` requires `Authorization: Bearer <VIRTUAL_CARILLON_API_TOKEN>` when a token is configured.
+The API listens on port `9876` inside the container. The default Compose deployment does not publish that port to the host; Home Assistant connects over the shared Docker network. `/health` is available to attached containers for health checks, and `/api/*` requires `Authorization: Bearer <VIRTUAL_CARILLON_API_TOKEN>` when a token is configured.
 
 The SQLite database and rendered audio cache live in the `virtual-carillon-data` Docker volume. Enable backups for that volume in production.
 
@@ -26,9 +26,9 @@ The SQLite database and rendered audio cache live in the `virtual-carillon-data`
 5. Set `VIRTUAL_CARILLON_API_TOKEN` to a secret value. Home Assistant automations own scheduling and output selection.
 6. Deploy and confirm the health check is green.
 
-Add a Dokploy domain for service `virtual-carillon` and container port `9876`, preferably with HTTPS. Home Assistant should use that domain and the same API token. The published port also allows a trusted-LAN URL such as `http://<server-lan-ip>:9876`.
+Keep the default deployment HA-first: attach the Home Assistant container to the same Docker network as `virtual-carillon`, then configure the integration with `http://virtual-carillon:9876` and the same API token. Do not add a Dokploy domain or host port unless external access is intentionally required. Users who need that behavior can add a `ports` mapping or reverse proxy as a deployment-specific override.
 
-The API token protects the engine API. The Home Assistant media proxy intentionally exposes only rendered audio at `/api/virtual_carillon/audio/<asset>` without a separate device token, because network media players need to fetch the URL. Keep Home Assistant and the Dokploy domain on a trusted LAN, VPN, or other access-controlled network.
+The API token protects the engine API. The Home Assistant media proxy intentionally exposes only rendered audio at `/api/virtual_carillon/audio/<asset>` without a separate device token, because network media players need to fetch the URL. Keep Home Assistant and its media players on the appropriate trusted network.
 
 ## Home Assistant
 
@@ -63,11 +63,11 @@ Copy `homeassistant/blueprints/automation/virtual_carillon/scheduled_routine.yam
 
 ### Home Assistant cannot connect
 
-Check the URL and token. Test the public health endpoint and authenticated API separately:
+Check the shared Docker network, URL, and token. The default deployment is not reachable through the host's `localhost:9876`. From a container attached to the shared network, test:
 
 ```bash
-curl https://bells.example.com/health
-curl -H "Authorization: Bearer $VIRTUAL_CARILLON_API_TOKEN" https://bells.example.com/api/assets
+curl http://virtual-carillon:9876/health
+curl -H "Authorization: Bearer $VIRTUAL_CARILLON_API_TOKEN" http://virtual-carillon:9876/api/assets
 ```
 
 ### A media player cannot play an asset
