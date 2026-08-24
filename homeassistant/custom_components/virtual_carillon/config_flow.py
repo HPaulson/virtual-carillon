@@ -269,6 +269,7 @@ class VirtualCarillonOptionsFlow(config_entries.OptionsFlow):
         return self.async_create_entry(
             title="",
             data={
+                CONF_SCHEDULE: deepcopy(self._schedule),
                 CONF_LITCAL_ENABLED: self._schedule["litcal"]["enabled"],
                 CONF_LITCAL_CALENDAR: self._schedule["litcal"]["calendar"],
             },
@@ -383,7 +384,14 @@ def _add_optional_time(schema: dict[Any, Any], field: str, value: str | None):
 
 def _asset_options(assets: list[dict[str, Any]], *, include_empty: bool):
     options = [{"value": "", "label": "None"}] if include_empty else []
-    options.extend({"value": asset["id"], "label": f"{asset.get('name', asset['id'])} ({asset['id']})"} for asset in assets if asset.get("id"))
+    valid_assets = sorted(
+        (asset for asset in assets if asset.get("id")),
+        key=lambda asset: (str(asset.get("name", asset["id"])).casefold(), str(asset["id"]).casefold()),
+    )
+    options.extend(
+        {"value": asset["id"], "label": f"{asset.get('name', asset['id'])} ({asset['id']})"}
+        for asset in valid_assets
+    )
     return options
 
 

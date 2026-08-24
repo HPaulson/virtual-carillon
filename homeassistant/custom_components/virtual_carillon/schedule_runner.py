@@ -44,15 +44,24 @@ class ScheduleRunner:
             if not claim.get("claimed"):
                 return
             slot_key = claim["slotKey"]
+            queued_players: set[str] = set()
             for action in claim.get("actions", []):
                 wait_before = float(action.get("waitBeforeSeconds", 0))
                 if wait_before > 0:
                     await asyncio.sleep(wait_before)
-                await self.coordinator.async_play(
-                    action["asset"],
-                    action.get("mediaPlayers", []),
-                    refresh=False,
-                )
+                media_players = [str(player) for player in action.get("mediaPlayers", [])]
+                new_players = [player for player in media_players if player not in queued_players]
+                existing_players = [player for player in media_players if player in queued_players]
+                if new_players:
+                    await self.coordinator.async_play(action["asset"], new_players, refresh=False)
+                if existing_players:
+                    await self.coordinator.async_play(
+                        action["asset"],
+                        existing_players,
+                        refresh=False,
+                        enqueue="add",
+                    )
+                queued_players.update(media_players)
                 wait_after = float(action.get("waitAfterSeconds", 0))
                 if wait_after > 0:
                     await asyncio.sleep(wait_after)

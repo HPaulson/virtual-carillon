@@ -45,16 +45,35 @@ class CarillonCoordinator(DataUpdateCoordinator):
         except Exception as err:
             raise UpdateFailed(f"Unable to reach Virtual Carillon: {err}") from err
 
-    async def async_play(self, asset: str, media_players: list[str], *, refresh: bool = True):
+    async def async_play(
+        self,
+        asset: str,
+        media_players: list[str],
+        *,
+        refresh: bool = True,
+        enqueue: str | None = None,
+    ):
         media_id = f"{MEDIA_SOURCE_PREFIX}{quote(asset, safe='')}"
         await self.hass.services.async_call(
             "media_player",
-            "play_media",
+            "volume_set",
             {
                 "entity_id": media_players,
-                "media_content_id": media_id,
-                "media_content_type": "music",
+                "volume_level": 1.0,
             },
+            blocking=True,
+        )
+        data = {
+            "entity_id": media_players,
+            "media_content_id": media_id,
+            "media_content_type": "music",
+        }
+        if enqueue is not None:
+            data["enqueue"] = enqueue
+        await self.hass.services.async_call(
+            "media_player",
+            "play_media",
+            data,
             blocking=True,
         )
         if refresh:
