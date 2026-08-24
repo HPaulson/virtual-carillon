@@ -1,0 +1,91 @@
+import { defineHymn } from '../defineHymn.js';
+import { melody, measure, note } from '../notation/index.js';
+
+export const joyToTheWorld = defineHymn({
+  id: 'joy-to-the-world',
+  name: 'Joy to the World',
+  source: 'Lowell Mason after Handel, public-domain hymn tune',
+  sourceUrl:
+    'https://abcnotation.com/tunePage?a=trillian.mit.edu%2F~jc%2Fmusic%2Fabc%2Fxmas%2FJoy_To_the_World%2F0000',
+  license: 'Public-domain melody; ABC source transcription credited in this asset',
+  tags: ['Hymn', 'Christmas', 'Advent'],
+  liturgical: {
+    categories: ['christological', 'incarnation', 'praise'],
+    seasons: ['Advent', 'Christmas'],
+    offices: ['Lauds', 'Vespers'],
+    feasts: ['christmas'],
+    solemnities: ['christmas'],
+  },
+  notation: melody({
+    meter: { numerator: 2, denominator: 4 },
+    unitLength: 'sixteenth',
+    key: 'D',
+    tempo: 120,
+    rhythmicCharacter: 'metered',
+    measures: [
+      measure([note('D5', 'quarter'), note('C#5', 'eighth'), note('B4', 'eighth')]),
+      measure([note('A4', 'dotted-quarter'), note('G4', 'eighth')]),
+      measure([note('F#4', 'quarter'), note('E4', 'quarter')]),
+      measure([note('D4', 'dotted-quarter'), note('A4', 'eighth')]),
+      measure([note('B4', 'dotted-quarter'), note('B4', 'eighth')]),
+      measure([note('C#5', 'dotted-quarter'), note('C#5', 'eighth')]),
+      measure([note('D5', 'half')]),
+      measure([note('D5', 'dotted-quarter'), note('D5', 'eighth')]),
+      measure([
+        note('D5', 'eighth'),
+        note('C#5', 'eighth'),
+        note('B4', 'eighth'),
+        note('A4', 'eighth'),
+      ]),
+      measure([
+        note('A4', 'eighth'),
+        note('G4', 'eighth'),
+        note('F#4', 'eighth'),
+        note('D5', 'eighth'),
+      ]),
+      measure([
+        note('D5', 'eighth'),
+        note('C#5', 'eighth'),
+        note('B4', 'eighth'),
+        note('A4', 'eighth'),
+      ]),
+      measure([
+        note('A4', 'eighth'),
+        note('G4', 'eighth'),
+        note('F#4', 'eighth'),
+        note('F#4', 'eighth'),
+      ]),
+      measure([
+        note('F#4', 'eighth'),
+        note('F#4', 'eighth'),
+        note('F#4', 'eighth'),
+        note('F#4', 'sixteenth'),
+        note('G4', 'sixteenth'),
+      ]),
+      measure([note('A4', 'dotted-quarter'), note('G4', 'sixteenth'), note('F#4', 'sixteenth')]),
+      measure([
+        note('E4', 'eighth'),
+        note('E4', 'eighth'),
+        note('E4', 'eighth'),
+        note('E4', 'sixteenth'),
+        note('F#4', 'sixteenth'),
+      ]),
+      measure([note('G4', 'dotted-quarter'), note('F#4', 'sixteenth'), note('E4', 'sixteenth')]),
+      measure([
+        note('D4', 'eighth'),
+        note('D5', 'eighth'),
+        note('D5', 'eighth'),
+        note('B4', 'eighth'),
+      ]),
+      measure([
+        note('A4', 'eighth'),
+        note('G4', 'eighth'),
+        note('F#4', 'eighth'),
+        note('G4', 'eighth'),
+      ]),
+      measure([note('F#4', 'quarter'), note('E4', 'quarter')]),
+      measure([note('D4', 'half')]),
+    ],
+  }),
+  arrangement: { style: 'celebratory', tonic: 'D3' },
+});

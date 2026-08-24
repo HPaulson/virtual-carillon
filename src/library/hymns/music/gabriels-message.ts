@@ -1,0 +1,101 @@
+import { defineHymn } from '../defineHymn.js';
+import { melody, measure, note, rest } from '../notation/index.js';
+
+export const gabrielsMessage = defineHymn({
+  id: 'gabriels-message',
+  name: "Gabriel's Message (The Angel Gabriel from Heaven Came)",
+  source: 'Traditional Basque carol, public-domain melody',
+  sourceUrl:
+    'https://abcnotation.com/tunePage?a=pghardy.net%2Ftunebooks%2Fpgh_xmas_tunebook%2F0017',
+  license: 'Public-domain melody; ABC source transcription credited in this asset',
+  tags: ['Hymn', 'Advent', 'Christmas'],
+  liturgical: {
+    categories: ['annunciation', 'incarnation', 'christological'],
+    seasons: ['Advent', 'Christmas'],
+    offices: ['Lauds', 'Vespers'],
+    feasts: ['annunciation', 'christmas'],
+    solemnities: [],
+  },
+  notation: melody({
+    meter: { numerator: 9, denominator: 8 },
+    unitLength: 'sixteenth',
+    key: 'Em',
+    tempo: 80,
+    rhythmicCharacter: 'metered',
+    pickup: [note('B3', 'eighth')],
+    measures: [
+      measure([
+        note('E4', 'quarter'),
+        note('G4', 'eighth'),
+        note('F#4', 'quarter'),
+        note('A4', 'eighth'),
+        note('G4', 'quarter'),
+        note('F#4', 'eighth'),
+      ]),
+      measure([
+        note('E4', 'dotted-quarter'),
+        note('F#4', 'dotted-quarter'),
+        note('B3', 'dotted-quarter'),
+      ]),
+      measure([
+        note('E4', 'quarter'),
+        note('G4', 'eighth'),
+        note('F#4', 'quarter'),
+        note('A4', 'eighth'),
+        note('G4', 'quarter'),
+        note('F#4', 'eighth'),
+      ]),
+      measure([
+        note('E4', 'dotted-quarter'),
+        note('E4', 'quarter'),
+        note('D4', 'eighth'),
+        note('E4', 'dotted-quarter'),
+      ]),
+      measure([
+        note('E4', 'eighth'),
+        rest('eighth'),
+        note('G4', 'eighth'),
+        note('G4', 'quarter'),
+        note('A4', 'eighth'),
+        note('G4', 'quarter'),
+        note('F#4', 'eighth'),
+      ]),
+      measure([
+        note('G4', 'quarter'),
+        note('A4', 'eighth'),
+        note('B4', 'quarter'),
+        note('B4', 'eighth'),
+        note('A4', 'dotted-quarter'),
+      ]),
+      measure([
+        note('G4', 'dotted-quarter'),
+        note('F#4', 'dotted-quarter'),
+        note('F#4', 'eighth'),
+        rest('eighth'),
+        note('G4', 'eighth'),
+      ]),
+      measure([
+        note('A4', 'quarter'),
+        note('G4', 'eighth'),
+        note('F#4', 'quarter'),
+        note('E4', 'eighth'),
+        note('F#4', 'dotted-quarter'),
+      ]),
+      measure([
+        note('B3', 'dotted-quarter'),
+        note('E4', 'dotted-quarter'),
+        note('G4', 'eighth'),
+        note('F#4', 'eighth'),
+        note('G4', 'eighth'),
+      ]),
+      measure([
+        note('E4', 'dotted-quarter'),
+        note('E4', 'quarter'),
+        note('D4', 'eighth'),
+        note('E4', 'dotted-half'),
+      ]),
+      measure([note('E4', 'dotted-quarter'), rest('quarter')]),
+    ],
+  }),
+  arrangement: { style: 'flowing', tonic: 'E3' },
+});

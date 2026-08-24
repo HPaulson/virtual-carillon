@@ -1,0 +1,49 @@
+play:
+  name: Play bell or asset
+  description: Play a Virtual Carillon asset through the selected output.
+  fields:
+    asset:
+      required: true
+      example: test-bell
+      selector: {text: {}}
+    output:
+      required: false
+      selector: {text: {}}
+stop:
+  name: Stop playback
+  description: Stop active Virtual Carillon playback.
+select_hymn:
+  name: Select and play a hymn
+  description: Select a hymn from today's LitCal celebration, a fixed hymn, or a tagged collection, then play it.
+  fields:
+    strategy:
+      required: false
+      example: automatic
+      selector:
+        select:
+          options: [automatic, fixed, random, sequential]
+    hymn:
+      required: false
+      description: Hymn asset id for fixed selection.
+      example: ave-maris-stella
+      selector: {text: {}}
+    category:
+      required: false
+      description: Stable category id such as marian or eucharistic.
+      example: marian
+      selector: {text: {}}
+    feast:
+      required: false
+      description: Stable feast id such as assumption-of-mary.
+      example: assumption-of-mary
+      selector: {text: {}}
+    office:
+      required: false
+      example: vespers
+      selector: {text: {}}
+    seed:
+      required: false
+      selector: {text: {}}
+    output:
+      required: false
+      selector: {text: {}}

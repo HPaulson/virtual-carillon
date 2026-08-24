@@ -1,0 +1,10 @@
+services:
+  virtual-carillon:
+    environment:
+      XDG_RUNTIME_DIR: /run/user/1000
+      PIPEWIRE_REMOTE: pipewire-0
+      PULSE_SERVER: unix:/run/user/1000/pulse/native
+    volumes:
+      # Linux-only host audio transport. Bluetooth pairing stays on the host.
+      - ${HOST_XDG_RUNTIME_DIR:-/run/user/1000}/pipewire-0:/run/user/1000/pipewire-0
+      - ${HOST_XDG_RUNTIME_DIR:-/run/user/1000}/pulse/native:/run/user/1000/pulse/native

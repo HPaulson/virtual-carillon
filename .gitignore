@@ -1,0 +1,8 @@
+node_modules/
+.pnpm-store/
+dist/
+.data/
+data/
+.env
+*.log
+coverage/

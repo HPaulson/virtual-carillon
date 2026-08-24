@@ -1,0 +1,321 @@
+export const LITURGICAL_SEASONS = {
+  general: 'General',
+  advent: 'Advent',
+  christmas: 'Christmas',
+  epiphany: 'Epiphany',
+  lent: 'Lent',
+  'holy-week': 'Holy Week',
+  easter: 'Easter',
+  ascension: 'Ascension',
+  pentecost: 'Pentecost',
+  'ordinary-time': 'Ordinary Time',
+} as const;
+
+export const LITURGICAL_CATEGORIES = {
+  general: 'General',
+  marian: 'Marian',
+  'blessed-virgin-mary': 'Blessed Virgin Mary',
+  christological: 'Christological',
+  eucharistic: 'Eucharistic',
+  'sacred-heart': 'Sacred Heart',
+  'holy-spirit': 'Holy Spirit',
+  trinity: 'Trinity',
+  'cross-passion': 'Cross / Passion',
+  resurrection: 'Resurrection',
+  advent: 'Advent',
+  christmas: 'Christmas',
+  epiphany: 'Epiphany',
+  lent: 'Lent',
+  'holy-week': 'Holy Week',
+  easter: 'Easter',
+  ascension: 'Ascension',
+  pentecost: 'Pentecost',
+  'corpus-christi': 'Corpus Christi',
+  'all-saints': 'All Saints',
+  'all-souls': 'All Souls',
+  angels: 'Angels',
+  apostles: 'Apostles',
+  martyrs: 'Martyrs',
+  virgins: 'Virgins',
+  doctors: 'Doctors',
+  religious: 'Religious',
+  'dedication-of-a-church': 'Dedication of a Church',
+  sunday: 'Sunday',
+  confirmation: 'Confirmation',
+  ordination: 'Ordination',
+} as const;
+
+export const LITURGICAL_FEASTS = {
+  annunciation: 'Annunciation',
+  'assumption-of-mary': 'Assumption of Mary',
+  'nativity-of-mary': 'Nativity of Mary',
+  'immaculate-conception': 'Immaculate Conception',
+  'mary-mother-of-god': 'Mary, Mother of God',
+  visitation: 'Visitation',
+  'queenship-of-mary': 'Queenship of Mary',
+  'our-lady-of-sorrows': 'Our Lady of Sorrows',
+  'epiphany-of-the-lord': 'Epiphany of the Lord',
+  'nativity-of-the-lord': 'Nativity of the Lord',
+  'baptism-of-the-lord': 'Baptism of the Lord',
+  'easter-sunday': 'Easter Sunday',
+  'ascension-of-the-lord': 'Ascension of the Lord',
+  pentecost: 'Pentecost',
+  'trinity-sunday': 'Trinity Sunday',
+  'corpus-christi': 'Corpus Christi',
+  'sacred-heart-of-jesus': 'Sacred Heart of Jesus',
+  'holy-thursday': 'Holy Thursday',
+  'good-friday': 'Good Friday',
+  'exaltation-of-the-holy-cross': 'Exaltation of the Holy Cross',
+  'all-saints': 'All Saints',
+  'all-souls': 'All Souls',
+  'dedication-of-a-church': 'Dedication of a Church',
+} as const;
+
+export type LiturgicalSeasonId = keyof typeof LITURGICAL_SEASONS;
+export type LiturgicalCategoryId = keyof typeof LITURGICAL_CATEGORIES;
+export type LiturgicalFeastId = keyof typeof LITURGICAL_FEASTS;
+export type LiturgicalOfficeId =
+  | 'matins'
+  | 'lauds'
+  | 'terce'
+  | 'sext'
+  | 'none'
+  | 'vespers'
+  | 'compline'
+  | 'morning-prayer'
+  | 'evening-prayer'
+  | 'night-prayer';
+export type LiturgicalRankId =
+  | 'feria'
+  | 'commemoration'
+  | 'optional-memorial'
+  | 'memorial'
+  | 'feast'
+  | 'feast-of-the-lord'
+  | 'solemnity'
+  | 'higher-solemnity';
+
+export interface LiturgicalTags {
+  seasons: LiturgicalSeasonId[];
+  feasts: string[];
+  solemnities: string[];
+  memorials: string[];
+  saints: string[];
+  categories: string[];
+  offices: LiturgicalOfficeId[];
+  canonicalHours: LiturgicalOfficeId[];
+}
+
+export const EMPTY_LITURGICAL_TAGS: LiturgicalTags = {
+  seasons: [],
+  feasts: [],
+  solemnities: [],
+  memorials: [],
+  saints: [],
+  categories: [],
+  offices: [],
+  canonicalHours: [],
+};
+
+export function createLiturgicalTags(input: Partial<LiturgicalTags> = {}): LiturgicalTags {
+  return {
+    seasons: unique(input.seasons),
+    feasts: unique(input.feasts),
+    solemnities: unique(input.solemnities),
+    memorials: unique(input.memorials),
+    saints: unique(input.saints),
+    categories: unique(input.categories),
+    offices: unique(input.offices),
+    canonicalHours: unique(input.canonicalHours),
+  };
+}
+
+export function inferLiturgicalTags(input: {
+  key?: string;
+  name?: string;
+  season?: string;
+  grade?: number;
+  rank?: string;
+  common?: string[];
+  tags?: string[];
+  feastTypes?: string[];
+  liturgicalSeasons?: string[];
+}): LiturgicalTags {
+  const text = normalise(
+    [
+      input.key,
+      input.name,
+      input.rank,
+      ...(input.common ?? []),
+      ...(input.tags ?? []),
+      ...(input.feastTypes ?? []),
+    ]
+      .filter(Boolean)
+      .join(' '),
+  );
+  const tags = createLiturgicalTags({
+    seasons: [seasonId(input.season)],
+    categories: [],
+    feasts: [],
+  });
+  for (const season of input.liturgicalSeasons ?? []) tags.seasons.push(seasonId(season));
+  const addCategory = (...values: string[]) => tags.categories.push(...values);
+  const addFeast = (...values: string[]) => tags.feasts.push(...values);
+  const addSeason = (value: LiturgicalSeasonId) => tags.seasons.push(value);
+
+  if (text.includes('assumption')) {
+    addFeast('assumption-of-mary');
+    addCategory('marian', 'blessed-virgin-mary');
+  }
+  if (text.includes('nativity') && (text.includes('mary') || text.includes('virgin'))) {
+    addFeast('nativity-of-mary');
+    addCategory('marian', 'blessed-virgin-mary');
+  }
+  if (text.includes('immaculate conception')) {
+    addFeast('immaculate-conception');
+    addCategory('marian', 'blessed-virgin-mary');
+  }
+  if (text.includes('annunciation')) {
+    addFeast('annunciation');
+    addCategory('marian', 'blessed-virgin-mary');
+  }
+  if (text.includes('mother of god') || text.includes('theotokos')) {
+    addFeast('mary-mother-of-god');
+    addCategory('marian', 'blessed-virgin-mary');
+  }
+  if (text.includes('visitation')) {
+    addFeast('visitation');
+    addCategory('marian', 'blessed-virgin-mary');
+  }
+  if (text.includes('queenship of mary')) {
+    addFeast('queenship-of-mary');
+    addCategory('marian', 'blessed-virgin-mary');
+  }
+  if (
+    text.includes('our lady') ||
+    text.includes('blessed virgin') ||
+    text.includes('virgin mary') ||
+    text.includes('mary')
+  )
+    addCategory('marian', 'blessed-virgin-mary');
+
+  if (text.includes('corpus christi')) {
+    addFeast('corpus-christi');
+    addCategory('eucharistic', 'christological', 'corpus-christi');
+  }
+  if (text.includes('holy thursday')) {
+    addFeast('holy-thursday');
+    addCategory('eucharistic', 'cross-passion', 'holy-week');
+  }
+  if (text.includes('sacred heart')) {
+    addFeast('sacred-heart-of-jesus');
+    addCategory('sacred-heart', 'christological');
+  }
+  if (text.includes('holy spirit') || text.includes('pentecost')) {
+    addFeast('pentecost');
+    addCategory('holy-spirit', 'pentecost');
+    addSeason('pentecost');
+  }
+  if (text.includes('trinity')) {
+    addFeast('trinity-sunday');
+    addCategory('trinity', 'christological');
+  }
+  if (text.includes('ascension')) {
+    addFeast('ascension-of-the-lord');
+    addCategory('ascension', 'christological');
+    addSeason('ascension');
+  }
+  if (text.includes('resurrection') || text.includes('easter')) {
+    addFeast('easter-sunday');
+    addCategory('resurrection', 'christological', 'easter');
+    addSeason('easter');
+  }
+  if (
+    text.includes('exaltation of the holy cross') ||
+    text.includes('good friday') ||
+    text.includes('passion') ||
+    text.includes('cross')
+  )
+    addCategory('cross-passion', 'christological');
+  if (text.includes('epiphany')) {
+    addFeast('epiphany-of-the-lord');
+    addCategory('epiphany', 'christological');
+    addSeason('epiphany');
+  }
+  if (text.includes('nativity of the lord') || text.includes('christmas')) {
+    addFeast('nativity-of-the-lord');
+    addCategory('christmas', 'christological');
+    addSeason('christmas');
+  }
+  if (text.includes('all saints')) {
+    addFeast('all-saints');
+    addCategory('all-saints');
+  }
+  if (text.includes('all souls')) {
+    addFeast('all-souls');
+    addCategory('all-souls');
+  }
+  if (text.includes('angel')) addCategory('angels');
+  if (text.includes('apostle')) addCategory('apostles');
+  if (text.includes('martyr')) addCategory('martyrs');
+  if (text.includes('virgin')) addCategory('virgins');
+  if (text.includes('doctor')) addCategory('doctors');
+  if (text.includes('religious') || text.includes('abbot') || text.includes('monk'))
+    addCategory('religious');
+  if (text.includes('dedication')) {
+    addFeast('dedication-of-a-church');
+    addCategory('dedication-of-a-church');
+  }
+  if (text.includes('sunday')) addCategory('sunday');
+  if (!tags.categories.length) addCategory('general');
+
+  const rank = rankId(input.grade, input.rank);
+  if (rank === 'solemnity' || rank === 'higher-solemnity') tags.solemnities.push(...tags.feasts);
+  if (rank === 'memorial' || rank === 'optional-memorial') tags.memorials.push(...tags.feasts);
+  return createLiturgicalTags(tags);
+}
+
+export function seasonId(value?: string): LiturgicalSeasonId {
+  const text = normalise(value ?? '');
+  if (text.includes('advent')) return 'advent';
+  if (text.includes('christmas')) return 'christmas';
+  if (text.includes('epiphany')) return 'epiphany';
+  if (text.includes('lent')) return 'lent';
+  if (text.includes('holy week')) return 'holy-week';
+  if (text.includes('easter')) return 'easter';
+  if (text.includes('ascension')) return 'ascension';
+  if (text.includes('pentecost')) return 'pentecost';
+  if (text.includes('ordinary')) return 'ordinary-time';
+  return 'general';
+}
+
+export function rankId(grade?: number, label?: string): LiturgicalRankId {
+  if (grade !== undefined)
+    return ([
+      'feria',
+      'commemoration',
+      'optional-memorial',
+      'memorial',
+      'feast',
+      'feast-of-the-lord',
+      'solemnity',
+      'higher-solemnity',
+    ][Math.max(0, Math.min(7, grade))] ?? 'feria') as LiturgicalRankId;
+  const text = normalise(label ?? '');
+  if (text.includes('solemn')) return 'solemnity';
+  if (text.includes('feast')) return 'feast';
+  if (text.includes('optional')) return 'optional-memorial';
+  if (text.includes('memorial')) return 'memorial';
+  return 'feria';
+}
+
+export function normalise(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/[·'’_\-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+function unique<T>(values: T[] | undefined): T[] {
+  return [...new Set(values ?? [])];
+}

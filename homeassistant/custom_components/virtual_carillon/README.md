@@ -1,0 +1,3 @@
+# Virtual Carillon Home Assistant integration
+
+Copy this directory into `/config/custom_components/virtual_carillon`, start the Node engine, and add **Virtual Carillon** from Settings → Devices & services. The status sensor exposes the hymn catalog (including stable feast, category, season, office, language, rite, and tradition tags) and today's normalized LitCal day. Use `virtual_carillon.select_hymn` for automatic, fixed, random, or sequential selection; pass `category`, `feast`, or `office` to override the automatic query. The engine's `/api/schedules` endpoint also accepts the same liturgical query fields.

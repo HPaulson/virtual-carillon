@@ -1,0 +1,22 @@
+services:
+  virtual-carillon:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: virtual-carillon:latest
+    container_name: virtual-carillon
+    restart: unless-stopped
+    ports:
+      - "9876:9876"
+    environment:
+      VIRTUAL_CARILLON_HOST: 0.0.0.0
+      VIRTUAL_CARILLON_PORT: 9876
+      VIRTUAL_CARILLON_DATA_DIR: /app/.data
+    volumes:
+      - ./data:/app/.data
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:9876/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s

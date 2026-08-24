@@ -1,0 +1,6 @@
+DOMAIN = "virtual_carillon"
+CONF_URL = "url"
+DEFAULT_URL = "http://127.0.0.1:9876"
+SERVICE_PLAY = "play"
+SERVICE_STOP = "stop"
+SERVICE_SELECT_HYMN = "select_hymn"
