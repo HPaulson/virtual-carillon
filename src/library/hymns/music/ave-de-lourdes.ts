@@ -13,7 +13,7 @@ export const aveDeLourdes = defineHymn({
     categories: ['marian', 'blessed-virgin-mary', 'praise'],
     seasons: ['General', 'Ordinary Time'],
     offices: [],
-    feasts: ['our-lady-of-lourdes'],
+    feasts: ['our-lady-of-lourdes', 'immaculate-conception'],
     solemnities: [],
   },
   notation: melody({

@@ -52,7 +52,6 @@ node dist/cli/index.js import --name "My Church Angelus" --file /path/to/angelus
 | `VIRTUAL_CARILLON_PORT` | `9876` | HTTP port |
 | `VIRTUAL_CARILLON_API_TOKEN` | unset | Bearer token for `/api/*`; set a long random value for remote deployments |
 | `VIRTUAL_CARILLON_SAMPLE_RATE` | `44100` | Only 44100 and 48000 are accepted |
-| `VIRTUAL_CARILLON_DISTANCE_PROFILE` | `half-mile` | `near`, `church-grounds`, `quarter-mile`, `half-mile`, `one-mile`, or `custom` |
 
 ## Editing rules
 

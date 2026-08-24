@@ -52,7 +52,6 @@ target:
   entity_id: media_player.kitchen
 data:
   strategy: random
-  fallback_asset: ave-maris-stella
 ```
 
 Virtual Carillon does not configure the selected media player. Wi-Fi speakers, Bluetooth speakers, Chromecast, Sonos, laptop audio, or any other output are the responsibility of the corresponding Home Assistant integration.

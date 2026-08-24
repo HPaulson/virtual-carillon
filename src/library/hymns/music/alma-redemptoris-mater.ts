@@ -13,7 +13,7 @@ export const almaRedemptorisMater = defineHymn({
     categories: ['marian', 'advent', 'incarnation'],
     seasons: ['Advent', 'Christmas'],
     offices: ['Compline'],
-    feasts: [],
+    feasts: ['assumption-of-mary', 'purification-of-the-lord', 'mary-mother-of-god'],
     solemnities: [],
   },
   notation: melody({

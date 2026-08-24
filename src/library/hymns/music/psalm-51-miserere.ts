@@ -9,10 +9,10 @@ export const psalm51Miserere = defineHymn({
   license: 'Public-domain chant; source notation and transcriber credited in the bundled GABC',
   tags: ['Psalm', 'Gregorian', 'Lent', 'Penitential'],
   liturgical: {
-    categories: ['penitential', 'repentance', 'psalm'],
+    categories: ['penitential', 'repentance', 'psalm', 'all-souls'],
     seasons: ['Lent'],
     offices: [],
-    feasts: [],
+    feasts: ['ash-wednesday', 'all-souls'],
     solemnities: [],
   },
   notation: melody({

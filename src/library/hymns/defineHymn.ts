@@ -15,6 +15,14 @@ export function defineHymn(definition: HymnDefinition): HymnAsset {
   const imported = parseAbc(abc, definition.id);
   const liturgical = definition.liturgical ?? {};
   const offices = liturgical.offices ?? [];
+  if (
+    offices.length > 0 &&
+    !(liturgical.categories?.length || liturgical.feasts?.length || liturgical.seasons?.length)
+  ) {
+    throw new Error(
+      `Hymn ${definition.id} assigns a canonical hour without a liturgical category, feast, or season`,
+    );
+  }
   const arrangement: ArrangementPlan = definition.arrangement;
   const license = definition.license ?? DEFAULT_LICENSE;
   const rhythmicCharacter = definition.notation.rhythmicCharacter ?? 'metered';

@@ -11,7 +11,7 @@ export const oldHundredth = defineHymn({
   license: 'Public-domain melody; ABC source transcription credited in this asset',
   tags: ['Hymn', 'Psalm', 'Doxology'],
   liturgical: {
-    categories: ['praise'],
+    categories: ['praise', 'sunday'],
     seasons: ['General', 'Ordinary Time'],
     offices: [],
     feasts: [],

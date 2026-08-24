@@ -18,7 +18,7 @@ import { DEFAULT_SCHEDULE_CONFIG, normalizeSchedule, toSimpleSchedule } from '..
 const config = loadConfig();
 const displayConfig = { ...config, apiToken: config.apiToken ? '[configured]' : undefined };
 const database = new CarillonDatabase(defaultDatabasePath(config));
-const engine = new AudioEngine(path.join(config.dataDir, 'cache'), config.sampleRate, config.distanceProfile);
+const engine = new AudioEngine(path.join(config.dataDir, 'cache'), config.sampleRate);
 const library = new AssetLibrary(engine, path.join(config.dataDir, 'cache'), path.join(config.dataDir, 'assets'));
 const hymnCatalog = new HymnCatalog(library);
 const liturgicalCalendar = new LiturgicalCalendarClient({ cacheDir: path.join(config.dataDir, 'litcal') });

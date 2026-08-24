@@ -22,6 +22,9 @@ export interface SequenceEvent {
   duration?: number;
   voice?: string;
   kind?: 'strike' | 'note';
+  /** Optional per-event distance override for mixed sequences. */
+  distance?: DistanceProfile;
+  customDistance?: Partial<DistanceSettings>;
 }
 
 export interface RenderOptions { distance?: DistanceProfile; customDistance?: Partial<DistanceSettings>; }
@@ -58,7 +61,9 @@ export class AudioEngine {
     const rendered = events.map((event) => {
       const start = event.start ?? event.offset ?? 0;
       const gain = event.gain ?? event.velocity ?? 1;
-      const waveformKey = JSON.stringify([event.pitch, event.bellId, event.preset, event.frequency, distance, options.customDistance]);
+      const eventDistance = event.distance ?? distance;
+      const eventCustomDistance = event.customDistance ?? options.customDistance;
+      const waveformKey = JSON.stringify([event.pitch, event.bellId, event.preset, event.frequency, eventDistance, eventCustomDistance]);
       let samples = waveformCache.get(waveformKey);
       if (!samples) {
         samples = synthesizeBell({
@@ -67,8 +72,8 @@ export class AudioEngine {
         preset: event.preset,
         frequency: event.frequency ?? (event.pitch ? pitchFrequency(event.pitch) : undefined),
         velocity: 1,
-        distance,
-        customDistance: options.customDistance,
+        distance: eventDistance,
+        customDistance: eventCustomDistance,
         sampleRate: this.sampleRate,
         });
         waveformCache.set(waveformKey, samples);

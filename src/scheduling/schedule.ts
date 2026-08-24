@@ -33,7 +33,6 @@ const SelectHymnActionSchema = z.object({
   outputs: NativeOutputsSchema.default([]),
   strategy: z.enum(['fixed', 'sequential', 'random']).default('random'),
   fixedAssetId: z.string().min(1).optional(),
-  fallbackAsset: z.string().min(1).optional(),
   seasons: z.array(z.string()).optional(),
   rank: z.string().min(1).optional(),
   feastIds: z.array(z.string()).optional(),
@@ -105,6 +104,8 @@ export interface LocalScheduleTime {
 
 export interface SchedulePlayback {
   asset: string;
+  /** Known rendered duration, used when the HA player cannot enqueue media. */
+  durationSeconds?: number;
   volume?: number;
   mediaPlayers: string[];
   outputs: string[];
@@ -150,7 +151,8 @@ function normalizeRoutine(value: unknown, index: number): unknown {
   const routine = value as Record<string, unknown>;
   if (Array.isArray(routine.actions)) return routine;
 
-  const type = routine.type === 'liturgical_hymn' ? 'liturgical_hymn' : 'play';
+  const isHymn = routine.type === 'liturgical_hymn' || routine.type === 'hymn_category';
+  const type = isHymn ? 'liturgical_hymn' : 'play';
   const times = Array.isArray(routine.times) && routine.times.length ? routine.times : ['12:00'];
   const canonicalHour = typeof routine.canonicalHour === 'string'
     ? routine.canonicalHour
@@ -161,8 +163,8 @@ function normalizeRoutine(value: unknown, index: number): unknown {
     ? {
       type: 'select_hymn',
       strategy: routine.strategy ?? 'random',
-      fallbackAsset: routine.fallbackAsset,
       volume: routine.volume,
+      categoryIds: Array.isArray(routine.categoryIds) ? routine.categoryIds : undefined,
       canonicalHours: canonicalHour ? [canonicalHour] : undefined,
       mediaPlayers: routine.mediaPlayers ?? [],
       outputs: routine.outputs ?? [],
@@ -176,7 +178,7 @@ function normalizeRoutine(value: unknown, index: number): unknown {
     };
   return {
     id: routine.id ?? `routine-${index + 1}`,
-    name: routine.name ?? (routine.type === 'liturgical_hymn' ? 'Liturgical hymn' : routine.asset ?? 'Scheduled asset'),
+    name: routine.name ?? (isHymn ? 'Liturgical hymn' : routine.asset ?? 'Scheduled asset'),
     enabled: routine.enabled ?? true,
     trigger: {
       frequency: 'exact',
@@ -203,12 +205,13 @@ export function toSimpleSchedule(config: ScheduleConfig) {
         id: routine.id,
         name: routine.name,
         enabled: routine.enabled,
-        type: isHymn ? 'liturgical_hymn' : 'asset',
-        ...(isHymn ? { fallbackAsset: action.fallbackAsset } : { asset: action?.type === 'play' ? action.asset : undefined }),
+        type: isHymn ? (action.categoryIds?.length ? 'hymn_category' : 'liturgical_hymn') : 'asset',
+        ...(isHymn ? {} : { asset: action?.type === 'play' ? action.asset : undefined }),
         ...(action?.type === 'play' || action?.type === 'select_hymn'
           ? (action.volume === undefined ? {} : { volume: action.volume })
           : {}),
         ...(isHymn && action.canonicalHours?.length ? { canonicalHour: action.canonicalHours[0] } : {}),
+        ...(isHymn && action.categoryIds?.length ? { categoryIds: action.categoryIds } : {}),
         times: routine.trigger.times ?? [routine.trigger.time],
         weekdays: routine.trigger.weekdays,
         notBefore: routine.trigger.notBefore,

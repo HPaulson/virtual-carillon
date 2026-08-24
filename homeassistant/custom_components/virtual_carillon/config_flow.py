@@ -15,6 +15,7 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from .const import (
     CONF_ASSET,
     CONF_CANONICAL_HOUR,
+    CONF_DISTANCE_PROFILE,
     CONF_LITCAL_CALENDAR,
     CONF_LITCAL_ENABLED,
     CONF_MEDIA_PLAYERS,
@@ -36,9 +37,11 @@ from .const import (
     CONF_WESTMINSTER_NOT_AFTER,
     CONF_WESTMINSTER_NOT_BEFORE,
     DEFAULT_LITCAL_CALENDAR,
+    DEFAULT_DISTANCE_PROFILE,
     DEFAULT_LITCAL_ENABLED,
     DEFAULT_URL,
     DOMAIN,
+    DISTANCE_PROFILES,
     LITCAL_CALENDARS,
 )
 
@@ -65,7 +68,24 @@ WEEKDAY_OPTIONS = [
 ]
 ASSET_TYPE_OPTIONS = [
     {"value": "manual", "label": "Manual — Select a specific hymn"},
+    {"value": "category", "label": "Category — Select from a hymn category"},
     {"value": "automatic", "label": "Automatic — Hymn selected based on liturgical calendar"},
+]
+CATEGORY_OPTIONS = [
+    {"value": "marian", "label": "Marian"},
+    {"value": "blessed-virgin-mary", "label": "Blessed Virgin Mary"},
+    {"value": "christological", "label": "Christological"},
+    {"value": "eucharistic", "label": "Eucharistic"},
+    {"value": "sacred-heart", "label": "Sacred Heart"},
+    {"value": "holy-spirit", "label": "Holy Spirit"},
+    {"value": "trinity", "label": "Trinity"},
+    {"value": "cross-passion", "label": "Cross / Passion"},
+    {"value": "resurrection", "label": "Resurrection"},
+    {"value": "saints", "label": "Saints"},
+    {"value": "angels", "label": "Angels"},
+    {"value": "apostles", "label": "Apostles"},
+    {"value": "religious", "label": "Religious"},
+    {"value": "sunday", "label": "Sunday"},
 ]
 CANONICAL_HOUR_OPTIONS = [
     {"value": "", "label": "None (Default)"},
@@ -133,10 +153,12 @@ class VirtualCarillonOptionsFlow(config_entries.OptionsFlow):
     def __init__(self):
         self._schedule: dict[str, Any] | None = None
         self._assets: list[dict[str, Any]] = []
+        self._distance_profile = DEFAULT_DISTANCE_PROFILE
 
     async def async_step_init(self, user_input: dict[str, Any] | None = None):
         if self._schedule is None:
             existing = {**self.config_entry.data, **self.config_entry.options}
+            self._distance_profile = existing.get(CONF_DISTANCE_PROFILE, DEFAULT_DISTANCE_PROFILE)
             schedule = existing.get(CONF_SCHEDULE)
             if not schedule:
                 schedule = await self._async_get_schedule()
@@ -161,6 +183,7 @@ class VirtualCarillonOptionsFlow(config_entries.OptionsFlow):
                 "enabled": user_input[CONF_LITCAL_ENABLED],
                 "calendar": user_input[CONF_LITCAL_CALENDAR],
             }
+            self._distance_profile = user_input[CONF_DISTANCE_PROFILE]
             return await self.async_step_init()
         return self.async_show_form(
             step_id="global",
@@ -169,6 +192,12 @@ class VirtualCarillonOptionsFlow(config_entries.OptionsFlow):
                 vol.Required(CONF_LITCAL_ENABLED, default=self._schedule["litcal"]["enabled"]): selector.BooleanSelector(),
                 vol.Required(CONF_LITCAL_CALENDAR, default=self._schedule["litcal"]["calendar"]): selector.SelectSelector(
                     selector.SelectSelectorConfig(options=list(LITCAL_CALENDARS))
+                ),
+                vol.Required(CONF_DISTANCE_PROFILE, default=self._distance_profile): selector.SelectSelector(
+                    selector.SelectSelectorConfig(options=[
+                        {"value": value, "label": value.replace("-", " ").title()}
+                        for value in DISTANCE_PROFILES
+                    ])
                 ),
             }),
         )
@@ -217,6 +246,8 @@ class VirtualCarillonOptionsFlow(config_entries.OptionsFlow):
         if user_input is not None:
             if self._routine_mode == "manual" and not str(user_input.get(CONF_ASSET, "")).strip():
                 errors["base"] = "asset_required"
+            elif self._routine_mode == "category" and not user_input.get(CONF_CATEGORY_IDS):
+                errors["base"] = "category_required"
             elif not _valid_times(user_input.get(CONF_TIMES, "")):
                 errors["base"] = "invalid_times"
             elif not _entities(user_input.get(CONF_MEDIA_PLAYERS, [])):
@@ -269,6 +300,8 @@ class VirtualCarillonOptionsFlow(config_entries.OptionsFlow):
         if user_input is not None:
             if self._routine_mode == "manual" and not str(user_input.get(CONF_ASSET, "")).strip():
                 errors["base"] = "asset_required"
+            elif self._routine_mode == "category" and not user_input.get(CONF_CATEGORY_IDS):
+                errors["base"] = "category_required"
             elif not _valid_times(user_input.get(CONF_TIMES, "")):
                 errors["base"] = "invalid_times"
             elif not _entities(user_input.get(CONF_MEDIA_PLAYERS, [])):
@@ -309,6 +342,7 @@ class VirtualCarillonOptionsFlow(config_entries.OptionsFlow):
                 CONF_SCHEDULE: deepcopy(self._schedule),
                 CONF_LITCAL_ENABLED: self._schedule["litcal"]["enabled"],
                 CONF_LITCAL_CALENDAR: self._schedule["litcal"]["calendar"],
+                CONF_DISTANCE_PROFILE: self._distance_profile,
             },
         )
 
@@ -435,6 +469,10 @@ def _routine_schema(
             selector.SelectSelectorConfig(options=_asset_options(assets, include_empty=True))
         )
     else:
+        if selected_mode == "category":
+            schema[vol.Required(CONF_CATEGORY_IDS, default=defaults["category_ids"])] = selector.SelectSelector(
+                selector.SelectSelectorConfig(options=CATEGORY_OPTIONS, multiple=True)
+            )
         schema[vol.Optional(CONF_CANONICAL_HOUR, default=defaults["canonical_hour"])] = selector.SelectSelector(
             selector.SelectSelectorConfig(options=CANONICAL_HOUR_OPTIONS)
         )
@@ -470,6 +508,7 @@ def _routine_defaults(routine: dict[str, Any] | None):
             "enabled": True,
             "play_type": "manual",
             "asset": "",
+            "category_ids": [],
             "canonical_hour": "",
             "times": "12:00",
             "weekdays": list(WEEKDAYS),
@@ -497,8 +536,9 @@ def _routine_defaults(routine: dict[str, Any] | None):
     return {
         "name": routine.get("name", ""),
         "enabled": routine.get("enabled", True),
-        "play_type": "automatic" if action.get("type") == "select_hymn" else "manual",
+        "play_type": "category" if action.get("type") == "select_hymn" and action.get("categoryIds") else ("automatic" if action.get("type") == "select_hymn" else "manual"),
         "asset": action.get("asset", ""),
+        "category_ids": action.get("categoryIds", []),
         "canonical_hour": (action.get("canonicalHours") or [""])[0],
         "times": ", ".join(trigger.get("times", [trigger.get("time", "12:00")])),
         "weekdays": trigger.get("weekdays", list(WEEKDAYS)),
@@ -526,16 +566,18 @@ def _routine_from_input(user_input: dict[str, Any], *, routine_id: str | None = 
             trigger[key] = value
 
     play_type = user_input.get(CONF_PLAY_TYPE, "manual")
-    if play_type == "automatic":
+    if play_type in ("automatic", "category"):
         action = {
             "type": "select_hymn",
             "strategy": "random",
             "mediaPlayers": _entities(user_input.get(CONF_MEDIA_PLAYERS, [])),
         }
+        if play_type == "category":
+            action["categoryIds"] = list(user_input.get(CONF_CATEGORY_IDS, []))
         canonical_hour = str(user_input.get(CONF_CANONICAL_HOUR, "")).strip()
         if canonical_hour:
             action["canonicalHours"] = [canonical_hour]
-        default_name = "Automatic hymn"
+        default_name = "Hymn from category" if play_type == "category" else "Automatic hymn"
     else:
         action = {
             "type": "play",
@@ -587,7 +629,7 @@ def _normalise_routine(routine: dict[str, Any], index: int):
         return deepcopy(routine)
     times = routine.get("times") if isinstance(routine.get("times"), list) else _csv(routine.get("times", "12:00"))
     times = times or ["12:00"]
-    is_hymn = routine.get("type") == "liturgical_hymn"
+    is_hymn = routine.get("type") in ("liturgical_hymn", "hymn_category")
     action = {
         "type": "select_hymn" if is_hymn else "play",
         "mediaPlayers": list(routine.get("mediaPlayers", [])),
@@ -597,6 +639,8 @@ def _normalise_routine(routine: dict[str, Any], index: int):
         action["volume"] = routine["volume"]
     if is_hymn:
         action["strategy"] = routine.get("strategy", "random")
+        if routine.get("categoryIds"):
+            action["categoryIds"] = list(routine["categoryIds"])
         if routine.get("canonicalHour"):
             action["canonicalHours"] = [routine["canonicalHour"]]
     else:
@@ -628,7 +672,7 @@ def _simple_schedule(schedule: dict[str, Any]):
             "id": routine["id"],
             "name": routine.get("name", "Scheduled playback"),
             "enabled": routine.get("enabled", True),
-            "type": "liturgical_hymn" if is_hymn else "asset",
+            "type": "hymn_category" if is_hymn and action.get("categoryIds") else ("liturgical_hymn" if is_hymn else "asset"),
             "times": trigger.get("times", [trigger.get("time", "12:00")]),
             "weekdays": trigger.get("weekdays", list(WEEKDAYS)),
             "mediaPlayers": action.get("mediaPlayers", []),
@@ -639,6 +683,8 @@ def _simple_schedule(schedule: dict[str, Any]):
         if is_hymn:
             if action.get("canonicalHours"):
                 simple["canonicalHour"] = action["canonicalHours"][0]
+            if action.get("categoryIds"):
+                simple["categoryIds"] = action["categoryIds"]
         else:
             simple["asset"] = action.get("asset", "")
         for key in ("notBefore", "notAfter"):

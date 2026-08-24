@@ -91,7 +91,3 @@ select_hymn:
       required: false
       description: Liturgical date to evaluate instead of today.
       selector: {date: {}}
-    fallback_asset:
-      required: false
-      description: Asset to play if LitCal is unavailable or no hymn matches.
-      selector: {text: {}}

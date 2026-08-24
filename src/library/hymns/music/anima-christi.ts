@@ -10,10 +10,10 @@ export const animaChristi = defineHymn({
   license: 'Public-domain chant; source notation and transcriber credited in the bundled GABC',
   tags: ['Prayer', 'Eucharistic', 'Christological'],
   liturgical: {
-    categories: ['eucharistic', 'christological'],
+    categories: ['eucharistic', 'christological', 'sacred-heart'],
     seasons: ['General', 'Ordinary Time'],
     offices: [],
-    feasts: ['corpus-christi', 'holy-thursday'],
+    feasts: ['corpus-christi', 'holy-thursday', 'sacred-heart-of-jesus'],
     solemnities: [],
   },
   notation: melody({

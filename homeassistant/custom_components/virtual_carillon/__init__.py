@@ -9,6 +9,7 @@ import voluptuous as vol
 from .const import (
     CONF_LITCAL_CALENDAR,
     CONF_LITCAL_ENABLED,
+    CONF_DISTANCE_PROFILE,
     CONF_TOKEN,
     DOMAIN,
     SERVICE_PLAY,
@@ -16,6 +17,7 @@ from .const import (
     SERVICE_STOP,
     DEFAULT_LITCAL_CALENDAR,
     DEFAULT_LITCAL_ENABLED,
+    DEFAULT_DISTANCE_PROFILE,
 )
 from .coordinator import CarillonCoordinator
 from .media_source import VirtualCarillonAudioView
@@ -63,7 +65,6 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
             "seed",
             "recent_exclusion",
             "date",
-            "fallback_asset",
         )
         options = {key: call.data[key] for key in option_keys if key in call.data}
         if "date" in options:
@@ -87,7 +88,6 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
         vol.Optional("seed"): vol.Any(str, int),
         vol.Optional("recent_exclusion"): vol.All(vol.Coerce(int), vol.Range(min=0)),
         vol.Optional("date"): str,
-        vol.Optional("fallback_asset"): str,
     }, extra=vol.ALLOW_EXTRA))
     return True
 
@@ -100,6 +100,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         entry.data.get(CONF_TOKEN, ""),
         litcal_enabled=options.get(CONF_LITCAL_ENABLED, DEFAULT_LITCAL_ENABLED),
         litcal_calendar=options.get(CONF_LITCAL_CALENDAR, DEFAULT_LITCAL_CALENDAR),
+        distance_profile=options.get(CONF_DISTANCE_PROFILE, DEFAULT_DISTANCE_PROFILE),
     )
     await coordinator.async_config_entry_first_refresh()
     hass.data[DOMAIN][entry.entry_id] = coordinator

@@ -43,6 +43,9 @@ const PlaySchema = z.object({
     .optional(),
   customDistance: DistanceOverrides.optional(),
 });
+const AudioQuerySchema = z.object({
+  distance: PlaySchema.shape.distance,
+}).strict();
 const LiturgicalSelectionSchema = z.object({
   seasons: z.array(z.string()).optional(),
   rank: z.string().optional(),
@@ -86,6 +89,7 @@ const ScheduleRunSchema = z.object({
   at: z.string().min(1).optional(),
   output: z.string().min(1).optional(),
 });
+const HymnDaySchema = z.object({ date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional() });
 type ScheduleRunner = 'home_assistant' | 'native';
 const ImportSchema = z.object({
   name: z.string().min(1),
@@ -221,7 +225,9 @@ export async function createServer(services: ServerServices): Promise<FastifyIns
   });
   app.get<{ Params: { asset: string } }>('/api/assets/:asset/audio', async (request, reply) => {
     try {
-      const filePath = await services.library.resolveAndRender(request.params.asset);
+      const parsedQuery = AudioQuerySchema.safeParse(request.query);
+      if (!parsedQuery.success) return reply.code(400).send({ error: parsedQuery.error.flatten() });
+      const filePath = await services.library.resolveAndRender(request.params.asset, parsedQuery.data);
       const audio = await fs.readFile(filePath);
       const range = request.headers.range;
       if (!range) {
@@ -287,14 +293,21 @@ export async function createServer(services: ServerServices): Promise<FastifyIns
   app.get<{ Params: { date: string }; Querystring: { calendar?: string } }>('/api/liturgical/:date/hymn', async (request, reply) => {
     const parsedCalendar = CalendarSchema.safeParse(request.query.calendar ?? 'general');
     if (!parsedCalendar.success) return reply.code(400).send({ error: parsedCalendar.error.flatten() });
-    const day = await services.liturgicalCalendar?.getDay(request.params.date, parsedCalendar.data);
-    if (!day)
-      return reply.code(404).send({ error: 'No liturgical day is available for this date' });
+    const day = (await services.liturgicalCalendar?.getDay(request.params.date, parsedCalendar.data))
+      ?? neutralLiturgicalDay(request.params.date);
     return {
       calendar: parsedCalendar.data,
       day,
-      selection: hymnCatalog.selectForDay(day),
+      selection: hymnCatalog.selectForDay(day, { alreadyPlayed: services.database.completedScheduleAssets?.(request.params.date) ?? [] }),
     };
+  });
+  app.post('/api/hymns/reset-day', async (request, reply) => {
+    const parsed = HymnDaySchema.safeParse(request.body ?? {});
+    if (!parsed.success) return reply.code(400).send({ error: parsed.error.flatten() });
+    const date = parsed.data.date ?? localDate(new Date());
+    services.database.resetHymnDay(date);
+    hymnCatalog.resetDay(date);
+    return { ok: true, date };
   });
   app.post('/api/hymns/select', async (request, reply) => {
     const parsed = HymnSelectSchema.safeParse(request.body);
@@ -302,12 +315,8 @@ export async function createServer(services: ServerServices): Promise<FastifyIns
     const { date, useLitCal = true, calendar = 'general', ...input } = parsed.data;
     const selectedDate = date ?? localDate(new Date());
     const day = useLitCal
-      ? await services.liturgicalCalendar?.getDay(selectedDate, calendar)
+      ? (await services.liturgicalCalendar?.getDay(selectedDate, calendar)) ?? neutralLiturgicalDay(selectedDate)
       : neutralLiturgicalDay(selectedDate);
-    if (!day)
-      return reply
-        .code(503)
-        .send({ error: 'Liturgical calendar is unavailable for this date' });
     const condition: LiturgicalCondition = input;
     if (!conditionMatches(day, condition)) {
       return {
@@ -315,7 +324,9 @@ export async function createServer(services: ServerServices): Promise<FastifyIns
         selection: { candidates: [], matchedBy: 'none' as const },
       };
     }
-    return { day, selection: hymnCatalog.selectForDay(day, toHymnQuery(condition)) };
+    const query = toHymnQuery(condition);
+    query.alreadyPlayed = services.database.completedScheduleAssets?.(selectedDate) ?? [];
+    return { day, selection: hymnCatalog.selectForDay(day, query) };
   });
   app.post('/api/play', async (request, reply) => {
     const parsed = PlaySchema.safeParse(request.body);
@@ -373,6 +384,7 @@ async function scheduledPlaybacks(
   if (westminster && targetMatches(config.westminster.mediaPlayers, config.westminster.outputs, runner)) {
     playbacks.push({
       asset: westminster,
+      durationSeconds: services.library.list().find((candidate) => candidate.id === westminster)?.duration,
       mediaPlayers: config.westminster.mediaPlayers,
       outputs: config.westminster.outputs,
       routineId: 'westminster',
@@ -394,6 +406,7 @@ async function scheduledPlaybacks(
       if (!asset) continue;
       playbacks.push({
         asset,
+        durationSeconds: services.library.list().find((candidate) => candidate.id === asset)?.duration,
         ...(action.volume === undefined ? {} : { volume: action.volume }),
         mediaPlayers: action.mediaPlayers,
         outputs: action.outputs,
@@ -469,11 +482,13 @@ async function resolveScheduleAsset(
   if (action.type === 'play') return action.asset;
 
   const day = config.litcal.enabled
-    ? await services.liturgicalCalendar?.getDay(date, config.litcal.calendar)
+    ? (await services.liturgicalCalendar?.getDay(date, config.litcal.calendar)) ?? neutralLiturgicalDay(date)
     : neutralLiturgicalDay(date);
-  if (!day || !conditionMatches(day, action)) return action.fallbackAsset;
-  const selection = hymnCatalog.selectForDay(day, toHymnQuery(action));
-  return selection.asset?.id ?? action.fallbackAsset;
+  if (!day || !conditionMatches(day, action)) return undefined;
+  const query = toHymnQuery(action);
+  query.alreadyPlayed = services.database.completedScheduleAssets?.(date) ?? [];
+  const selection = hymnCatalog.selectForDay(day, query);
+  return selection.asset?.id;
 }
 
 function tokensMatch(expected: string, provided: string): boolean {

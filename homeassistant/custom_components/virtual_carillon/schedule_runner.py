@@ -54,22 +54,17 @@ class ScheduleRunner:
                 media_players = [str(player) for player in action.get("mediaPlayers", [])]
                 new_players = [player for player in media_players if player not in queued_players]
                 existing_players = [player for player in media_players if player in queued_players]
+                if existing_players:
+                    await self._wait_for_players(existing_players, actions[action_index - 1])
                 _LOGGER.info(
-                    "Schedule action: asset=%s players=%s",
+                    "Schedule action: asset=%s players=%s serialized=%s",
                     action.get("asset"),
                     media_players,
+                    existing_players,
                 )
                 if new_players:
                     await self.coordinator.async_play(
                         action["asset"], new_players, refresh=False, volume=action.get("volume")
-                    )
-                if existing_players:
-                    await self.coordinator.async_play(
-                        action["asset"],
-                        existing_players,
-                        refresh=False,
-                        enqueue="add",
-                        volume=action.get("volume"),
                     )
                 queued_players.update(media_players)
                 wait_after = float(action.get("waitAfterSeconds", 0))
@@ -87,3 +82,40 @@ class ScheduleRunner:
                     await self.coordinator.async_complete_schedule(slot_key, "failed", str(err))
                 except Exception as complete_err:  # pragma: no cover - defensive network failure path
                     _LOGGER.debug("Unable to mark schedule event failed: %s", complete_err)
+
+    async def _wait_for_players(self, players: list[str], action: dict) -> None:
+        """Wait for non-queueing players before issuing the next play command.
+
+        Sending another play_media call to VLC (and similar simple players)
+        can replace the current item even when Home Assistant accepts an
+        enqueue argument. Use the player's reported duration when available;
+        the schedule payload supplies a duration for generated assets as a
+        fallback.
+        """
+        fallback = float(action.get("durationSeconds") or 0)
+        deadline = asyncio.get_running_loop().time() + fallback + 5.0 if fallback else None
+        started = asyncio.get_running_loop().time()
+        observed_playback = False
+        while deadline is None or asyncio.get_running_loop().time() < deadline:
+            active = False
+            for player in players:
+                state = self.hass.states.get(player)
+                if state is None:
+                    continue
+                if state.state in ("playing", "paused"):
+                    duration = state.attributes.get("media_duration")
+                    position = state.attributes.get("media_position")
+                    if duration is None or position is None or float(duration) - float(position) > 0.2:
+                        active = True
+            if active:
+                observed_playback = True
+            if not active and observed_playback:
+                return
+            # Some players update their state only after they have opened the
+            # URL. Give that initial request time to start before sending the
+            # next play_media command.
+            if not active and asyncio.get_running_loop().time() - started > 3.0 and not fallback:
+                return
+            await asyncio.sleep(0.25)
+        if fallback and deadline is not None:
+            await asyncio.sleep(max(0.0, fallback - (asyncio.get_running_loop().time() - started)))

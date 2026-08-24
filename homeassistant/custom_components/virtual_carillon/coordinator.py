@@ -10,11 +10,12 @@ from .const import MEDIA_SOURCE_PREFIX
 
 _LOGGER = logging.getLogger(__name__)
 class CarillonCoordinator(DataUpdateCoordinator):
-    def __init__(self, hass: HomeAssistant, url: str, token: str = "", *, litcal_enabled: bool = True, litcal_calendar: str = "general"):
+    def __init__(self, hass: HomeAssistant, url: str, token: str = "", *, litcal_enabled: bool = True, litcal_calendar: str = "general", distance_profile: str = "half-mile"):
         self.url = url.rstrip("/")
         self.headers = {"Authorization": f"Bearer {token}"} if token else {}
         self.litcal_enabled = litcal_enabled
         self.litcal_calendar = litcal_calendar
+        self.distance_profile = distance_profile
         super().__init__(hass, logger=_LOGGER, name="Virtual Carillon", update_interval=timedelta(seconds=30))
 
     async def _async_update_data(self):
@@ -158,7 +159,6 @@ class CarillonCoordinator(DataUpdateCoordinator):
         seed: str | int | None = None,
         recent_exclusion: int | None = None,
         date_value: str | None = None,
-        fallback_asset: str | None = None,
     ):
         from homeassistant.helpers.aiohttp_client import async_get_clientsession
         payload = {"strategy": strategy, "useLitCal": self.litcal_enabled, "calendar": self.litcal_calendar}
@@ -191,13 +191,8 @@ class CarillonCoordinator(DataUpdateCoordinator):
             timeout=10,
         ) as response:
             if response.status >= 300:
-                if fallback_asset:
-                    await self.async_play(fallback_asset, media_players)
-                    return
                 raise RuntimeError(await response.text())
             result = await response.json()
         asset = ((result.get("selection") or {}).get("asset") or {}).get("id")
         if asset:
             await self.async_play(asset, media_players)
-        elif fallback_asset:
-            await self.async_play(fallback_asset, media_players)

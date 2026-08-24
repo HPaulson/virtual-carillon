@@ -39,7 +39,7 @@ class VirtualCarillonAudioView(HomeAssistantView):
         if coordinator is None:
             return web.Response(status=503, text="Virtual Carillon is not configured")
 
-        upstream_url = f"{coordinator.url}/api/assets/{quote(asset, safe='')}/audio"
+        upstream_url = f"{coordinator.url}/api/assets/{quote(asset, safe='')}/audio?distance={quote(coordinator.distance_profile, safe='')}"
         try:
             headers = dict(coordinator.headers)
             if request.headers.get("Range"):

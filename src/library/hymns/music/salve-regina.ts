@@ -13,7 +13,7 @@ export const salveRegina = defineHymn({
     categories: ['marian', 'blessed-virgin-mary'],
     seasons: ['General', 'Ordinary Time'],
     offices: ['Compline'],
-    feasts: [],
+    feasts: ['queenship-of-mary', 'assumption-of-mary', 'visitation'],
     solemnities: [],
   },
   notation: melody({

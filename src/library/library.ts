@@ -40,22 +40,28 @@ export interface AssetDefinition extends AudioAsset {
 const PITCHES = {
   C3: 130.81,
   D3: 146.83,
+  E3: 164.81,
+  B3: 246.94,
   G3: 196,
+  F3: 174.61,
   C4: 261.63,
   D4: 293.66,
   E4: 329.63,
+  FSharp4: 369.99,
+  F4: 349.23,
+  GSharp4: 415.3,
   G4: 392,
 };
 
 export const WESTMINSTER_BEAT_SECONDS = 0.62;
-/** The hour bell sits above C3 so its octave partial does not reinforce the Q4 C4 tail. */
-export const WESTMINSTER_HOUR_FREQUENCY = PITCHES.D3;
+/** Big Ben's documented Westminster hour-bell note is E3. */
+export const WESTMINSTER_HOUR_FREQUENCY = PITCHES.E3;
 export const WESTMINSTER_PHRASES = {
-  Q1: ['E4', 'D4', 'C4', 'G3'],
-  Q2: ['C4', 'E4', 'D4', 'G3'],
-  Q3: ['E4', 'C4', 'D4', 'G3'],
-  Q4: ['G3', 'D4', 'E4', 'C4'],
-  MQ: ['C4', 'D4', 'E4', 'C4'],
+  Q1: ['G#4', 'F#4', 'E4', 'B3'],
+  Q2: ['E4', 'G#4', 'F#4', 'B3'],
+  Q3: ['G#4', 'E4', 'F#4', 'B3'],
+  Q4: ['B3', 'F#4', 'G#4', 'E4'],
+  MQ: ['E4', 'F#4', 'G#4', 'E4'],
 } as const;
 
 type WestminsterPhrase = keyof typeof WESTMINSTER_PHRASES;
@@ -77,7 +83,7 @@ function westminsterEvents(quarters: WestminsterQuarter[]): SequenceEvent[] {
       const notes = WESTMINSTER_PHRASES[phraseName];
       for (let noteIndex = 0; noteIndex < 4; noteIndex++) {
         const pitch = notes[noteIndex];
-        events.push({ offset: phraseOffset + noteIndex * WESTMINSTER_BEAT_SECONDS, pitch, preset: 'clock', duration: 0.5, kind: 'note', gain: noteIndex === 3 ? 0.92 : 0.82, voice: 'clock-chime' });
+        events.push({ offset: phraseOffset + noteIndex * WESTMINSTER_BEAT_SECONDS, pitch, preset: 'clock', duration: 0.5, kind: 'note', gain: noteIndex === 3 ? 1.28 : 1.15, voice: 'clock-chime' });
       }
       phraseOffset += 6 * WESTMINSTER_BEAT_SECONDS;
     }
@@ -89,7 +95,15 @@ function westminsterAsset(id: string, name: string, quarters: WestminsterQuarter
   const events = westminsterEvents(quarters);
   if (hour !== undefined) {
     const firstStrike = Math.max(...events.map((event) => event.offset ?? 0)) + 3.4;
-    for (let index = 0; index < hour; index++) events.push({ offset: firstStrike + index * 2.35, frequency: WESTMINSTER_HOUR_FREQUENCY, preset: 'clock-tower', duration: 0.5, kind: 'strike', gain: 0.98, voice: 'hour-strike' });
+    for (let index = 0; index < hour; index++) events.push({
+      offset: firstStrike + index * 2.35,
+      frequency: WESTMINSTER_HOUR_FREQUENCY,
+      preset: 'clock-tower',
+      duration: 0.5,
+      kind: 'strike',
+      gain: 1.1,
+      voice: 'hour-strike',
+    });
   }
   const lastStrike = Math.max(...events.map((event) => event.offset ?? 0));
   const duration = lastStrike + (hour ? 12 : 7);
@@ -97,7 +111,7 @@ function westminsterAsset(id: string, name: string, quarters: WestminsterQuarter
     id, name, type: 'sequence', source: 'generated', contentKind: 'traditional', events, duration,
     instrument: 'clock-bell', tags: ['Westminster', 'Clock', 'Clock chime'],
     sourceUrl: 'https://www.mtosmt.org/issues/mto.00.6.4/mto.00.6.4.harrison.html',
-    description: 'William Crotch’s Westminster Quarters: quarter phrases built from E–D–C–G, with the traditional rhythmic phrase and a separate tower-hour bell.',
+    description: 'Big Ben’s Westminster Quarters: quarter phrases built from G♯–F♯–E–B, with the traditional rhythmic phrase and a separate E3 tower-hour bell.',
   };
 }
 
@@ -179,7 +193,12 @@ export class AssetLibrary {
     if (!asset) throw new Error(`Unknown asset: ${assetId}`);
     if (asset.filePath) return asset.filePath;
     if (asset.type === 'hymn' && asset.melody) return this.engine.renderMelody(asset.id, asset.melody, 'bright', options);
-    if (asset.type === 'sequence') return this.engine.renderSequence(asset.id, asset.events ?? [], asset.duration, options);
+    if (asset.type === 'sequence') {
+      // Westminster pitch/register has been tuned against the real Big Ben set;
+      // force a fresh render so old cached F3/F4 experiments cannot leak through.
+      const renderKey = asset.id.startsWith('westminster-') ? `${asset.id}-big-ben-v1` : asset.id;
+      return this.engine.renderSequence(renderKey, asset.events ?? [], asset.duration, options);
+    }
     const bellOptions: BellRenderOptions = { preset: asset.preset, frequency: asset.frequency, distance: options.distance, customDistance: options.customDistance };
     return this.engine.renderBell(asset.id, bellOptions);
   }

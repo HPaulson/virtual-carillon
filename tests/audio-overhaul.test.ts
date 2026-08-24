@@ -317,7 +317,7 @@ describe('large carillon audio layer', () => {
       'G4',
     ]);
     const quarter = BUILTIN_ASSETS.find((asset) => asset.id === 'westminster-quarter')!;
-    expect(quarter.events?.map((event) => event.pitch)).toEqual(['E4', 'D4', 'C4', 'G3']);
+    expect(quarter.events?.map((event) => event.pitch)).toEqual(['G#4', 'F#4', 'E4', 'B3']);
     expect(quarter.events?.map((event) => event.offset)).toEqual([
       0,
       0.62,

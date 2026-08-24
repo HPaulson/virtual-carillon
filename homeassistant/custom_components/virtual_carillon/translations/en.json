@@ -39,7 +39,8 @@
         "data": {
           "schedule_enabled": "Enable schedules",
           "litcal_enabled": "Use LitCal for liturgical hymns",
-          "litcal_calendar": "LitCal calendar"
+          "litcal_calendar": "LitCal calendar",
+          "distance_profile": "Playback distance"
         }
       },
       "westminster": {
@@ -69,6 +70,22 @@
           "routine_enabled": "Enable schedule",
           "asset": "Specific asset or hymn (Manual mode only)",
           "canonical_hour": "Traditional Liturgy of the Hours preference (Automatic mode only)",
+          "times": "Times (HH:MM, comma separated)",
+          "weekdays": "Days",
+          "not_before": "Never before",
+          "not_after": "Never after",
+          "media_players": "Media players",
+          "volume": "Volume (%)"
+        }
+      },
+      "add_routine_category": {
+        "title": "Configure category playback",
+        "description": "Choose one or more hymn categories, optionally prefer a canonical hour, then set the time, days, and speakers.",
+        "data": {
+          "routine_name": "Name (optional)",
+          "routine_enabled": "Enable schedule",
+          "category_ids": "Hymn categories",
+          "canonical_hour": "Traditional Liturgy of the Hours preference",
           "times": "Times (HH:MM, comma separated)",
           "weekdays": "Days",
           "not_before": "Never before",
@@ -121,6 +138,22 @@
           "volume": "Volume (%)"
         }
       },
+      "edit_routine_category": {
+        "title": "Edit category playback",
+        "description": "Change the selected hymn categories, canonical-hour preference, times, days, time window, or speakers.",
+        "data": {
+          "routine_name": "Name (optional)",
+          "routine_enabled": "Enable schedule",
+          "category_ids": "Hymn categories",
+          "canonical_hour": "Traditional Liturgy of the Hours preference",
+          "times": "Times (HH:MM, comma separated)",
+          "weekdays": "Days",
+          "not_before": "Never before",
+          "not_after": "Never after",
+          "media_players": "Media players",
+          "volume": "Volume (%)"
+        }
+      },
       "edit_routine_automatic": {
         "title": "Edit automatic playback",
         "description": "Automatic mode uses LitCal and the hymn catalog. Leave the hour at Default (recommended); select a canonical hour only for traditional Liturgy of the Hours matching.",
@@ -145,6 +178,7 @@
     },
     "error": {
       "asset_required": "Choose a specific asset or hymn for Manual mode.",
+      "category_required": "Choose at least one hymn category for Category mode.",
       "invalid_times": "Enter one or more times in HH:MM format, separated by commas.",
       "media_players_required": "Select at least one Home Assistant media player."
     },
@@ -182,8 +216,7 @@
         "tags": {"name": "Tags", "description": "Asset tags to use as a selection filter."},
         "seed": {"name": "Seed", "description": "Optional deterministic selection seed."},
         "recent_exclusion": {"name": "Recent exclusion", "description": "Number of recently selected assets to avoid."},
-        "date": {"name": "Liturgical date", "description": "Liturgical date to evaluate."},
-        "fallback_asset": {"name": "Fallback asset", "description": "Asset to play if no hymn matches."}
+        "date": {"name": "Liturgical date", "description": "Liturgical date to evaluate."}
       }
     }
   }

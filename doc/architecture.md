@@ -52,4 +52,4 @@ HA LitCal option → API request → LitCal day → primary celebration by grade
                → AssetLibrary renderer → HA media_player target
 ```
 
-The catalog owns matching and selection state. Hymn definitions only declare metadata; they do not contain date or feast branches. If LitCal is disabled in the HA options flow, the API selects against a neutral general day. If LitCal is unavailable, the HA service can play its configured fallback asset.
+The catalog owns matching and selection state. Hymn definitions only declare metadata; they do not contain date or feast branches. If LitCal is disabled or temporarily unavailable, the API selects against a neutral general day, ensuring automatic mode still chooses a generic hymn when no stronger liturgical match exists.

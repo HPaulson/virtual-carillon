@@ -26,7 +26,9 @@ const baseline = JSON.parse(
 
 describe('structured hymn migration', () => {
   it('keeps stable source/notation metadata and normalized event streams', () => {
-    expect(BUILTIN_HYMNS).toHaveLength(baseline.length);
+    // The baseline protects the established assets while allowing intentional
+    // additions to the source-backed catalog.
+    expect(BUILTIN_HYMNS.length).toBeGreaterThanOrEqual(baseline.length);
     expect(new Set(BUILTIN_HYMNS.map((hymn) => hymn.id)).size).toBe(BUILTIN_HYMNS.length);
 
     for (const expected of baseline) {

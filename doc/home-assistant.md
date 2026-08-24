@@ -34,7 +34,7 @@ target:
   entity_id: media_player.kitchen
 ```
 
-Automatic selection uses the highest-priority LitCal celebration and the catalog's exact-feast → exact-saint → saint/category → season → General fallback:
+Automatic selection scores every hymn using today's feast, saint/category, season, and optional canonical-hour context. Previously played hymns receive a strong daily penalty, so the schedule avoids repeating one until better-fitting unused choices are exhausted:
 
 ```yaml
 service: virtual_carillon.select_hymn
@@ -42,7 +42,6 @@ target:
   entity_id: media_player.kitchen
 data:
   strategy: random
-  fallback_asset: ave-maris-stella
 ```
 
 Overrides can select a fixed hymn or a tagged collection. Stable IDs are used for categories and feasts:
@@ -68,7 +67,7 @@ The normal schedule is configured once inside the **Virtual Carillon** integrati
 Open **Settings → Devices & services → Virtual Carillon → Configure**. The schedule editor has two simple building blocks:
 
 - **Westminster** — enable it, choose every 15 minutes, every 30 minutes, or hourly, then choose days, a daily time window, and media players. The quarter chimes and the correct 1–12 hour strike count are selected automatically.
-- **Add a manual or automatic schedule** — choose **Manual** to select one specific asset or hymn, or **Automatic** to select from the current LitCal context. Automatic mode can optionally add a canonical-hour preference. Enter one or more exact times such as `12:00, 18:00`, optionally set the routine volume from 0–100%, choose days, optionally set Never before/Never after, and choose media players. If volume is left blank, the player’s current volume is preserved. Add as many of these schedules as needed.
+- **Add a schedule** — choose **Manual** to select one specific asset or hymn, **Category** to select one or more categories (for example, Marian) and let the engine choose among them, or **Automatic** to select from the current LitCal context. Category and Automatic modes can optionally add a canonical-hour preference. Enter one or more exact times such as `12:00, 18:00`, optionally set the routine volume from 0–100%, choose days, optionally set Never before/Never after, and choose media players. If volume is left blank, the player’s current volume is preserved. Add as many of these schedules as needed.
 
 This supports Angelus at both noon and 18:00 on only Mondays and Wednesdays as one schedule, or any other combination, without YAML or one automation per event. Automatic mode uses the current LitCal season and feast context and the engine's built-in hymn selection logic; it does not require a backup asset. The configured list is saved through the public semantic `/api/schedule` endpoint and survives container restarts. The same schedule can be configured by API clients; HA simply supplies `media_player` targets when speakers are managed by Home Assistant.
 

@@ -14,9 +14,25 @@ export class CarillonDatabase {
     this.db.exec('CREATE TABLE IF NOT EXISTS events (id INTEGER PRIMARY KEY AUTOINCREMENT, asset TEXT NOT NULL, output TEXT, status TEXT NOT NULL, message TEXT, created_at TEXT NOT NULL)');
     this.db.exec('CREATE TABLE IF NOT EXISTS schedules (id INTEGER PRIMARY KEY CHECK (id = 1), config TEXT NOT NULL, updated_at TEXT NOT NULL)');
     this.db.exec('CREATE TABLE IF NOT EXISTS schedule_runs (slot_key TEXT PRIMARY KEY, payload TEXT NOT NULL, status TEXT NOT NULL, claimed_at TEXT NOT NULL, completed_at TEXT, message TEXT)');
+    this.db.exec('CREATE TABLE IF NOT EXISTS hymn_day_resets (date TEXT PRIMARY KEY, reset_at TEXT NOT NULL)');
   }
   addEvent(event: EventRecord) { this.db.prepare('INSERT INTO events (asset,output,status,message,created_at) VALUES (?,?,?,?,?)').run(event.asset, event.output ?? null, event.status, event.message ?? null, event.createdAt ?? new Date().toISOString()); }
   recentEvents(limit = 20) { return this.db.prepare('SELECT id,asset,output,status,message,created_at as createdAt FROM events ORDER BY id DESC LIMIT ?').all(limit); }
+  completedScheduleAssets(date: string): string[] {
+    const reset = this.db.prepare('SELECT reset_at as resetAt FROM hymn_day_resets WHERE date = ?').get(date) as { resetAt?: string } | undefined;
+    const rows = (reset?.resetAt
+      ? this.db.prepare("SELECT payload FROM schedule_runs WHERE status = 'completed' AND slot_key LIKE ? AND completed_at > ?").all(`${date}T%`, reset.resetAt)
+      : this.db.prepare("SELECT payload FROM schedule_runs WHERE status = 'completed' AND slot_key LIKE ?").all(`${date}T%`)) as Array<{ payload?: string }>;
+    return rows.flatMap((row) => {
+      try {
+        const actions = JSON.parse(row.payload ?? '[]') as Array<{ asset?: string }>;
+        return actions.flatMap((action) => action.asset ? [action.asset] : []);
+      } catch { return []; }
+    });
+  }
+  resetHymnDay(date: string, now = new Date().toISOString()) {
+    this.db.prepare('INSERT INTO hymn_day_resets (date, reset_at) VALUES (?, ?) ON CONFLICT(date) DO UPDATE SET reset_at = excluded.reset_at').run(date, now);
+  }
   getSchedule(): StoredSchedule | undefined {
     const row = this.db.prepare('SELECT config, updated_at as updatedAt FROM schedules WHERE id = 1').get() as { config?: string; updatedAt?: string } | undefined;
     if (!row?.config || !row.updatedAt) return undefined;

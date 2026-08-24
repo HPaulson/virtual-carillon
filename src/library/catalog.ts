@@ -24,6 +24,8 @@ export interface HymnQuery {
   fixedAssetId?: string;
   seed?: string | number;
   recentExclusion?: number;
+  /** Hymns already played for the local schedule date. Automatic selection heavily penalises these. */
+  alreadyPlayed?: string[];
 }
 
 export interface HymnSelection {
@@ -45,6 +47,10 @@ export class HymnCatalog {
   private readonly cursors = new Map<string, number>();
 
   constructor(private readonly provider: AssetProvider) {}
+
+  resetDay(date: string) {
+    this.recent.delete(date);
+  }
 
   list(query: HymnQuery = {}): AssetDefinition[] {
     return this.all().filter((asset) => matchesQuery(asset, query));
@@ -79,6 +85,16 @@ export class HymnCatalog {
       ? explicitSeason
         : values([...day.seasonIds, seasonId(day.season)]);
     const preferredHours = values(query.preferredCanonicalHours ?? query.canonicalHours);
+
+    if (automatic) {
+      return this.chooseScored(available, day, query, celebration, {
+        feastTargets,
+        saintTargets,
+        categoryTargets,
+        seasonTargets,
+        preferredHours,
+      });
+    }
 
     const tiers: Array<{ level: HymnMatchLevel; ids: string[]; field: keyof LiturgicalTags }> = [
       { level: 'exact-feast', ids: feastTargets, field: 'feasts' },
@@ -126,6 +142,69 @@ export class HymnCatalog {
     });
     if (general.length) return this.choose(general, 'general', day, query, celebration);
     return { candidates: [], matchedBy: 'none', celebration };
+  }
+
+  private chooseScored(
+    candidates: AssetDefinition[],
+    day: LiturgicalDay,
+    query: HymnQuery,
+    celebration: LiturgicalCelebration | undefined,
+    targets: { feastTargets: string[]; saintTargets: string[]; categoryTargets: string[]; seasonTargets: string[]; preferredHours: string[] },
+  ): HymnSelection {
+    if (!candidates.length) return { candidates: [], matchedBy: 'none', celebration };
+    const alreadyPlayed = new Set(values(
+      query.alreadyPlayed ?? (query.seed === undefined ? this.recent.get(day.date) : undefined),
+    ));
+    const scored = candidates.map((asset) => {
+      const tags = asset.liturgicalTags ?? assetTags(asset);
+      let score = 0;
+      if (directIntersects(tags.feasts, targets.feastTargets)) score += 100;
+      if (directIntersects(tags.saints, targets.saintTargets)) score += 80;
+      if (directIntersects(tags.categories, targets.categoryTargets)) score += 45;
+      if (directIntersects(tags.seasons, targets.seasonTargets)) score += 35;
+      if (directIntersects(tags.canonicalHours, targets.preferredHours)) score += 55;
+      if (directIntersects(tags.offices, targets.preferredHours)) score += 25;
+      if (targets.seasonTargets.length && tags.seasons.length && !directIntersects(tags.seasons, targets.seasonTargets)) score -= 45;
+      if (alreadyPlayed.has(asset.id)) score -= 1000;
+      return { asset, score };
+    });
+
+    // Prefer an unused hymn with a real liturgical fit. If the only unused
+    // choices are out of season, the least-bad previously played hymn may win.
+    const unused = scored.filter(({ asset }) => !alreadyPlayed.has(asset.id));
+    const bestUnused = Math.max(...unused.map(({ score }) => score), Number.NEGATIVE_INFINITY);
+    const pool = bestUnused > 0 ? unused : scored;
+    const bestScore = Math.max(...pool.map(({ score }) => score));
+    const tied = pool.filter(({ score }) => score === bestScore).map(({ asset }) => asset);
+    const asset = this.chooseTie(tied, day, query, 'weighted');
+    if (query.alreadyPlayed === undefined) {
+      this.recent.set(day.date, [asset.id, ...(this.recent.get(day.date) ?? [])].slice(0, Math.max(1, query.recentExclusion ?? 3)));
+    }
+    const tags = assetTags(asset);
+    const matchedBy: HymnMatchLevel = directIntersects(tags.feasts, targets.feastTargets)
+      ? 'exact-feast'
+      : directIntersects(tags.saints, targets.saintTargets)
+        ? 'saint'
+        : directIntersects(tags.categories, targets.categoryTargets)
+          ? 'category'
+          : directIntersects(tags.seasons, targets.seasonTargets)
+            ? 'season'
+            : 'general';
+    return { asset, candidates, matchedBy, celebration };
+  }
+
+  private chooseTie(candidates: AssetDefinition[], day: LiturgicalDay, query: HymnQuery, key: string): AssetDefinition {
+    if (query.strategy === 'sequential') {
+      const cursorKey = `${key}|${candidates.map((asset) => asset.id).join(',')}`;
+      const cursor = this.cursors.get(cursorKey) ?? 0;
+      const asset = candidates[cursor % candidates.length];
+      this.cursors.set(cursorKey, (cursor + 1) % candidates.length);
+      return asset;
+    }
+    const index = query.seed === undefined
+      ? Math.floor(Math.random() * candidates.length)
+      : stableHash(`${query.seed}|${day.date}|${key}|${candidates.map((asset) => asset.id).join(',')}`) % candidates.length;
+    return candidates[index];
   }
 
   private choose(
@@ -249,6 +328,10 @@ function values(values: string[] | undefined): string[] {
 function intersects(left: string[], right: string[]): boolean {
   const target = new Set(values(right));
   return values(left).some((value) => target.has(value));
+}
+function directIntersects(left: string[], right: string[]): boolean {
+  const target = new Set(right);
+  return left.some((value) => target.has(value));
 }
 function normalise(value: string): string {
   return value

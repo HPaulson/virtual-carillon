@@ -117,19 +117,21 @@ describe('audio delivery API', () => {
     const directory = await mkdtemp(path.join(tmpdir(), 'virtual-carillon-api-'));
     const filePath = path.join(directory, 'hymn.wav');
     const audio = Buffer.from('RIFF test audio payload');
+    let renderOptions: Record<string, unknown> | undefined;
     await writeFile(filePath, audio);
     const app = await createServer({
       engine: { defaultDistanceProfile: 'half-mile' },
-      library: { list: () => [], resolveAndRender: async () => filePath },
+      library: { list: () => [], resolveAndRender: async (_asset: string, options: Record<string, unknown>) => { renderOptions = options; return filePath; } },
       database: { recentEvents: () => [] },
     } as never);
 
     try {
-      const full = await app.inject({ method: 'GET', url: '/api/assets/hymn/audio' });
+      const full = await app.inject({ method: 'GET', url: '/api/assets/hymn/audio?distance=one-mile' });
       expect(full.statusCode).toBe(200);
       expect(full.headers['accept-ranges']).toBe('bytes');
       expect(full.headers['content-length']).toBe(String(audio.length));
       expect(full.rawPayload).toEqual(audio);
+      expect(renderOptions).toEqual({ distance: 'one-mile' });
 
       const partial = await app.inject({
         method: 'GET',

@@ -12,7 +12,7 @@ export const adoramusTeChriste = defineHymn({
     categories: ['cross', 'passion', 'christological'],
     seasons: ['Lent'],
     offices: [],
-    feasts: ['good-friday'],
+    feasts: ['good-friday', 'exaltation-of-the-holy-cross'],
     solemnities: [],
   },
   notation: melody({

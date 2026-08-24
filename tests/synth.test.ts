@@ -33,7 +33,7 @@ describe('bell synthesizer', () => {
     const library = new AssetLibrary(new AudioEngine(dir, 8000), dir);
     const file = await library.resolveAndRender('westminster-quarter');
     expect((await readFile(file)).toString('ascii', 0, 4)).toBe('RIFF');
-    expect(path.basename(file)).toBe('westminster-quarter-half-mile.wav');
+    expect(path.basename(file)).toBe('westminster-quarter-big-ben-v1-half-mile.wav');
     await expect(library.resolveAndRender('not-an-asset')).rejects.toThrow('Unknown asset');
   });
 });
