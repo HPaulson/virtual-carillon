@@ -9,7 +9,7 @@ import { Melody, pitchFrequency, scoreFromMelody, Score } from '../melodies/type
 
 /** A time-based event used by clock signals and the public sequence API. */
 export interface SequenceEvent {
-  /** Legacy alias for startSeconds. */
+  /** Event start time in seconds. */
   offset?: number;
   start?: number;
   pitch?: string;
@@ -44,7 +44,7 @@ export class AudioEngine {
   async playBell(key: string, options: BellRenderOptions = {}, output?: AudioOutput): Promise<{ filePath: string; command: string }> {
     const filePath = await this.renderBell(key, options);
     const result = await playWav(filePath, output);
-    if (result.pid) this.active.add(result.pid);
+    this.track(result);
     return { filePath, command: result.command };
   }
 
@@ -101,13 +101,29 @@ export class AudioEngine {
 
   async playFile(filePath: string, output?: AudioOutput): Promise<{ filePath: string; command: string }> {
     const result = await playWav(filePath, output);
-    if (result.pid) this.active.add(result.pid);
+    this.track(result);
+    return { filePath, command: result.command };
+  }
+
+  async playFileAndWait(filePath: string, output?: AudioOutput): Promise<{ filePath: string; command: string }> {
+    const result = await playWav(filePath, output);
+    this.track(result);
+    await result.completion;
     return { filePath, command: result.command };
   }
 
   stop(): void {
     for (const pid of this.active) try { process.kill(pid); } catch { /* already exited */ }
     this.active.clear();
+  }
+
+  private track(result: Awaited<ReturnType<typeof playWav>>): void {
+    if (!result.pid) return;
+    this.active.add(result.pid);
+    void result.completion.then(
+      () => this.active.delete(result.pid!),
+      () => this.active.delete(result.pid!),
+    );
   }
 }
 

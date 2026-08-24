@@ -15,10 +15,10 @@ Important project facts:
 - Use pnpm. The pinned package manager is recorded in `package.json`.
 - The core application is TypeScript under `src/`; compile output goes to `dist/`.
 - The main user interface is Home Assistant. The integration lives under `homeassistant/custom_components/virtual_carillon` and talks to the local HTTP API; it does not implement audio itself.
-- Linux audio is discovered dynamically through PipeWire (`wpctl`/`pw-play`) with PulseAudio and `ffplay` fallbacks. Do not hard-code ALSA device names.
-- Bluetooth pairing is a host concern. An Echo Show is treated as a generic Bluetooth/PipeWire sink; no Amazon API is required.
+- Native Linux audio, when used for development, is discovered dynamically through PipeWire (`wpctl`/`pw-play`) with PulseAudio and `ffplay` fallbacks. Do not hard-code ALSA device names. The default Docker/Dokploy path does not access host audio devices; Home Assistant selects media players.
+- Bluetooth, Wi-Fi speakers, Chromecast, Sonos, laptop audio, and other output integrations are Home Assistant or host concerns. No Amazon API is required.
 - SQLite and rendered audio are runtime data. The default native data directory is `.data`; Docker mounts `./data` to `/app/.data`. Do not delete these directories while diagnosing without explicit approval.
-- The Docker deployment files are part of the supported path: `Dockerfile`, `compose.yaml`, and the Linux PipeWire override `compose.linux.yaml`.
+- The Docker deployment files are part of the supported path: `Dockerfile` and the single HA-native `compose.yaml`.
 
 Normal validation:
 
@@ -29,6 +29,6 @@ pnpm test
 pnpm lint
 ```
 
-For runtime validation, run `node dist/cli/index.js doctor`, render with `test`, play `test-bell` or `westminster-quarter`, and exercise `/health`, `/api/status`, `/api/assets`, and `/api/schedules`. See [`doc/testing.md`](doc/testing.md) and [`doc/operations.md`](doc/operations.md).
+For runtime validation, run `node dist/cli/index.js doctor`, render with `test`, optionally play a native test asset, and exercise `/health`, `/api/status`, and `/api/assets`. For the default deployment, verify the Home Assistant media source and `media_player` actions. See [`doc/testing.md`](doc/testing.md) and [`doc/operations.md`](doc/operations.md).
 
-Do not claim PipeWire, Bluetooth, or Echo Show success based only on a macOS test. Record the actual host and available output in the handoff. Keep scheduler failures isolated so a disconnected speaker cannot crash the engine.
+Do not claim PipeWire, Bluetooth, or Echo Show success based only on a macOS test. Record the actual host and available output in the handoff. A disconnected media player must not crash the engine API.

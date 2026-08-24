@@ -17,7 +17,6 @@ export interface HymnQuery {
   seasonIds?: string[];
   officeIds?: string[];
   canonicalHours?: string[];
-  /** Legacy/display tags retained for imported assets and old schedules. */
   tags?: string[];
   strategy?: SelectionStrategy;
   fixedAssetId?: string;

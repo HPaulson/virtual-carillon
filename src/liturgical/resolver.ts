@@ -1,34 +1,25 @@
-import { HymnCatalog, HymnQuery } from '../library/catalog.js';
-import { AssetLibrary } from '../library/library.js';
-import { LiturgicalCalendarClient, LiturgicalDay } from './litcal.js';
-import { LiturgicalCondition, ScheduleEntry } from '../scheduler/types.js';
+import type { HymnQuery, SelectionStrategy } from '../library/catalog.js';
+import type { LiturgicalDay } from './litcal.js';
 import { seasonId } from './taxonomy.js';
 
-export class LiturgicalResolver {
-  private readonly catalog: HymnCatalog;
-
-  constructor(
-    private readonly calendar: LiturgicalCalendarClient,
-    library: AssetLibrary,
-    catalog = new HymnCatalog(library),
-  ) {
-    this.catalog = catalog;
-  }
-
-  async resolve(entry: ScheduleEntry, now: Date): Promise<string> {
-    const condition = entry.liturgical;
-    if (!condition) return entry.asset;
-    const day = await this.calendar.getDay(now);
-    if (!day || !conditionMatches(day, condition)) return entry.asset;
-    const selection = this.catalog.selectForDay(day, toHymnQuery(condition));
-    return selection.asset?.id ?? entry.asset;
-  }
+export interface LiturgicalCondition {
+  seasons?: string[];
+  rank?: string;
+  feastIds?: string[];
+  categoryIds?: string[];
+  offices?: string[];
+  canonicalHours?: string[];
+  tags?: string[];
+  strategy?: SelectionStrategy;
+  fixedAssetId?: string;
+  seed?: string | number;
+  recentExclusion?: number;
 }
 
 export function conditionMatches(day: LiturgicalDay, condition: LiturgicalCondition): boolean {
   const celebrations = day.celebrations;
-  const seasons = [...(condition.seasons ?? []), ...(condition.season ? [condition.season] : [])];
-  const feasts = [...(condition.feastIds ?? []), ...(condition.feast ? [condition.feast] : [])];
+  const seasons = condition.seasons ?? [];
+  const feasts = condition.feastIds ?? [];
   if (
     seasons.length &&
     !seasons.some(
@@ -57,22 +48,17 @@ export function conditionMatches(day: LiturgicalDay, condition: LiturgicalCondit
   return true;
 }
 
-function toHymnQuery(condition: LiturgicalCondition): HymnQuery {
-  const seasons = [
-    ...(condition.seasons ?? []),
-    ...(condition.season ? [condition.season] : []),
-  ].map((value) => seasonId(value));
-  const feasts = [...(condition.feastIds ?? []), ...(condition.feast ? [condition.feast] : [])].map(
-    stableId,
-  );
+export function toHymnQuery(condition: LiturgicalCondition): HymnQuery {
+  const seasons = (condition.seasons ?? []).map((value) => seasonId(value));
+  const feasts = (condition.feastIds ?? []).map(stableId);
   return {
     feastIds: feasts.length ? feasts : undefined,
     categoryIds: condition.categoryIds,
     seasonIds: seasons.length ? seasons : undefined,
     officeIds: condition.offices,
     canonicalHours: condition.canonicalHours,
-    tags: condition.hymnTag ? [condition.hymnTag] : undefined,
-    strategy: condition.strategy ?? condition.rotation ?? 'random',
+    tags: condition.tags,
+    strategy: condition.strategy ?? 'random',
     fixedAssetId: condition.fixedAssetId,
     seed: condition.seed,
     recentExclusion: condition.recentExclusion,

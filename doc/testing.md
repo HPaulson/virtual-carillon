@@ -2,7 +2,7 @@
 
 ## Automated checks
 
-Run all four checks before handing work to another agent:
+Run all four checks before handoff:
 
 ```bash
 pnpm typecheck
@@ -11,7 +11,7 @@ pnpm test
 pnpm lint
 ```
 
-Current tests cover the 77-bell registry, per-register tails, distance attenuation, clipping/DC safety, tail-safe sequence rendering, polyphonic overlap and register diagnostics, source-backed Westminster/Angelus/Office semantics, GABC/ABC chant and hymn imports, distinct multi-voice hymn settings, hymn metadata/rendering, user recording import, notation parsing, scheduler failure isolation, LitCal cache/offline behavior, actual-grade primary-celebration ordering, and catalog feast/category/season fallback plus selection strategies.
+Tests cover the bell registry, synthesis safety, distance attenuation, sequence rendering, score parsing/arranging, hymn metadata and selection, user recording import, LitCal normalization/cache behavior, database event history, and API validation/selection.
 
 ## Manual CLI smoke test
 
@@ -19,30 +19,24 @@ Current tests cover the 77-bell registry, per-register tails, distance attenuati
 node dist/cli/index.js doctor
 node dist/cli/index.js test
 node dist/cli/index.js shuffle-hymns --count 1
-node dist/cli/index.js play test-bell --distance half-mile
-node dist/cli/index.js play westminster-quarter
 node dist/cli/index.js assets
 ```
 
-Confirm that the cache contains WAV files and that playback uses the expected host player. On macOS this is normally `afplay`; on Linux it should be `pw-play` for PipeWire.
-
-For objective audio checks, `ffprobe` should report stereo PCM at the configured sample rate. `ffmpeg -af volumedetect` should show a non-clipping peak and a natural decay. `analyzeAudio` reports peak, RMS, DC offset, tail/body ratio, and spectral diagnostics. A render on macOS does not validate PipeWire, Bluetooth, or Echo Show output.
+Confirm that the cache contains WAV files. Native CLI playback can be tested separately when the development host has an audio backend, but it is not required for the Docker/Home Assistant deployment.
 
 ## Manual API smoke test
 
 Start `node dist/cli/index.js server`, then query:
 
 ```bash
+# Add this header to every /api/* request when VIRTUAL_CARILLON_API_TOKEN is set.
 curl http://127.0.0.1:9876/health
-curl http://127.0.0.1:9876/api/status
-curl http://127.0.0.1:9876/api/devices
-curl http://127.0.0.1:9876/api/assets
-curl http://127.0.0.1:9876/api/hymns
-curl http://127.0.0.1:9876/api/liturgical/2026-08-15/hymn
-curl http://127.0.0.1:9876/api/schedules
-curl -X POST http://127.0.0.1:9876/api/play \
-  -H 'content-type: application/json' \
-  -d '{"asset":"test-bell"}'
+curl -H 'Authorization: Bearer YOUR_TOKEN' http://127.0.0.1:9876/api/status
+curl -H 'Authorization: Bearer YOUR_TOKEN' http://127.0.0.1:9876/api/devices
+curl -H 'Authorization: Bearer YOUR_TOKEN' http://127.0.0.1:9876/api/assets
+curl -H 'Authorization: Bearer YOUR_TOKEN' http://127.0.0.1:9876/api/hymns
+curl -H 'Authorization: Bearer YOUR_TOKEN' 'http://127.0.0.1:9876/api/liturgical/2026-08-15/hymn?calendar=general'
+curl -H 'Authorization: Bearer YOUR_TOKEN' http://127.0.0.1:9876/api/assets/test-bell/audio -o /tmp/test-bell.wav
 ```
 
-Always stop the server after an interactive smoke test. Do not report real Bluetooth/Echo Show validation unless the test ran on Linux with that device connected.
+In Home Assistant, add the integration, configure LitCal in its Options flow, open the **Virtual Carillon** media source, browse to `test-bell`, and play it on a known-good `media_player`. Also exercise `virtual_carillon.play` and `virtual_carillon.select_hymn` with media-player targets. This validates the intended deployment path; speaker-specific behavior remains the responsibility of that media-player integration.

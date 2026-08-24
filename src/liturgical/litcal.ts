@@ -24,62 +24,60 @@ export interface LiturgicalDay {
   source: string;
 }
 
+export type LiturgicalCalendarName = 'general' | 'US' | 'IT' | 'NL' | 'VA' | 'CA';
+
 export interface LitCalConfig {
-  enabled: boolean;
   baseUrl?: string;
-  calendar?: 'general' | 'US' | 'IT' | 'NL' | 'VA' | 'CA';
+  defaultCalendar?: LiturgicalCalendarName;
   cacheDir: string;
   cacheTtlMs?: number;
 }
 
 const DEFAULT_BASE_URL = 'https://litcal.johnromanodorazio.com/api/v5';
 
-/** Optional LitCal client. A stale year cache is always preferred to blocking a bell schedule. */
+/** LitCal client. A stale year cache is always preferred to blocking playback. */
 export class LiturgicalCalendarClient {
-  private readonly config: Required<Omit<LitCalConfig, 'baseUrl' | 'calendar'>> & Pick<LitCalConfig, 'baseUrl' | 'calendar'>;
-  private readonly memory = new Map<number, LiturgicalDay[]>();
+  private readonly config: { cacheDir: string; cacheTtlMs: number; baseUrl: string; defaultCalendar: LiturgicalCalendarName };
+  private readonly memory = new Map<string, LiturgicalDay[]>();
 
   constructor(config: LitCalConfig) {
-    this.config = { enabled: config.enabled, cacheDir: config.cacheDir, cacheTtlMs: config.cacheTtlMs ?? 14 * 24 * 60 * 60 * 1000, baseUrl: config.baseUrl ?? DEFAULT_BASE_URL, calendar: config.calendar ?? 'general' };
+    this.config = { cacheDir: config.cacheDir, cacheTtlMs: config.cacheTtlMs ?? 14 * 24 * 60 * 60 * 1000, baseUrl: config.baseUrl ?? DEFAULT_BASE_URL, defaultCalendar: config.defaultCalendar ?? 'general' };
   }
 
-  get enabled() { return this.config.enabled; }
   get baseUrl() { return this.config.baseUrl; }
 
-  async getDay(date: Date | string): Promise<LiturgicalDay | undefined> {
-    if (!this.config.enabled) return undefined;
+  async getDay(date: Date | string, calendar = this.config.defaultCalendar): Promise<LiturgicalDay | undefined> {
     const iso = typeof date === 'string' ? date.slice(0, 10) : localDate(date);
     const year = Number(iso.slice(0, 4));
-    const days = await this.getYear(year);
+    const days = await this.getYear(year, calendar);
     return days.find((day) => day.date === iso);
   }
 
-  async getYear(year: number): Promise<LiturgicalDay[]> {
-    if (!this.config.enabled) return [];
-    const cached = this.memory.get(year);
+  async getYear(year: number, calendar = this.config.defaultCalendar): Promise<LiturgicalDay[]> {
+    const key = `${calendar}:${year}`;
+    const cached = this.memory.get(key);
     if (cached) return cached;
-    const cachePath = path.join(this.config.cacheDir, `litcal-${this.config.calendar ?? 'general'}-${year}.json`);
+    const cachePath = path.join(this.config.cacheDir, `litcal-${calendar}-${year}.json`);
     const disk = await readCache(cachePath);
     if (disk && Date.now() - disk.cachedAt < this.config.cacheTtlMs) {
-      this.memory.set(year, disk.days);
+      this.memory.set(key, disk.days);
       return disk.days;
     }
     try {
-      const response = await fetch(this.urlFor(year), { headers: { accept: 'application/json', 'accept-language': 'en-US' }, signal: AbortSignal.timeout(8000) });
+      const response = await fetch(this.urlFor(year, calendar), { headers: { accept: 'application/json', 'accept-language': 'en-US' }, signal: AbortSignal.timeout(8000) });
       if (!response.ok) throw new Error(`LitCal HTTP ${response.status}`);
       const days = normaliseCalendar(await response.json() as unknown, this.config.baseUrl ?? DEFAULT_BASE_URL);
       await fs.mkdir(this.config.cacheDir, { recursive: true });
       await fs.writeFile(cachePath, JSON.stringify({ cachedAt: Date.now(), days }));
-      this.memory.set(year, days);
+      this.memory.set(key, days);
       return days;
     } catch {
-      if (disk) { this.memory.set(year, disk.days); return disk.days; }
+      if (disk) { this.memory.set(key, disk.days); return disk.days; }
       return [];
     }
   }
 
-  private urlFor(year: number): string {
-    const calendar = this.config.calendar ?? 'general';
+  private urlFor(year: number, calendar: LiturgicalCalendarName): string {
     const pathPart = calendar === 'general' ? `/calendar/${year}` : `/calendar/nation/${calendar}/${year}`;
     return `${(this.config.baseUrl ?? DEFAULT_BASE_URL).replace(/\/$/, '')}${pathPart}?year_type=CIVIL`;
   }

@@ -29,4 +29,4 @@ class CarillonStatusSensor(SensorEntity):
     @property
     def extra_state_attributes(self):
         data = self.coordinator.data or {}
-        return {"outputs": data.get("outputs", []), "bluetooth": data.get("bluetooth", {}), "recent_events": data.get("recentEvents", []), "assets": data.get("assets", []), "hymns": data.get("hymns", []), "liturgical_day": data.get("liturgical_day")}
+        return {"outputs": data.get("outputs", []), "bluetooth": data.get("bluetooth", {}), "recent_events": data.get("recentEvents", []), "assets": data.get("assets", []), "hymns": data.get("hymns", []), "litcal_enabled": self.coordinator.litcal_enabled, "litcal_calendar": self.coordinator.litcal_calendar, "liturgical_day": data.get("liturgical_day")}

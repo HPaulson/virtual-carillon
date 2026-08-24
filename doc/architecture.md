@@ -2,71 +2,61 @@
 
 ## System boundary
 
-The Node engine owns bell synthesis, asset rendering, playback, scheduling, persistence, and diagnostics. Home Assistant is a client of the engine through HTTP. It should not contain audio/DSP logic.
+The Node service owns bell synthesis, asset rendering, audio serving, persistence of playback events, and diagnostics. Home Assistant is the frontend: it owns scheduling, LitCal settings, media-player targeting, and playback actions. Home Assistant does not contain audio/DSP logic.
 
 ```text
-Home Assistant custom component
-            │ HTTP
-            ▼
-      Fastify API
-            │
-  ┌─────────┼─────────┐
-  ▼         ▼         ▼
-Library  Catalog  Scheduler / Devices
-  │         │         │
-  ▼         ▼         ▼
-WAV cache SQLite   PipeWire/Bluetooth
+Home Assistant config flow, automations, media players
+                         │ HTTP / media source
+                         ▼
+                   Fastify API
+                         │
+              ┌──────────┼──────────┐
+              ▼          ▼          ▼
+           Library    Catalog    LitCal client
+              │          │          │
+              ▼          ▼          ▼
+           WAV cache  selection   cached years
+                         │
+                         ▼
+                 HA media_player targets
 ```
 
 ## Source map
 
-- `src/cli/index.ts` — CLI entry point and process composition.
-- `src/configuration/config.ts` — environment parsing with Zod.
-- `src/database/db.ts` — SQLite schema and schedule/event persistence using `node:sqlite`.
-- `src/bells/types.ts` — inharmonic partials, distance profiles, and bell-family definitions.
-- `src/bells/instrument.ts` — the 77-bell C1–E7 note-addressable grand-carillon registry; each bell has its own modal profile, loudness, attack, and tail.
-- `src/bells/synth.ts` — modal two-mode bell synthesis and far-field air/early-reflection model. It does not use a feedback cathedral reverb.
-- `src/audio/wav.ts` — PCM16 stereo WAV writer.
-- `src/audio/engine.ts` — polyphonic event mixing, waveform reuse, cache/play orchestration, and tail-safe mastering.
-- `src/audio/outputs.ts` — PipeWire/PulseAudio/CoreAudio discovery, Bluetooth diagnostics, and player selection.
-- `src/library/library.ts` — built-in bell and sequence asset definitions and asset validation.
-- `src/library/hymns.ts` — compatibility barrel for the structured hymn registry.
-- `src/library/hymns/` — one self-contained hymn definition per file, shared tune notation, `defineHymn()`, and the notation-to-ABC serializer.
-- `src/library/catalog.ts` — reusable stable-ID liturgical queries, priority matching, and random/sequential/fixed selection.
-- `src/scheduler/` — schedule types and minute-level scheduler.
-- `src/api/server.ts` — Fastify routes consumed by Home Assistant and other clients.
-- `src/melodies/types.ts` — beat-based score/events, pitch utilities, ties, meter, and provenance metadata.
-- `src/melodies/parsers.ts` — ABC, MIDI, MusicXML, and GABC import primitives; bundled hymns use the structured-notation → ABC → `parseAbc()` path.
-- `src/melodies/arranger.ts` — whole-piece transposition, carillon register diagnostics, and style-aware melody/chord/bass/inner-voice arrangement with phrase cadences and passing tones.
-- `src/liturgical/litcal.ts` — optional cached LitCal client; stale cache keeps operation offline.
-- `src/liturgical/resolver.ts` — schedule condition compatibility and delegation to the hymn catalog.
+- `src/cli/index.ts` — CLI entry point and process composition for development/special cases.
+- `src/configuration/config.ts` — deployment environment parsing with Zod.
+- `src/database/db.ts` — SQLite event history using `node:sqlite`.
+- `src/bells/` — inharmonic partials, distance profiles, and bell-family definitions.
+- `src/audio/` — synthesis, WAV writing, output discovery, and playback.
+- `src/library/library.ts` — built-in and imported asset definitions, rendering, and playback.
+- `src/library/catalog.ts` — stable-ID liturgical queries, priority matching, and selection strategies.
+- `src/api/server.ts` — Fastify routes consumed by Home Assistant and explicit CLI/special-case clients.
+- `src/liturgical/litcal.ts` — cached LitCal client; stale data is used when the network is unavailable.
+- `src/liturgical/resolver.ts` — LitCal condition matching and conversion to catalog queries.
 - `src/liturgical/taxonomy.ts` — stable seasons, feast/category IDs, tagging, and LitCal inference.
-- `homeassistant/custom_components/virtual_carillon/` — Home Assistant config flow, coordinator, media player, sensor, and services.
+- `homeassistant/custom_components/virtual_carillon/` — HA config flow/options, coordinator, media source, sensor, and target-based services.
+- `homeassistant/blueprints/` — an optional HA automation blueprint for reusable scheduled routines.
 
 ## Runtime data
 
-The configured data directory contains `carillon.sqlite` for schedules/events and `cache/*.wav` for lazily rendered audio. The cache can be regenerated; the SQLite database contains user schedule state and should be backed up.
-
-## Content model
-
-`AudioAsset` exposes `type` (`recording`, `bell`, `sequence`, `melody`, or `hymn`) and `source` (`bundled`, `user`, or `generated`). Fixed traditional signals retain source URLs and descriptions. A tower bell, clock chime, clock-tower hour bell, monastery bell, and carillon are separate generated instruments. User recordings live under the configured data directory and are indexed by `assets/index.json`.
+The configured data directory contains `carillon.sqlite` for playback events, `cache/*.wav` for lazily rendered audio, and cached LitCal years. Caches can be regenerated; keep the event database if its history matters.
 
 ## Audio flow
 
 1. `AssetLibrary` validates an asset ID.
 2. A bell or sequence is rendered into a cached WAV file if needed.
-3. Outputs are discovered at playback time.
-4. Linux prefers `pw-play`, then `paplay`, then `ffplay`; macOS development uses `afplay`.
-5. Child-process PIDs are tracked so `stop` can terminate active playback.
+3. The engine serves the rendered audio through `/api/assets/:id/audio`.
+4. The Home Assistant integration exposes the asset through its media source and proxies the audio URL through Home Assistant.
+5. Home Assistant sends the media URL to the selected `media_player` entity or entities. The Node container does not need access to the speaker.
 
-Do not move output discovery into the scheduler. The scheduler only knows asset IDs and optional output IDs/names.
+The CLI and `/api/play` path support native host-output experiments and special cases. They are not required by the Home Assistant deployment.
 
 ## Liturgical selection flow
 
 ```text
-LitCal day → primary celebration by actual grade → LiturgicalTags
-          → HymnQuery → exact feast/category/season matching
-          → random | sequential | fixed strategy → AssetLibrary renderer → output
+HA LitCal option → API request → LitCal day → primary celebration by grade
+               → LiturgicalTags → HymnQuery → selection strategy
+               → AssetLibrary renderer → HA media_player target
 ```
 
-The catalog owns matching and selection state. Hymn definitions only declare metadata; they do not contain date or feast branches. The calendar remains optional and schedule failures fall back to the configured asset.
+The catalog owns matching and selection state. Hymn definitions only declare metadata; they do not contain date or feast branches. If LitCal is disabled in the HA options flow, the API selects against a neutral general day. If LitCal is unavailable, the HA service can play its configured fallback asset.

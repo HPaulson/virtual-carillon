@@ -1,1 +1,67 @@
-{"config":{"step":{"user":{"title":"Connect Virtual Carillon","description":"Enter the URL of the Virtual Carillon engine.","data":{"url":"Engine URL"}}},"error":{"cannot_connect":"Unable to connect to the engine."}}}
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect to Virtual Carillon",
+        "description": "Enter the URL of the Virtual Carillon API, the optional bearer token, and the LitCal settings used by Home Assistant schedules.",
+        "data": {
+          "url": "API URL",
+          "token": "API token",
+          "litcal_enabled": "Use LitCal",
+          "litcal_calendar": "LitCal calendar"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Unable to connect to the Virtual Carillon API.",
+      "invalid_auth": "The API token was rejected."
+    },
+    "abort": {
+      "already_configured": "This Virtual Carillon API is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Virtual Carillon settings",
+        "description": "Choose whether hymn selection uses LitCal and which calendar it should use.",
+        "data": {
+          "litcal_enabled": "Use LitCal",
+          "litcal_calendar": "LitCal calendar"
+        }
+      }
+    }
+  },
+  "services": {
+    "play": {
+      "name": "Play asset",
+      "description": "Render and play an asset through the selected Home Assistant media players.",
+      "fields": {
+        "asset": {"name": "Asset", "description": "The stable Virtual Carillon asset ID to play."}
+      }
+    },
+    "stop": {
+      "name": "Stop playback",
+      "description": "Stop playback on the selected Home Assistant media players."
+    },
+    "select_hymn": {
+      "name": "Select and play a hymn",
+      "description": "Select a hymn using the configured LitCal context and optional filters, then play it through the selected media players.",
+      "fields": {
+        "strategy": {"name": "Selection strategy", "description": "Fixed, random, or sequential selection."},
+        "fixed_asset_id": {"name": "Fixed asset ID", "description": "Exact hymn asset ID for fixed selection."},
+        "category_ids": {"name": "Category IDs", "description": "Category IDs to use as a selection filter."},
+        "feast_ids": {"name": "Feast IDs", "description": "Feast IDs to use as a LitCal condition and selection filter."},
+        "offices": {"name": "Office IDs", "description": "Office IDs to use as a selection filter."},
+        "seasons": {"name": "Season IDs", "description": "Season IDs to use as a LitCal condition and selection filter."},
+        "rank": {"name": "Liturgical rank", "description": "Liturgical rank condition such as solemnity, feast, or memorial."},
+        "canonical_hours": {"name": "Canonical hours", "description": "Canonical hour IDs to use as a selection filter."},
+        "tags": {"name": "Tags", "description": "Asset tags to use as a selection filter."},
+        "seed": {"name": "Seed", "description": "Optional deterministic selection seed."},
+        "recent_exclusion": {"name": "Recent exclusion", "description": "Number of recently selected assets to avoid for unseeded random selection."},
+        "date": {"name": "Liturgical date", "description": "Liturgical date to evaluate instead of today."},
+        "fallback_asset": {"name": "Fallback asset", "description": "Asset to play if LitCal is unavailable or no hymn matches."}
+      }
+    }
+  }
+}

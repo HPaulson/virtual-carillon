@@ -1,6 +1,13 @@
 DOMAIN = "virtual_carillon"
 CONF_URL = "url"
+CONF_TOKEN = "token"
+CONF_LITCAL_ENABLED = "litcal_enabled"
+CONF_LITCAL_CALENDAR = "litcal_calendar"
 DEFAULT_URL = "http://127.0.0.1:9876"
+DEFAULT_LITCAL_ENABLED = True
+DEFAULT_LITCAL_CALENDAR = "general"
+LITCAL_CALENDARS = ("general", "US", "IT", "NL", "VA", "CA")
 SERVICE_PLAY = "play"
 SERVICE_STOP = "stop"
 SERVICE_SELECT_HYMN = "select_hymn"
+MEDIA_SOURCE_PREFIX = "media-source://virtual_carillon/asset/"

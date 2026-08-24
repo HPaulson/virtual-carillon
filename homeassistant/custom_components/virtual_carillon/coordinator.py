@@ -2,58 +2,126 @@ from __future__ import annotations
 
 import logging
 from datetime import date, timedelta
+from urllib.parse import quote
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+
+from .const import MEDIA_SOURCE_PREFIX
 
 _LOGGER = logging.getLogger(__name__)
 
 
 class CarillonCoordinator(DataUpdateCoordinator):
-    def __init__(self, hass: HomeAssistant, url: str):
+    def __init__(self, hass: HomeAssistant, url: str, token: str = "", *, litcal_enabled: bool = True, litcal_calendar: str = "general"):
         self.url = url.rstrip("/")
+        self.headers = {"Authorization": f"Bearer {token}"} if token else {}
+        self.litcal_enabled = litcal_enabled
+        self.litcal_calendar = litcal_calendar
         super().__init__(hass, logger=_LOGGER, name="Virtual Carillon", update_interval=timedelta(seconds=30))
 
     async def _async_update_data(self):
         from homeassistant.helpers.aiohttp_client import async_get_clientsession
         try:
-            async with async_get_clientsession(self.hass).get(f"{self.url}/api/status", timeout=5) as response:
+            async with async_get_clientsession(self.hass).get(f"{self.url}/api/status", headers=self.headers, timeout=5) as response:
                 if response.status != 200:
                     raise UpdateFailed(f"Engine returned HTTP {response.status}")
                 status = await response.json()
-            async with async_get_clientsession(self.hass).get(f"{self.url}/api/assets", timeout=5) as response:
+            async with async_get_clientsession(self.hass).get(f"{self.url}/api/assets", headers=self.headers, timeout=5) as response:
                 if response.status == 200:
                     status["assets"] = (await response.json()).get("assets", [])
-            async with async_get_clientsession(self.hass).get(f"{self.url}/api/hymns", timeout=5) as response:
+            async with async_get_clientsession(self.hass).get(f"{self.url}/api/hymns", headers=self.headers, timeout=5) as response:
                 if response.status == 200:
                     status["hymns"] = (await response.json()).get("hymns", [])
-            async with async_get_clientsession(self.hass).get(f"{self.url}/api/liturgical/{date.today().isoformat()}", timeout=5) as response:
-                if response.status == 200:
-                    status["liturgical_day"] = (await response.json()).get("day")
+            if self.litcal_enabled:
+                async with async_get_clientsession(self.hass).get(
+                    f"{self.url}/api/liturgical/{date.today().isoformat()}",
+                    params={"calendar": self.litcal_calendar},
+                    headers=self.headers,
+                    timeout=5,
+                ) as response:
+                    if response.status == 200:
+                        status["liturgical_day"] = (await response.json()).get("day")
             return status
         except Exception as err:
             raise UpdateFailed(f"Unable to reach Virtual Carillon: {err}") from err
 
-    async def async_play(self, asset: str, output: str | None = None):
-        from homeassistant.helpers.aiohttp_client import async_get_clientsession
-        async with async_get_clientsession(self.hass).post(f"{self.url}/api/play", json={"asset": asset, "output": output}, timeout=10) as response:
-            if response.status >= 300:
-                raise RuntimeError(await response.text())
+    async def async_play(self, asset: str, media_players: list[str]):
+        media_id = f"{MEDIA_SOURCE_PREFIX}{quote(asset, safe='')}"
+        await self.hass.services.async_call(
+            "media_player",
+            "play_media",
+            {
+                "entity_id": media_players,
+                "media_content_id": media_id,
+                "media_content_type": "music",
+            },
+            blocking=True,
+        )
         await self.async_request_refresh()
 
-    async def async_stop(self):
-        from homeassistant.helpers.aiohttp_client import async_get_clientsession
-        async with async_get_clientsession(self.hass).post(f"{self.url}/api/stop", timeout=5) as response:
-            if response.status >= 300:
-                raise RuntimeError(await response.text())
+    async def async_stop(self, media_players: list[str]):
+        await self.hass.services.async_call(
+            "media_player",
+            "media_stop",
+            {"entity_id": media_players},
+            blocking=True,
+        )
 
-    async def async_select_hymn(self, strategy: str = "automatic", hymn: str | None = None, category: str | None = None, feast: str | None = None, office: str | None = None, seed: str | int | None = None, output: str | None = None):
+    async def async_select_hymn(
+        self,
+        media_players: list[str],
+        strategy: str = "random",
+        fixed_asset_id: str | None = None,
+        category_ids: list[str] | None = None,
+        feast_ids: list[str] | None = None,
+        offices: list[str] | None = None,
+        seasons: list[str] | None = None,
+        rank: str | None = None,
+        canonical_hours: list[str] | None = None,
+        tags: list[str] | None = None,
+        seed: str | int | None = None,
+        recent_exclusion: int | None = None,
+        date_value: str | None = None,
+        fallback_asset: str | None = None,
+    ):
         from homeassistant.helpers.aiohttp_client import async_get_clientsession
-        payload = {"strategy": strategy if strategy != "automatic" else None, "fixedAssetId": hymn, "categoryIds": [category] if category else None, "feastIds": [feast] if feast else None, "officeIds": [office] if office else None, "seed": seed}
-        payload = {key: value for key, value in payload.items() if value is not None}
-        async with async_get_clientsession(self.hass).post(f"{self.url}/api/hymns/select", json=payload, timeout=10) as response:
+        payload = {"strategy": strategy, "useLitCal": self.litcal_enabled, "calendar": self.litcal_calendar}
+        if date_value is not None:
+            payload["date"] = date_value
+        if fixed_asset_id:
+            payload["fixedAssetId"] = fixed_asset_id
+        if category_ids is not None:
+            payload["categoryIds"] = category_ids
+        if feast_ids is not None:
+            payload["feastIds"] = feast_ids
+        if offices is not None:
+            payload["offices"] = offices
+        if seasons is not None:
+            payload["seasons"] = seasons
+        if rank:
+            payload["rank"] = rank
+        if canonical_hours is not None:
+            payload["canonicalHours"] = canonical_hours
+        if tags is not None:
+            payload["tags"] = tags
+        if seed is not None:
+            payload["seed"] = seed
+        if recent_exclusion is not None:
+            payload["recentExclusion"] = recent_exclusion
+        async with async_get_clientsession(self.hass).post(
+            f"{self.url}/api/hymns/select",
+            headers=self.headers,
+            json=payload,
+            timeout=10,
+        ) as response:
             if response.status >= 300:
+                if fallback_asset:
+                    await self.async_play(fallback_asset, media_players)
+                    return
                 raise RuntimeError(await response.text())
             result = await response.json()
         asset = ((result.get("selection") or {}).get("asset") or {}).get("id")
         if asset:
-            await self.async_play(asset, output)
+            await self.async_play(asset, media_players)
+        elif fallback_asset:
+            await self.async_play(fallback_asset, media_players)

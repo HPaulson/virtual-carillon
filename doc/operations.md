@@ -2,7 +2,7 @@
 
 ## Docker deployment
 
-Docker is the recommended deployment. The base Compose file runs the API, scheduler, SQLite database, and cache on any Docker host:
+Docker is the recommended deployment. The single Compose file runs the API, SQLite database, and rendered-audio cache. Home Assistant owns scheduling, media-player selection, and playback:
 
 ```bash
 cp .env.example .env
@@ -11,43 +11,26 @@ docker compose ps
 docker compose logs -f virtual-carillon
 ```
 
-The data directory is `./data` on the host. The health endpoint is `http://127.0.0.1:9876/health`.
+The database and rendered audio cache live in the `virtual-carillon-data` Docker volume. The health endpoint is `http://127.0.0.1:9876/health`.
 
-For Linux PipeWire/Bluetooth playback, use the override and expose the host user-session sockets:
+For a remote or Dokploy deployment, set `VIRTUAL_CARILLON_API_TOKEN` in the server environment to a long random value, then expose the service through an HTTPS domain. `/health` is public for health checks; all `/api/*` calls require the bearer token.
 
-```bash
-HOST_XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}" \
-  docker compose -f compose.yaml -f compose.linux.yaml up -d --build
-```
-
-Pair the speaker on the host, not inside the container:
-
-```bash
-wpctl status
-bluetoothctl devices Connected
-```
-
-The host user must have a live PipeWire session and the container must see `pipewire-0`. See [`docs/docker.md`](../docs/docker.md) for the full deployment procedure.
+See [`docs/docker.md`](../docs/docker.md) for the Dokploy and Home Assistant deployment procedure. The container needs no host ALSA, PipeWire, PulseAudio, Bluetooth, or speaker-device access.
 
 ## Home Assistant URLs
 
 - Same host/native engine: `http://127.0.0.1:9876`
 - Same Compose network: `http://virtual-carillon:9876`
-- Separate hosts: use the engine host's reachable address and firewall port 9876 appropriately.
+- Separate hosts: use the engine host's reachable address and firewall port 9876 appropriately; enter the matching API token in the HA config flow.
+- Dokploy: use the HTTPS domain mapped to container port `9876`; enter the matching `VIRTUAL_CARILLON_API_TOKEN` in HA.
 
 ## Common failures
 
-### No outputs
+### A media player cannot play an asset
 
-Run `doctor` and `devices`. On Linux, check `wpctl status`, `pactl list short sinks`, and the PipeWire socket mount. On macOS, the intended development output is the CoreAudio default and Bluetooth status is reported unavailable.
+The engine can be healthy while the selected Home Assistant media player cannot fetch the audio URL. Confirm that the player can reach Home Assistant's configured internal or external URL, that the Virtual Carillon media source is available, and that the player supports `media_player.play_media`. Speaker pairing, Wi-Fi, Bluetooth, Chromecast, Sonos, and laptop audio are handled by the relevant Home Assistant integration.
 
-### Bluetooth speaker disconnected
-
-Bluetooth pairing and connection are host responsibilities. Reconnect it with the host's Bluetooth tools, then verify that it appears as a PipeWire sink. The scheduler catches playback errors and continues running; it does not currently guarantee automatic reconnection.
-
-### Audio plays locally but not through Docker
-
-Use `compose.linux.yaml`, set `HOST_XDG_RUNTIME_DIR` to the runtime directory of the logged-in audio user, and verify socket permissions. Do not install a second Bluetooth daemon in the container.
+The default Dokploy deployment does not use the server's local speakers. Direct CLI/API playback remains available for experiments, but it requires a separate native host-audio setup.
 
 ### Database locked
 
@@ -55,10 +38,6 @@ The engine uses WAL mode and a busy timeout. Avoid running multiple server insta
 
 ### Cache or database reset
 
-Rendered WAV cache can be regenerated. The SQLite database contains schedules and event history. Back it up before replacing it:
-
-```bash
-cp data/carillon.sqlite data/carillon.sqlite.backup
-```
+Rendered WAV and LitCal caches can be regenerated. The SQLite database contains playback event history. Use Dokploy's named-volume backup for `virtual-carillon-data` before replacing it.
 
 Only remove runtime data when explicitly requested and after confirming the exact target.
