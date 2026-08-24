@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { AudioEngine } from '../src/audio/engine.js';
 import { BUILTIN_HYMNS } from '../src/library/hymns.js';
-import { LITURGICAL_FEASTS } from '../src/liturgical/taxonomy.js';
+import {
+  LITURGICAL_CATEGORIES,
+  LITURGICAL_FEASTS,
+  LITURGICAL_OFFICES,
+  LITURGICAL_SEASONS,
+} from '../src/liturgical/taxonomy.js';
 import {
   AssetLibrary,
   BUILTIN_ASSETS,
@@ -15,10 +20,18 @@ import path from 'node:path';
 describe('authentic content model', () => {
   it('uses stable feast IDs and canonical-hour values in hymn metadata', () => {
     const feastIds = new Set(Object.keys(LITURGICAL_FEASTS));
-    const hours = new Set(['matins', 'lauds', 'daytime', 'vespers', 'compline']);
+    const categoryIds = new Set(Object.keys(LITURGICAL_CATEGORIES));
+    const seasonIds = new Set(Object.keys(LITURGICAL_SEASONS));
+    const hours = new Set(Object.keys(LITURGICAL_OFFICES));
     for (const hymn of BUILTIN_HYMNS) {
       for (const feast of hymn.liturgicalTags.feasts)
         expect(feastIds, `${hymn.id}: ${feast}`).toContain(feast);
+      for (const category of hymn.liturgicalTags.categories)
+        expect(categoryIds, `${hymn.id}: ${category}`).toContain(category);
+      for (const season of hymn.liturgicalTags.seasons)
+        expect(seasonIds, `${hymn.id}: ${season}`).toContain(season);
+      for (const office of hymn.liturgicalTags.offices)
+        expect(hours, `${hymn.id}: ${office}`).toContain(office);
       for (const hour of hymn.liturgicalTags.canonicalHours)
         expect(hours, `${hymn.id}: ${hour}`).toContain(hour);
       expect(hymn.liturgicalTags.solemnities, `${hymn.id}: hymn rank tags`).toEqual([]);
@@ -37,9 +50,14 @@ describe('authentic content model', () => {
       'salve-regina-solemn',
       'te-lucis-ante-terminum',
       'veni-creator-spiritus',
+      'vexilla-regis',
       'christ-is-made-the-sure-foundation',
+      'christe-redemptor-omnium',
+      'creator-alme-siderum',
+      'exsultet-caelum-laudibus',
       'exsultet-orbis-gaudiis',
       'o-fathers-of-our-ancient-faith',
+      'sub-tuum-praesidium',
     ].sort());
   });
 
@@ -147,16 +165,8 @@ describe('authentic content model', () => {
       ),
     ).toBe(true);
     expect(
-      hymns.every(
-        (asset) =>
-          !asset.tags.some((tag) =>
-            ['English', 'Latin', 'Spanish', 'Welsh', 'Anglican'].includes(tag),
-          ),
-      ),
-    ).toBe(true);
-    expect(
       hymns.find((asset) => asset.id === 'veni-creator-spiritus')?.liturgicalTags?.categories,
-    ).toEqual(expect.arrayContaining(['holy-spirit', 'pentecost', 'confirmation', 'ordination']));
+    ).toEqual(expect.arrayContaining(['holy-spirit']));
     expect(hymns.find((asset) => asset.id === 'pange-lingua')?.liturgicalTags?.feasts).toEqual(
       expect.arrayContaining(['corpus-christi', 'holy-thursday']),
     );

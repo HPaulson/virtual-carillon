@@ -8,13 +8,11 @@ export const oComeOComeEmmanuel = defineHymn({
   sourceUrl:
     'https://abcnotation.com/tunePage?a=trillian.mit.edu%2F~jc%2Fmusic%2Fabc%2Fsession%2FSudburyAncients%2Fxmas%2FO_Come_O_Come_Emmanuel-Em-19-2%2F0000',
   license: 'Public-domain melody; ABC source transcription credited in this asset',
-  tags: ['Hymn', 'Advent', 'Gregorian family'],
   liturgical: {
-    categories: ['advent', 'christological'],
+    categories: ['christological'],
     seasons: ['Advent'],
     offices: [],
     feasts: [],
-    solemnities: [],
   },
   notation: melody({
     meter: { numerator: 4, denominator: 4 },

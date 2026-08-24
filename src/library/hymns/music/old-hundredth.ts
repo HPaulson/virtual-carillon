@@ -9,13 +9,11 @@ export const oldHundredth = defineHymn({
   sourceUrl:
     'https://abcnotation.com/tunePage?a=trillian.mit.edu%2F~jc%2Fmusic%2Fabc%2Fmirror%2Frichardrobinson.tunebook.org.uk%2F100_Psalm_JMP_102%2F00000',
   license: 'Public-domain melody; ABC source transcription credited in this asset',
-  tags: ['Hymn', 'Psalm', 'Doxology'],
   liturgical: {
-    categories: ['praise', 'sunday'],
+    categories: ['praise'],
     seasons: ['General', 'Ordinary Time'],
     offices: [],
     feasts: [],
-    solemnities: [],
   },
   notation: melody({
     meter: { numerator: 2, denominator: 2 },

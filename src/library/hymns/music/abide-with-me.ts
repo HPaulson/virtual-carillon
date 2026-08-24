@@ -8,13 +8,11 @@ export const abideWithMe = defineHymn({
   sourceUrl:
     'https://abcnotation.com/tunePage?a=trillian.mit.edu%2F~jc%2Fmusic%2Fabc%2Fsession%2FSAFD%2F___%2FHymns%2F0001',
   license: 'Public-domain melody; ABC source transcription credited in this asset',
-  tags: ['Hymn'],
   liturgical: {
     categories: ['christological'],
     seasons: ['General', 'Ordinary Time'],
     offices: [],
     feasts: [],
-    solemnities: [],
   },
   notation: melody({
     meter: { numerator: 4, denominator: 4 },

@@ -8,13 +8,11 @@ export const whileShepherdsWatched = defineHymn({
   sourceUrl:
     'https://abcnotation.com/tunePage?a=pghardy.net%2Ftunebooks%2Fpgh_xmas_tunebook%2F0013',
   license: 'Public-domain melody; ABC source transcription credited in this asset',
-  tags: ['Hymn', 'Christmas'],
   liturgical: {
-    categories: ['christmas', 'christological'],
+    categories: ['christological'],
     seasons: ['Christmas'],
     offices: [],
     feasts: ['nativity-of-the-lord'],
-    solemnities: [],
   },
   notation: melody({
     meter: { numerator: 4, denominator: 4 },

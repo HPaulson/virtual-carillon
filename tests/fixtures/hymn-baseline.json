@@ -611,7 +611,7 @@
     "sourceUrl": "https://hymnary.org/tune/hyfrydol",
     "license": "Public-domain melody; ABC source transcription credited in this asset",
     "tags": ["Hymn", "Ascension", "Eucharistic"],
-    "seasons": ["Ascension", "General"],
+    "seasons": ["Easter", "General"],
     "offices": ["Lauds", "Vespers"],
     "arrangement": {
       "style": "celebratory",
@@ -5070,7 +5070,7 @@
     "sourceUrl": "https://www.gregorianum.org/index.php?mobileaction=toggle_view_mobile&title=Ave_Regina_Coelorum_%28Tono_simplex%29",
     "license": "Public-domain chant; source notation and transcriber credited in the bundled GABC",
     "tags": ["Antiphon", "Marian", "Compline"],
-    "seasons": ["Christmas", "Lent"],
+    "seasons": ["Ordinary Time", "Lent"],
     "offices": ["Compline", "Vespers"],
     "arrangement": {
       "style": "flowing",
@@ -5412,7 +5412,7 @@
     "sourceUrl": "https://www.gregorianum.org/wiki/Ave_Regina_Coelorum_%28Tonus_Solemnis_-_Monasticum%29",
     "license": "Public-domain chant; source notation and transcriber credited in the bundled GABC",
     "tags": ["Antiphon", "Marian", "Compline"],
-    "seasons": ["Christmas", "Lent"],
+    "seasons": ["Ordinary Time", "Lent"],
     "offices": ["Compline", "Vespers"],
     "arrangement": {
       "style": "flowing",
@@ -6273,7 +6273,7 @@
     "sourceUrl": "https://en.gregorianum.org/index.php?title=Veni_Creator_Spiritus",
     "license": "Public-domain chant; source GABC and traditional English title credited by source page",
     "tags": ["Hymn", "Pentecost", "Holy Spirit"],
-    "seasons": ["Easter", "Pentecost"],
+    "seasons": ["Easter"],
     "offices": ["Vespers", "Lauds"],
     "arrangement": {
       "style": "grand",
@@ -7355,7 +7355,7 @@
     "sourceUrl": "https://en.gregorianum.org/index.php?title=Veni_Creator_Spiritus",
     "license": "Public-domain chant; source GABC and English title pairing credited in this asset",
     "tags": ["Hymn", "Pentecost", "Holy Spirit"],
-    "seasons": ["Easter", "Pentecost"],
+    "seasons": ["Easter"],
     "offices": ["Vespers", "Lauds"],
     "arrangement": {
       "style": "grand",
@@ -10079,7 +10079,7 @@
     "sourceUrl": "https://abcnotation.com/tunePage?a=pghardy.net%2Ftunebooks%2Fpgh_songs_tunebook%2F0007",
     "license": "Public-domain melody; ABC source transcription credited in this asset",
     "tags": ["Hymn", "Ascension"],
-    "seasons": ["Ascension"],
+    "seasons": ["Easter"],
     "offices": ["Lauds"],
     "arrangement": {
       "style": "celebratory",
@@ -10942,7 +10942,7 @@
     "sourceUrl": "https://abcnotation.com/tunePage?a=trillian.mit.edu%2F~jc%2Fmusic%2Fabc%2Fmirror%2Fwww.stephenmerrony.co.uk%2FHyfrydol_2%2F0000",
     "license": "Public-domain melody; ABC source transcription credited in this asset",
     "tags": ["Hymn", "Advent", "Christmas"],
-    "seasons": ["Advent", "Christmas"],
+    "seasons": ["General"],
     "offices": ["Lauds", "Vespers"],
     "arrangement": {
       "style": "flowing",
@@ -11267,7 +11267,7 @@
     "sourceUrl": "https://hymnary.org/tune/hymn_to_joy_beethoven",
     "license": "Public-domain melody; ABC source transcription credited in this asset",
     "tags": ["Hymn", "Trinity", "Easter"],
-    "seasons": ["Easter", "General", "Ordinary Time"],
+    "seasons": ["General", "Ordinary Time"],
     "offices": ["Lauds"],
     "arrangement": {
       "style": "celebratory",
@@ -12046,7 +12046,7 @@
     "sourceUrl": "https://abcnotation.com/tunePage?a=trillian.mit.edu%2F~jc%2Fmusic%2Fabc%2Fxmas%2FJoy_To_the_World%2F0000",
     "license": "Public-domain melody; ABC source transcription credited in this asset",
     "tags": ["Hymn", "Christmas", "Advent"],
-    "seasons": ["Advent", "Christmas"],
+    "seasons": ["Christmas"],
     "offices": ["Lauds", "Vespers"],
     "arrangement": {
       "style": "celebratory",
@@ -15332,7 +15332,7 @@
     "sourceUrl": "https://www.gregorianum.org/wiki/Regina_Caeli_%28Tono_Simplex%29",
     "license": "Public-domain chant; source notation and transcriber credited in the bundled GABC",
     "tags": ["Antiphon", "Marian", "Easter", "Pentecost"],
-    "seasons": ["Easter", "Pentecost"],
+    "seasons": ["Easter"],
     "offices": ["Compline", "Vespers"],
     "arrangement": {
       "style": "flowing",
@@ -15582,7 +15582,7 @@
     "sourceUrl": "https://www.gregorianum.org/wiki/Regina_Caeli_%28Tonus_Solemnis_-_Monasticum%29",
     "license": "Public-domain chant; source notation and transcriber credited in the bundled GABC",
     "tags": ["Antiphon", "Marian", "Easter", "Pentecost"],
-    "seasons": ["Easter", "Pentecost"],
+    "seasons": ["Easter"],
     "offices": ["Compline", "Vespers"],
     "arrangement": {
       "style": "flowing",
@@ -17922,7 +17922,7 @@
     "sourceUrl": "https://en.gregorianum.org/index.php?title=Veni_Creator_Spiritus",
     "license": "Public-domain chant; source notation and transcriber credited in the bundled GABC",
     "tags": ["Hymn", "Gregorian", "Pentecost"],
-    "seasons": ["Easter", "Pentecost"],
+    "seasons": ["Easter"],
     "offices": ["Vespers"],
     "arrangement": {
       "style": "grand",

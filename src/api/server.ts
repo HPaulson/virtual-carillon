@@ -53,7 +53,6 @@ const LiturgicalSelectionSchema = z.object({
   categoryIds: z.array(z.string()).optional(),
   offices: z.array(z.string()).optional(),
   canonicalHours: z.array(z.string()).optional(),
-  tags: z.array(z.string()).optional(),
   strategy: z.enum(['fixed', 'sequential', 'random']).optional(),
   fixedAssetId: z.string().optional(),
   seed: z.union([z.string(), z.number()]).optional(),
@@ -65,7 +64,6 @@ const HymnQuerySchema = z.object({
   seasonIds: z.array(z.string()).optional(),
   officeIds: z.array(z.string()).optional(),
   canonicalHours: z.array(z.string()).optional(),
-  tags: z.array(z.string()).optional(),
   strategy: z.enum(['fixed', 'sequential', 'random']).optional(),
   fixedAssetId: z.string().optional(),
   seed: z.union([z.string(), z.number()]).optional(),
@@ -488,6 +486,13 @@ async function resolveScheduleAsset(
   const query = toHymnQuery(action);
   query.alreadyPlayed = services.database.completedScheduleAssets?.(date) ?? [];
   const selection = hymnCatalog.selectForDay(day, query);
+  console.info(
+    `[schedule] hymn-selection date=${date} selected=${selection.asset?.id ?? 'none'} ` +
+      `matchedBy=${selection.matchedBy} selectedScore=${selection.selectedScore ?? 'n/a'} ` +
+      `reusedPlayed=${selection.reusedPlayedAsset ?? false} ` +
+      `alreadyPlayed=${query.alreadyPlayed.join(',') || 'none'} ` +
+      `scores=${selection.scoring?.map((candidate) => `${candidate.id}:${candidate.score}${candidate.alreadyPlayed ? '*' : ''}`).join(',') ?? 'n/a'}`,
+  );
   return selection.asset?.id;
 }
 
@@ -526,7 +531,6 @@ function queryFromRequest(value: unknown): Record<string, unknown> {
     seasonIds: list('seasonIds'),
     officeIds: list('officeIds'),
     canonicalHours: list('canonicalHours'),
-    tags: list('tags'),
     strategy: stringQuery(query.strategy),
     fixedAssetId: stringQuery(query.fixedAssetId),
     seed: stringQuery(query.seed),

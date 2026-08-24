@@ -8,13 +8,11 @@ export const aveReginaCaelorumSimpleTone = defineHymn({
   sourceUrl:
     'https://www.gregorianum.org/index.php?mobileaction=toggle_view_mobile&title=Ave_Regina_Coelorum_%28Tono_simplex%29',
   license: 'Public-domain chant; source notation and transcriber credited in the bundled GABC',
-  tags: ['Antiphon', 'Marian', 'Compline'],
   liturgical: {
-    categories: ['marian', 'blessed-virgin-mary'],
-    seasons: ['Christmas', 'Lent'],
+    categories: ['marian'],
+    seasons: ['Ordinary Time', 'Lent'],
     offices: ['Compline'],
     feasts: [],
-    solemnities: [],
   },
   notation: melody({
     meter: { numerator: 1, denominator: 1 },

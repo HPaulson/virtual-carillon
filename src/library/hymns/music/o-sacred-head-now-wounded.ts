@@ -7,13 +7,11 @@ export const oSacredHeadNowWounded = defineHymn({
   source: 'PASSION CHORALE, attributed to Hans Leo Hassler, 1601; public-domain chorale tune',
   sourceUrl: 'https://abcnotation.com/tunePage?a=www.campin.me.uk%2FMusic%2FChalumeau%2F0333',
   license: 'Public-domain melody; ABC source transcription credited in this asset',
-  tags: ['Hymn', 'Lenten', 'Holy Week'],
   liturgical: {
-    categories: ['lent', 'holy-week', 'cross-passion'],
+    categories: ['passion'],
     seasons: ['Lent', 'Holy Week'],
     offices: [],
     feasts: ['good-friday'],
-    solemnities: [],
   },
   notation: melody({
     meter: { numerator: 4, denominator: 4 },

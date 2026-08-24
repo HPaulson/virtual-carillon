@@ -462,8 +462,6 @@ describe('large carillon audio layer', () => {
       'Lent',
       'Holy Week',
       'Easter',
-      'Ascension',
-      'Pentecost',
       'Ordinary Time',
     ]) {
       expect(counts.get(season) ?? 0).toBeGreaterThanOrEqual(2);

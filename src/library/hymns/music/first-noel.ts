@@ -8,13 +8,11 @@ export const firstNoel = defineHymn({
   sourceUrl:
     'https://abcnotation.com/tunePage?a=pghardy.net%2Ftunebooks%2Fpgh_xmas_tunebook%2F0016',
   license: 'Public-domain melody; ABC source transcription credited in this asset',
-  tags: ['Hymn', 'Christmas', 'Epiphany'],
   liturgical: {
-    categories: ['christmas', 'epiphany'],
+    categories: ['christological'],
     seasons: ['Christmas', 'Epiphany'],
     offices: [],
     feasts: ['nativity-of-the-lord', 'epiphany-of-the-lord'],
-    solemnities: [],
   },
   notation: melody({
     meter: { numerator: 3, denominator: 4 },

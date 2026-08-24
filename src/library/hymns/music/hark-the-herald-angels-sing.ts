@@ -8,13 +8,11 @@ export const harkTheHeraldAngelsSing = defineHymn({
   sourceUrl:
     'https://abcnotation.com/tunePage?a=trillian.mit.edu%2F~jc%2Fmusic%2Fabc%2Fdemo%2FTunes%2FHarkTheHeraldAngelsSing%2F0000',
   license: 'Public-domain melody; ABC source transcription credited in this asset',
-  tags: ['Hymn', 'Christmas'],
   liturgical: {
-    categories: ['christmas', 'christological'],
+    categories: ['christological'],
     seasons: ['Christmas'],
     offices: [],
     feasts: ['nativity-of-the-lord'],
-    solemnities: [],
   },
   notation: melody({
     meter: { numerator: 4, denominator: 4 },

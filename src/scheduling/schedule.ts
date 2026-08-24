@@ -39,7 +39,6 @@ const SelectHymnActionSchema = z.object({
   categoryIds: z.array(z.string()).optional(),
   offices: z.array(z.string()).optional(),
   canonicalHours: z.array(z.string()).optional(),
-  tags: z.array(z.string()).optional(),
   seed: z.union([z.string(), z.number()]).optional(),
   recentExclusion: z.number().int().min(0).max(100).default(3),
 });

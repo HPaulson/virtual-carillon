@@ -15,6 +15,7 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from .const import (
     CONF_ASSET,
     CONF_CANONICAL_HOUR,
+    CONF_CATEGORY_IDS,
     CONF_DISTANCE_PROFILE,
     CONF_LITCAL_CALENDAR,
     CONF_LITCAL_ENABLED,
@@ -72,20 +73,31 @@ ASSET_TYPE_OPTIONS = [
     {"value": "automatic", "label": "Automatic — Hymn selected based on liturgical calendar"},
 ]
 CATEGORY_OPTIONS = [
+    # Devotional and doctrinal themes.
     {"value": "marian", "label": "Marian"},
-    {"value": "blessed-virgin-mary", "label": "Blessed Virgin Mary"},
     {"value": "christological", "label": "Christological"},
     {"value": "eucharistic", "label": "Eucharistic"},
-    {"value": "sacred-heart", "label": "Sacred Heart"},
     {"value": "holy-spirit", "label": "Holy Spirit"},
-    {"value": "trinity", "label": "Trinity"},
-    {"value": "cross-passion", "label": "Cross / Passion"},
+    {"value": "passion", "label": "Passion"},
     {"value": "resurrection", "label": "Resurrection"},
+
+    # Saint and vocation affinities.
     {"value": "saints", "label": "Saints"},
     {"value": "angels", "label": "Angels"},
     {"value": "apostles", "label": "Apostles"},
+    {"value": "martyrs", "label": "Martyrs"},
+    {"value": "virgins", "label": "Virgins"},
+    {"value": "doctors", "label": "Doctors of the Church"},
     {"value": "religious", "label": "Religious"},
-    {"value": "sunday", "label": "Sunday"},
+
+    # Sacramental, devotional, and liturgical-use affinities.
+    {"value": "praise", "label": "Praise"},
+    {"value": "thanksgiving", "label": "Thanksgiving"},
+    {"value": "confidence", "label": "Confidence in God"},
+    {"value": "contemplative", "label": "Contemplative"},
+    {"value": "incarnation", "label": "Incarnation"},
+    {"value": "penitential", "label": "Penitential"},
+    {"value": "psalm", "label": "Psalm"},
 ]
 CANONICAL_HOUR_OPTIONS = [
     {"value": "", "label": "None (Default)"},
@@ -241,6 +253,10 @@ class VirtualCarillonOptionsFlow(config_entries.OptionsFlow):
         self._routine_mode = "automatic"
         return await self._async_step_add_routine_details(user_input)
 
+    async def async_step_add_routine_category(self, user_input: dict[str, Any] | None = None):
+        self._routine_mode = "category"
+        return await self._async_step_add_routine_details(user_input)
+
     async def _async_step_add_routine_details(self, user_input: dict[str, Any] | None = None):
         errors = {}
         if user_input is not None:
@@ -292,6 +308,10 @@ class VirtualCarillonOptionsFlow(config_entries.OptionsFlow):
 
     async def async_step_edit_routine_automatic(self, user_input: dict[str, Any] | None = None):
         self._routine_mode = "automatic"
+        return await self._async_step_edit_routine_details(user_input)
+
+    async def async_step_edit_routine_category(self, user_input: dict[str, Any] | None = None):
+        self._routine_mode = "category"
         return await self._async_step_edit_routine_details(user_input)
 
     async def _async_step_edit_routine_details(self, user_input: dict[str, Any] | None = None):
@@ -473,7 +493,11 @@ def _routine_schema(
             schema[vol.Required(CONF_CATEGORY_IDS, default=defaults["category_ids"])] = selector.SelectSelector(
                 selector.SelectSelectorConfig(options=CATEGORY_OPTIONS, multiple=True)
             )
-        schema[vol.Optional(CONF_CANONICAL_HOUR, default=defaults["canonical_hour"])] = selector.SelectSelector(
+        # This must be Required so selecting the blank option is submitted as
+        # an explicit empty value. Optional fields with defaults can be
+        # omitted by HA for the blank selector choice, which would preserve a
+        # previously selected hour (for example, Vespers) while editing.
+        schema[vol.Required(CONF_CANONICAL_HOUR, default=defaults["canonical_hour"])] = selector.SelectSelector(
             selector.SelectSelectorConfig(options=CANONICAL_HOUR_OPTIONS)
         )
     _add_optional_time(schema, CONF_NOT_BEFORE, defaults["not_before"])

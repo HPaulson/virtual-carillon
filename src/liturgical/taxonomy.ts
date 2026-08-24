@@ -5,45 +5,33 @@ export const LITURGICAL_SEASONS = {
   epiphany: 'Epiphany',
   lent: 'Lent',
   'holy-week': 'Holy Week',
+  // Includes the Easter Octave; LitCal days in the octave normalize here too.
   easter: 'Easter',
-  ascension: 'Ascension',
-  pentecost: 'Pentecost',
   'ordinary-time': 'Ordinary Time',
 } as const;
 
 export const LITURGICAL_CATEGORIES = {
   general: 'General',
   marian: 'Marian',
-  'blessed-virgin-mary': 'Blessed Virgin Mary',
   saints: 'Saints',
   christological: 'Christological',
   eucharistic: 'Eucharistic',
-  'sacred-heart': 'Sacred Heart',
   'holy-spirit': 'Holy Spirit',
-  trinity: 'Trinity',
-  'cross-passion': 'Cross / Passion',
+  'passion': 'Passion',
   resurrection: 'Resurrection',
-  advent: 'Advent',
-  christmas: 'Christmas',
-  epiphany: 'Epiphany',
-  lent: 'Lent',
-  'holy-week': 'Holy Week',
-  easter: 'Easter',
-  ascension: 'Ascension',
-  pentecost: 'Pentecost',
-  'corpus-christi': 'Corpus Christi',
-  'all-saints': 'All Saints',
-  'all-souls': 'All Souls',
   angels: 'Angels',
   apostles: 'Apostles',
   martyrs: 'Martyrs',
   virgins: 'Virgins',
   doctors: 'Doctors',
   religious: 'Religious',
-  'dedication-of-a-church': 'Dedication of a Church',
-  sunday: 'Sunday',
-  confirmation: 'Confirmation',
-  ordination: 'Ordination',
+  praise: 'Praise',
+  thanksgiving: 'Thanksgiving',
+  confidence: 'Confidence in God',
+  contemplative: 'Contemplative',
+  incarnation: 'Incarnation',
+  penitential: 'Penitential',
+  psalm: 'Psalm',
 } as const;
 
 export const LITURGICAL_FEASTS = {
@@ -62,7 +50,6 @@ export const LITURGICAL_FEASTS = {
   'epiphany-of-the-lord': 'Epiphany of the Lord',
   'nativity-of-the-lord': 'Nativity of the Lord',
   'baptism-of-the-lord': 'Baptism of the Lord',
-  'easter-sunday': 'Easter Sunday',
   'ascension-of-the-lord': 'Ascension of the Lord',
   pentecost: 'Pentecost',
   'trinity-sunday': 'Trinity Sunday',
@@ -77,15 +64,20 @@ export const LITURGICAL_FEASTS = {
 } as const;
 
 export type LiturgicalSeasonId = keyof typeof LITURGICAL_SEASONS;
+export type LiturgicalSeasonName = (typeof LITURGICAL_SEASONS)[LiturgicalSeasonId];
+export type LiturgicalSeasonInput = LiturgicalSeasonId | LiturgicalSeasonName;
 export type LiturgicalCategoryId = keyof typeof LITURGICAL_CATEGORIES;
 export type LiturgicalFeastId = keyof typeof LITURGICAL_FEASTS;
-export type LiturgicalOfficeId =
-  | 'matins'
-  | 'lauds'
-  | 'daytime'
-  | 'vespers'
-  | 'compline'
-  ;
+export const LITURGICAL_OFFICES = {
+  matins: 'Matins',
+  lauds: 'Lauds',
+  daytime: 'Daytime',
+  vespers: 'Vespers',
+  compline: 'Compline',
+} as const;
+export type LiturgicalOfficeId = keyof typeof LITURGICAL_OFFICES;
+export type LiturgicalOfficeName = (typeof LITURGICAL_OFFICES)[LiturgicalOfficeId];
+export type LiturgicalOfficeInput = LiturgicalOfficeId | LiturgicalOfficeName;
 export type LiturgicalRankId =
   | 'feria'
   | 'commemoration'
@@ -98,11 +90,11 @@ export type LiturgicalRankId =
 
 export interface LiturgicalTags {
   seasons: LiturgicalSeasonId[];
-  feasts: string[];
-  solemnities: string[];
-  memorials: string[];
+  feasts: LiturgicalFeastId[];
+  solemnities: LiturgicalFeastId[];
+  memorials: LiturgicalFeastId[];
   saints: string[];
-  categories: string[];
+  categories: LiturgicalCategoryId[];
   offices: LiturgicalOfficeId[];
   canonicalHours: LiturgicalOfficeId[];
 }
@@ -160,8 +152,8 @@ export function inferLiturgicalTags(input: {
     feasts: [],
   });
   for (const season of input.liturgicalSeasons ?? []) tags.seasons.push(seasonId(season));
-  const addCategory = (...values: string[]) => tags.categories.push(...values);
-  const addFeast = (...values: string[]) => tags.feasts.push(...values);
+  const addCategory = (...values: LiturgicalCategoryId[]) => tags.categories.push(...values);
+  const addFeast = (...values: LiturgicalFeastId[]) => tags.feasts.push(...values);
   const addSaint = (...values: string[]) => tags.saints.push(...values);
   const addSeason = (value: LiturgicalSeasonId) => tags.seasons.push(value);
 
@@ -177,31 +169,31 @@ export function inferLiturgicalTags(input: {
 
   if (text.includes('assumption')) {
     addFeast('assumption-of-mary');
-    addCategory('marian', 'blessed-virgin-mary');
+    addCategory('marian');
   }
   if (text.includes('nativity') && (text.includes('mary') || text.includes('virgin'))) {
     addFeast('nativity-of-mary');
-    addCategory('marian', 'blessed-virgin-mary');
+    addCategory('marian');
   }
   if (text.includes('immaculate conception')) {
     addFeast('immaculate-conception');
-    addCategory('marian', 'blessed-virgin-mary');
+    addCategory('marian');
   }
   if (text.includes('annunciation')) {
     addFeast('annunciation');
-    addCategory('marian', 'blessed-virgin-mary');
+    addCategory('marian');
   }
   if (text.includes('mother of god') || text.includes('theotokos')) {
     addFeast('mary-mother-of-god');
-    addCategory('marian', 'blessed-virgin-mary');
+    addCategory('marian');
   }
   if (text.includes('visitation')) {
     addFeast('visitation');
-    addCategory('marian', 'blessed-virgin-mary');
+    addCategory('marian');
   }
   if (text.includes('queenship of mary')) {
     addFeast('queenship-of-mary');
-    addCategory('marian', 'blessed-virgin-mary');
+    addCategory('marian');
   }
   if (
     text.includes('our lady') ||
@@ -209,37 +201,34 @@ export function inferLiturgicalTags(input: {
     text.includes('virgin mary') ||
     text.includes('mary')
   )
-    addCategory('marian', 'blessed-virgin-mary');
+    addCategory('marian');
 
   if (text.includes('corpus christi')) {
     addFeast('corpus-christi');
-    addCategory('eucharistic', 'christological', 'corpus-christi');
+    addCategory('eucharistic', 'christological');
   }
   if (text.includes('holy thursday')) {
     addFeast('holy-thursday');
-    addCategory('eucharistic', 'cross-passion', 'holy-week');
+    addCategory('eucharistic', 'passion');
   }
   if (text.includes('sacred heart')) {
     addFeast('sacred-heart-of-jesus');
-    addCategory('sacred-heart', 'christological');
+    addCategory('christological');
   }
   if (text.includes('holy spirit') || text.includes('pentecost')) {
     addFeast('pentecost');
-    addCategory('holy-spirit', 'pentecost');
-    addSeason('pentecost');
+    addCategory('holy-spirit');
   }
   if (text.includes('trinity')) {
     addFeast('trinity-sunday');
-    addCategory('trinity', 'christological');
+    addCategory('christological');
   }
   if (text.includes('ascension')) {
     addFeast('ascension-of-the-lord');
-    addCategory('ascension', 'christological');
-    addSeason('ascension');
+    addCategory('christological');
   }
   if (text.includes('resurrection') || text.includes('easter')) {
-    addFeast('easter-sunday');
-    addCategory('resurrection', 'christological', 'easter');
+    addCategory('resurrection', 'christological');
     addSeason('easter');
   }
   if (
@@ -248,24 +237,22 @@ export function inferLiturgicalTags(input: {
     text.includes('passion') ||
     text.includes('cross')
   )
-    addCategory('cross-passion', 'christological');
+    addCategory('passion', 'christological');
   if (text.includes('epiphany')) {
     addFeast('epiphany-of-the-lord');
-    addCategory('epiphany', 'christological');
+    addCategory('christological');
     addSeason('epiphany');
   }
   if (text.includes('nativity of the lord') || text.includes('christmas')) {
     addFeast('nativity-of-the-lord');
-    addCategory('christmas', 'christological');
+    addCategory('christological');
     addSeason('christmas');
   }
   if (text.includes('all saints')) {
     addFeast('all-saints');
-    addCategory('all-saints');
   }
   if (text.includes('all souls')) {
     addFeast('all-souls');
-    addCategory('all-souls');
   }
   if (text.includes('angel')) addCategory('angels');
   if (text.includes('apostle')) addCategory('apostles');
@@ -276,9 +263,7 @@ export function inferLiturgicalTags(input: {
     addCategory('religious');
   if (text.includes('dedication')) {
     addFeast('dedication-of-a-church');
-    addCategory('dedication-of-a-church');
   }
-  if (text.includes('sunday')) addCategory('sunday');
   if (!tags.categories.length) addCategory('general');
 
   const rank = rankId(input.grade, input.rank);
@@ -310,8 +295,6 @@ export function seasonId(value?: string): LiturgicalSeasonId {
   if (text.includes('lent')) return 'lent';
   if (text.includes('holy week')) return 'holy-week';
   if (text.includes('easter')) return 'easter';
-  if (text.includes('ascension')) return 'ascension';
-  if (text.includes('pentecost')) return 'pentecost';
   if (text.includes('ordinary')) return 'ordinary-time';
   return 'general';
 }

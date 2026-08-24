@@ -8,13 +8,11 @@ export const gabrielsMessage = defineHymn({
   sourceUrl:
     'https://abcnotation.com/tunePage?a=pghardy.net%2Ftunebooks%2Fpgh_xmas_tunebook%2F0017',
   license: 'Public-domain melody; ABC source transcription credited in this asset',
-  tags: ['Hymn', 'Advent', 'Christmas'],
   liturgical: {
-    categories: ['annunciation', 'incarnation', 'christological'],
+    categories: ['incarnation', 'christological'],
     seasons: ['Advent', 'Christmas'],
     offices: [],
     feasts: ['annunciation'],
-    solemnities: [],
   },
   notation: melody({
     meter: { numerator: 9, denominator: 8 },

@@ -8,13 +8,11 @@ export const teLucisAnteTerminum = defineHymn({
   sourceUrl:
     'https://www.gregorianum.org/index.php?mobileaction=toggle_view_mobile&title=Te_lucis_ante_terminum_%28ad_Completorium%29',
   license: 'Public-domain chant; source GABC and transcriber credited by Gregorianum.org',
-  tags: ['Hymn', 'Gregorian', 'Compline'],
   liturgical: {
-    categories: ['christological'],
+    categories: ['christological', 'confidence'],
     seasons: ['General', 'Ordinary Time'],
     offices: ['Compline'],
     feasts: [],
-    solemnities: [],
   },
   notation: melody({
     meter: { numerator: 1, denominator: 1 },

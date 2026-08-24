@@ -8,13 +8,11 @@ export const aveDeLourdes = defineHymn({
     'Traditional Pyrenean LOURDES HYMN, published in Grenoble in 1882; Spanish and English title pairing',
   sourceUrl: 'https://www.hymnary.org/tune/lourdes_hymn_51131',
   license: 'Public-domain melody; ABC source transcription credited in this asset',
-  tags: ['Hymn', 'Marian', 'Lourdes'],
   liturgical: {
-    categories: ['marian', 'blessed-virgin-mary', 'praise'],
+    categories: ['marian', 'praise'],
     seasons: ['General', 'Ordinary Time'],
     offices: [],
-    feasts: ['our-lady-of-lourdes', 'immaculate-conception'],
-    solemnities: [],
+    feasts: ['our-lady-of-lourdes'],
   },
   notation: melody({
     meter: { numerator: 3, denominator: 4 },

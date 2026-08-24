@@ -7,13 +7,11 @@ export const pangeLingua = defineHymn({
   source: 'Graduale Romanum / Liber Usualis, Gregorian chant Mode III',
   sourceUrl: 'https://www.gregorianum.org/wiki/Pange_lingua_%28Tantum_ergo%29',
   license: 'Public-domain chant; source notation and transcriber credited in the bundled GABC',
-  tags: ['Hymn', 'Gregorian', 'Eucharistic'],
   liturgical: {
-    categories: ['eucharistic', 'christological', 'corpus-christi'],
+    categories: ['eucharistic', 'christological'],
     seasons: ['General', 'Ordinary Time'],
     offices: [],
     feasts: ['corpus-christi', 'holy-thursday'],
-    solemnities: [],
   },
   notation: melody({
     meter: { numerator: 1, denominator: 1 },

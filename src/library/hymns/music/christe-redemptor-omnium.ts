@@ -7,8 +7,7 @@ export const christeRedemptorOmnium = defineHymn({
   source: 'Traditional Latin office hymn, Gregorian chant for Christmas Vespers',
   sourceUrl: 'https://www.divinumofficium.com/cgi-bin/horas/Pofficium.pl?command=prayVesperae&date1=12-25-2020&lang2=Nederlands&testmode=regular&version=Tridentine+-+1570&votive=',
   license: 'Public-domain Gregorian hymn; breviary source and transcription credited in this asset',
-  tags: ['Hymn', 'Gregorian', 'Christmas', 'Vespers'],
-  liturgical: { categories: ['christmas', 'christological'], seasons: ['Christmas'], offices: ['Vespers'], feasts: ['nativity-of-the-lord'], solemnities: [] },
+  liturgical: { categories: ['christological'], seasons: ['Christmas'], offices: ['Vespers'], feasts: ['nativity-of-the-lord'] },
   notation: melody({
     meter: { numerator: 1, denominator: 1 }, unitLength: 'sixteenth', key: 'C', tempo: 72, mode: 2, rhythmicCharacter: 'free',
     measures: [

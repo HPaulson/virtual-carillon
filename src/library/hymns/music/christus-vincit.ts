@@ -7,13 +7,11 @@ export const christusVincit = defineHymn({
   source: 'Traditional Laudes Regiae acclamation; GregoBase transcription, Aloys Kunc version',
   sourceUrl: 'https://gregobase.selapa.net/chant.php?id=18832',
   license: 'Public-domain chant; source notation and transcriber credited in the bundled GABC',
-  tags: ['Acclamation', 'Christological', 'Praise'],
   liturgical: {
     categories: ['christological', 'praise'],
     seasons: ['General', 'Ordinary Time'],
     offices: [],
-    feasts: ['christ-the-king', 'easter-sunday'],
-    solemnities: [],
+    feasts: [],
   },
   notation: melody({
     meter: { numerator: 1, denominator: 1 },

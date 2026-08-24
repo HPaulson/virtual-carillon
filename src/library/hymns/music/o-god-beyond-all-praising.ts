@@ -8,13 +8,11 @@ export const oGodBeyondAllPraising = defineHymn({
   sourceUrl:
     'https://abcnotation.com/tunePage?a=trillian.mit.edu%2F~jc%2Fmusic%2Fabc%2Fmirror%2FOTIS_Irish_Session%2Fmelnets_big_abc_file%2F12749',
   license: 'Public-domain melody; ABC source transcription credited in this asset',
-  tags: ['Hymn', 'Ordinary Time', 'Praise'],
   liturgical: {
-    categories: ['praise', 'christological'],
+    categories: ['praise', 'thanksgiving', 'christological'],
     seasons: ['General', 'Ordinary Time'],
     offices: [],
     feasts: [],
-    solemnities: [],
   },
   notation: melody({
     meter: { numerator: 4, denominator: 4 },

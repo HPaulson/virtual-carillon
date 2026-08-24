@@ -8,13 +8,11 @@ export const awayInAManger = defineHymn({
   sourceUrl:
     'https://abcnotation.com/tunePage?a=trillian.mit.edu%2F~jc%2Fmusic%2Fabc%2Fmirror%2Ffolkinfo.org%2FAway_In_A_Manger_3%2F0000',
   license: 'Public-domain melody; ABC source transcription credited in this asset',
-  tags: ['Hymn', 'Christmas'],
   liturgical: {
     categories: ['christological', 'incarnation'],
     seasons: ['Christmas'],
     offices: [],
     feasts: ['nativity-of-the-lord'],
-    solemnities: [],
   },
   notation: melody({
     meter: { numerator: 3, denominator: 4 },

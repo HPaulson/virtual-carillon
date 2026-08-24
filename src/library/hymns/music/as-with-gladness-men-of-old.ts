@@ -8,13 +8,11 @@ export const asWithGladnessMenOfOld = defineHymn({
   sourceUrl:
     'https://abcnotation.com/tunePage?a=trillian.mit.edu%2F~jc%2Fmusic%2Fabc%2Fsession%2FOivan_Ilo%2Fsong%2FAs_With_Gladness_Men_of_Old_SAFD-A-12-1%2F0000',
   license: 'Public-domain melody; ABC source transcription credited in this asset',
-  tags: ['Hymn', 'Christmas', 'Epiphany'],
   liturgical: {
-    categories: ['christmas', 'epiphany', 'christological'],
+    categories: ['christological'],
     seasons: ['Christmas', 'Epiphany'],
     offices: [],
-    feasts: ['epiphany-of-the-lord', 'baptism-of-the-lord'],
-    solemnities: [],
+    feasts: ['epiphany-of-the-lord'],
   },
   notation: melody({
     meter: { numerator: 4, denominator: 4 },

@@ -8,13 +8,11 @@ export const exsultetOrbisGaudiis = defineHymn({
   sourceUrl:
     'https://www.divinumofficium.com/cgi-bin/horas/Pofficium.pl?caller=&command=prayLaudes&date1=01-25-2025&lang2=Latin-gabc&version=Tridentine+-+1888&votive=Hodie',
   license: 'Public-domain Gregorian chant; source notation and transcription credited in this asset',
-  tags: ['Hymn', 'Gregorian', 'Apostles', 'Common of Apostles'],
   liturgical: {
     categories: ['apostles', 'saints'],
     seasons: ['General', 'Ordinary Time'],
     offices: ['Lauds'],
     feasts: [],
-    solemnities: [],
   },
   notation: melody({
     meter: { numerator: 1, denominator: 1 },

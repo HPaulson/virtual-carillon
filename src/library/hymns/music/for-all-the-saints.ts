@@ -7,13 +7,11 @@ export const forAllTheSaints = defineHymn({
   source: 'Text by William Walsham How; tune SINE NOMINE by Ralph Vaughan Williams (1906)',
   sourceUrl: 'https://hymnary.org/tune/sine_nomine_vaughan_williams',
   license: 'Public-domain melody; source tune record and transcription credited in this asset',
-  tags: ['Hymn', 'Saints', 'Apostles', 'All Saints'],
   liturgical: {
-    categories: ['saints', 'apostles', 'all-saints', 'martyrs', 'virgins', 'doctors', 'religious'],
+    categories: ['saints'],
     seasons: ['General', 'Ordinary Time'],
     offices: [],
     feasts: ['all-saints'],
-    solemnities: [],
   },
   notation: melody({
     meter: { numerator: 4, denominator: 4 },

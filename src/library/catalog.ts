@@ -3,12 +3,41 @@ import {
   createLiturgicalTags,
   inferLiturgicalTags,
   seasonId,
+  type LiturgicalOfficeId,
   type LiturgicalTags,
 } from '../liturgical/taxonomy.js';
 import type { AssetDefinition, AssetLibrary } from './library.js';
 
 export type SelectionStrategy = 'random' | 'sequential' | 'fixed';
 export type HymnMatchLevel = 'exact-feast' | 'saint' | 'category' | 'season' | 'general' | 'fixed' | 'none';
+
+/**
+ * Broad devotional themes for an hour. These are scoring hints only: they do
+ * not add a canonical-hour tag to a hymn and therefore never make it an
+ * official hymn of that hour.
+ */
+const CANONICAL_HOUR_THEMES: Readonly<Record<LiturgicalOfficeId, readonly string[]>> = {
+  // In the reformed Roman Hours, Matins is the Office of Readings; its
+  // defining character is meditation on Scripture and spiritual writers.
+  matins: ['contemplative'],
+  lauds: ['praise'],
+  // Terce, Sext, and None commemorate the Passion and the first preaching
+  // of the Gospel (GILH 75), rather than having a generic work-day theme.
+  daytime: ['passion'],
+  vespers: ['thanksgiving'],
+  // Compline's psalmody evokes confidence in God and its conclusion asks for
+  // a quiet night (GILH 88, 91).
+  compline: ['confidence'],
+};
+
+const SCORE = {
+  feast: 100,
+  saint: 80,
+  canonicalHour: 55,
+  canonicalHourTheme: 50,
+  category: 45,
+  season: 35,
+} as const;
 
 /** A reusable query shared by hymn selection and future liturgical asset catalogs. */
 export interface HymnQuery {
@@ -19,7 +48,6 @@ export interface HymnQuery {
   canonicalHours?: string[];
   /** Preferred office for automatic selection; unlike canonicalHours in list(), this is not a hard filter. */
   preferredCanonicalHours?: string[];
-  tags?: string[];
   strategy?: SelectionStrategy;
   fixedAssetId?: string;
   seed?: string | number;
@@ -33,6 +61,9 @@ export interface HymnSelection {
   candidates: AssetDefinition[];
   matchedBy: HymnMatchLevel;
   celebration?: LiturgicalCelebration;
+  scoring?: Array<{ id: string; score: number; alreadyPlayed: boolean }>;
+  selectedScore?: number;
+  reusedPlayedAsset?: boolean;
 }
 
 type AssetProvider = AssetLibrary | AssetDefinition[] | (() => AssetDefinition[]);
@@ -158,11 +189,12 @@ export class HymnCatalog {
     const scored = candidates.map((asset) => {
       const tags = asset.liturgicalTags ?? assetTags(asset);
       let score = 0;
-      if (directIntersects(tags.feasts, targets.feastTargets)) score += 100;
-      if (directIntersects(tags.saints, targets.saintTargets)) score += 80;
-      if (directIntersects(tags.categories, targets.categoryTargets)) score += 45;
-      if (directIntersects(tags.seasons, targets.seasonTargets)) score += 35;
-      if (directIntersects(tags.canonicalHours, targets.preferredHours)) score += 55;
+      if (directIntersects(tags.feasts, targets.feastTargets)) score += SCORE.feast;
+      if (directIntersects(tags.saints, targets.saintTargets)) score += SCORE.saint;
+      if (directIntersects(tags.categories, targets.categoryTargets)) score += SCORE.category;
+      if (directIntersects(tags.seasons, targets.seasonTargets)) score += SCORE.season;
+      if (directIntersects(tags.canonicalHours, targets.preferredHours)) score += SCORE.canonicalHour;
+      if (canonicalHourThemeMatch(tags.categories, targets.preferredHours)) score += SCORE.canonicalHourTheme;
       if (directIntersects(tags.offices, targets.preferredHours)) score += 25;
       if (targets.seasonTargets.length && tags.seasons.length && !directIntersects(tags.seasons, targets.seasonTargets)) score -= 45;
       if (alreadyPlayed.has(asset.id)) score -= 1000;
@@ -190,7 +222,19 @@ export class HymnCatalog {
           : directIntersects(tags.seasons, targets.seasonTargets)
             ? 'season'
             : 'general';
-    return { asset, candidates, matchedBy, celebration };
+    return {
+      asset,
+      candidates,
+      matchedBy,
+      celebration,
+      scoring: scored.map(({ asset: candidate, score }) => ({
+        id: candidate.id,
+        score,
+        alreadyPlayed: alreadyPlayed.has(candidate.id),
+      })),
+      selectedScore: scored.find(({ asset: candidate }) => candidate.id === asset.id)?.score,
+      reusedPlayedAsset: alreadyPlayed.has(asset.id),
+    };
   }
 
   private chooseTie(candidates: AssetDefinition[], day: LiturgicalDay, query: HymnQuery, key: string): AssetDefinition {
@@ -264,6 +308,11 @@ export class HymnCatalog {
   }
 }
 
+function canonicalHourThemeMatch(categories: string[], preferredHours: string[]): boolean {
+  const themes = preferredHours.flatMap((hour) => CANONICAL_HOUR_THEMES[hour as LiturgicalOfficeId] ?? []);
+  return directIntersects(categories, [...new Set(themes)]);
+}
+
 function matchesQuery(asset: AssetDefinition, query: HymnQuery): boolean {
   const tags = assetTags(asset);
   return (
@@ -271,17 +320,7 @@ function matchesQuery(asset: AssetDefinition, query: HymnQuery): boolean {
     (!query.categoryIds?.length || intersects(tags.categories, query.categoryIds)) &&
     (!query.seasonIds?.length || intersects(tags.seasons, query.seasonIds)) &&
     (!query.officeIds?.length || intersects(tags.offices, query.officeIds)) &&
-    (!query.canonicalHours?.length || intersects(tags.canonicalHours, query.canonicalHours)) &&
-    (!query.tags?.length ||
-      intersects(
-        [
-          ...(asset.tags ?? []),
-          ...(asset.feastTypes ?? []),
-          ...(asset.liturgicalSeasons ?? []),
-          ...tags.categories,
-        ],
-        query.tags,
-      ))
+    (!query.canonicalHours?.length || intersects(tags.canonicalHours, query.canonicalHours))
   );
 }
 
@@ -299,7 +338,6 @@ function assetTags(asset: AssetDefinition): LiturgicalTags {
   const inferred = inferLiturgicalTags({
     key: asset.id,
     name: asset.name,
-    tags: asset.tags,
     feastTypes: asset.feastTypes,
     liturgicalSeasons: asset.liturgicalSeasons,
   });

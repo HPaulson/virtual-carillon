@@ -7,13 +7,11 @@ export const hymnToJoy = defineHymn({
   source: 'Ludwig van Beethoven, Symphony No. 9 (1824), public-domain melody',
   sourceUrl: 'https://hymnary.org/tune/hymn_to_joy_beethoven',
   license: 'Public-domain melody; ABC source transcription credited in this asset',
-  tags: ['Hymn', 'Trinity', 'Easter'],
   liturgical: {
-    categories: ['trinity', 'christological', 'praise'],
-    seasons: ['Easter', 'General', 'Ordinary Time'],
+    categories: ['praise'],
+    seasons: ['General', 'Ordinary Time'],
     offices: [],
     feasts: [],
-    solemnities: [],
   },
   notation: melody({
     meter: { numerator: 4, denominator: 4 },

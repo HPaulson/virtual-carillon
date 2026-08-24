@@ -7,8 +7,7 @@ export const vexillaRegis = defineHymn({
   source: 'Venantius Fortunatus, traditional Gregorian office hymn for Passiontide Vespers',
   sourceUrl: 'https://www2.divinumofficium.com/cgi-bin/horas/Pofficium.pl?command=prayVesperae&date1=04-14-2025&lang2=Latin-gabc&version=Tridentine+-+1906&votive=Hodie',
   license: 'Public-domain Gregorian hymn; breviary source and transcription credited in this asset',
-  tags: ['Hymn', 'Gregorian', 'Cross', 'Passiontide', 'Vespers'],
-  liturgical: { categories: ['cross-passion', 'christological'], seasons: ['Holy Week', 'Lent'], offices: ['Vespers'], feasts: [], solemnities: [] },
+  liturgical: { categories: ['passion', 'christological'], seasons: ['Holy Week', 'Lent'], offices: ['Vespers'], feasts: [] },
   notation: melody({
     meter: { numerator: 1, denominator: 1 }, unitLength: 'sixteenth', key: 'D', tempo: 72, mode: 1, rhythmicCharacter: 'free',
     measures: [

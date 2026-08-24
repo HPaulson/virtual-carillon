@@ -20,6 +20,7 @@ import { comeHolyGhostCreatorBlest } from './music/come-holy-ghost-creator-blest
 import { comeHolySpirit } from './music/come-holy-spirit.js';
 import { comeThouFount } from './music/come-thou-fount.js';
 import { comeThouLongExpectedJesus } from './music/come-thou-long-expected-jesus.js';
+import { creatorAlmeSiderum } from './music/creator-alme-siderum.js';
 import { christIsMadeTheSureFoundation } from './music/christ-is-made-the-sure-foundation.js';
 import { christeRedemptorOmnium } from './music/christe-redemptor-omnium.js';
 import { exsultetCaelumLaudibus } from './music/exsultet-caelum-laudibus.js';
@@ -51,12 +52,14 @@ import { reginaCaeli } from './music/regina-caeli.js';
 import { rectorPotensVeraxDeus } from './music/rector-potens-verax-deus.js';
 import { salveReginaSimpleTone } from './music/salve-regina-simple-tone.js';
 import { salveRegina } from './music/salve-regina.js';
+import { subTuumPraesidium } from './music/sub-tuum-praesidium.js';
 import { teLucisAnteTerminum } from './music/te-lucis-ante-terminum.js';
 import { veniCreatorSpiritus } from './music/veni-creator-spiritus.js';
 import { vexillaRegis } from './music/vexilla-regis.js';
 import { whenISurveyTheWondrousCross } from './music/when-i-survey-the-wondrous-cross.js';
 import { whileShepherdsWatched } from './music/while-shepherds-watched.js';
 import { winchesterNew } from './music/winchester-new.js';
+import { victimaePaschali } from './music/victimae-paschali.js';
 import type { HymnAsset } from './types.js';
 export type { HymnAsset } from './types.js';
 
@@ -82,6 +85,7 @@ export { comeHolyGhostCreatorBlest } from './music/come-holy-ghost-creator-blest
 export { comeHolySpirit } from './music/come-holy-spirit.js';
 export { comeThouFount } from './music/come-thou-fount.js';
 export { comeThouLongExpectedJesus } from './music/come-thou-long-expected-jesus.js';
+export { creatorAlmeSiderum } from './music/creator-alme-siderum.js';
 export { christIsMadeTheSureFoundation } from './music/christ-is-made-the-sure-foundation.js';
 export { christeRedemptorOmnium } from './music/christe-redemptor-omnium.js';
 export { exsultetCaelumLaudibus } from './music/exsultet-caelum-laudibus.js';
@@ -113,12 +117,14 @@ export { reginaCaeli } from './music/regina-caeli.js';
 export { rectorPotensVeraxDeus } from './music/rector-potens-verax-deus.js';
 export { salveReginaSimpleTone } from './music/salve-regina-simple-tone.js';
 export { salveRegina } from './music/salve-regina.js';
+export { subTuumPraesidium } from './music/sub-tuum-praesidium.js';
 export { teLucisAnteTerminum } from './music/te-lucis-ante-terminum.js';
 export { veniCreatorSpiritus } from './music/veni-creator-spiritus.js';
 export { vexillaRegis } from './music/vexilla-regis.js';
 export { whenISurveyTheWondrousCross } from './music/when-i-survey-the-wondrous-cross.js';
 export { whileShepherdsWatched } from './music/while-shepherds-watched.js';
 export { winchesterNew } from './music/winchester-new.js';
+export { victimaePaschali } from './music/victimae-paschali.js';
 
 export const BUILTIN_HYMNS: HymnAsset[] = [
   abideWithMe,
@@ -143,6 +149,7 @@ export const BUILTIN_HYMNS: HymnAsset[] = [
   comeHolySpirit,
   comeThouFount,
   comeThouLongExpectedJesus,
+  creatorAlmeSiderum,
   christIsMadeTheSureFoundation,
   christeRedemptorOmnium,
   exsultetCaelumLaudibus,
@@ -174,10 +181,12 @@ export const BUILTIN_HYMNS: HymnAsset[] = [
   rectorPotensVeraxDeus,
   salveReginaSimpleTone,
   salveRegina,
+  subTuumPraesidium,
   teLucisAnteTerminum,
   veniCreatorSpiritus,
   vexillaRegis,
   whenISurveyTheWondrousCross,
   whileShepherdsWatched,
   winchesterNew,
+  victimaePaschali,
 ];

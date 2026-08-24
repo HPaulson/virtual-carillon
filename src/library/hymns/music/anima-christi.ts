@@ -8,13 +8,11 @@ export const animaChristi = defineHymn({
     'Chants of the Church, 1956, p. 83, Eucharistic post-Communion prayer in Gregorian chant Mode VIII',
   sourceUrl: 'https://www.gregorianum.org/wiki/Anima_Christi',
   license: 'Public-domain chant; source notation and transcriber credited in the bundled GABC',
-  tags: ['Prayer', 'Eucharistic', 'Christological'],
   liturgical: {
-    categories: ['eucharistic', 'christological', 'sacred-heart'],
+    categories: ['eucharistic', 'christological'],
     seasons: ['General', 'Ordinary Time'],
     offices: [],
-    feasts: ['corpus-christi', 'holy-thursday', 'sacred-heart-of-jesus'],
-    solemnities: [],
+    feasts: ['corpus-christi', 'holy-thursday'],
   },
   notation: melody({
     meter: { numerator: 1, denominator: 1 },

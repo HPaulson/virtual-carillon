@@ -7,13 +7,11 @@ export const atTheCrossHerStationKeeping = defineHymn({
   source: 'Stabat Mater sequence, Graduale Romanum 1908, p. 404, Gregorian chant Mode II',
   sourceUrl: 'https://www.gregorianum.org/wiki/Stabat_Mater',
   license: 'Public-domain chant; source notation and transcriber credited in the bundled GABC',
-  tags: ['Sequence', 'Lent', 'Passion', 'Marian'],
   liturgical: {
-    categories: ['passion', 'cross', 'marian'],
+    categories: ['passion', 'marian'],
     seasons: ['Lent'],
     offices: [],
     feasts: ['our-lady-of-sorrows'],
-    solemnities: [],
   },
   notation: melody({
     meter: { numerator: 1, denominator: 1 },

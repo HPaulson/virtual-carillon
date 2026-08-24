@@ -155,7 +155,6 @@ class CarillonCoordinator(DataUpdateCoordinator):
         seasons: list[str] | None = None,
         rank: str | None = None,
         canonical_hours: list[str] | None = None,
-        tags: list[str] | None = None,
         seed: str | int | None = None,
         recent_exclusion: int | None = None,
         date_value: str | None = None,
@@ -178,8 +177,6 @@ class CarillonCoordinator(DataUpdateCoordinator):
             payload["rank"] = rank
         if canonical_hours is not None:
             payload["canonicalHours"] = canonical_hours
-        if tags is not None:
-            payload["tags"] = tags
         if seed is not None:
             payload["seed"] = seed
         if recent_exclusion is not None:

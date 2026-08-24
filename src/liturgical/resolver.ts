@@ -9,7 +9,6 @@ export interface LiturgicalCondition {
   categoryIds?: string[];
   offices?: string[];
   canonicalHours?: string[];
-  tags?: string[];
   strategy?: SelectionStrategy;
   fixedAssetId?: string;
   seed?: string | number;
@@ -57,7 +56,6 @@ export function toHymnQuery(condition: LiturgicalCondition): HymnQuery {
     seasonIds: seasons.length ? seasons : undefined,
     officeIds: condition.offices,
     preferredCanonicalHours: condition.canonicalHours,
-    tags: condition.tags,
     strategy: condition.strategy ?? 'random',
     fixedAssetId: condition.fixedAssetId,
     seed: condition.seed,

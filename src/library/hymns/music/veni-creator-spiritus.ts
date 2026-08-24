@@ -7,13 +7,11 @@ export const veniCreatorSpiritus = defineHymn({
   source: 'Graduale Romanum / Liber Usualis / Chants of the Church, Gregorian chant Mode VIII',
   sourceUrl: 'https://en.gregorianum.org/index.php?title=Veni_Creator_Spiritus',
   license: 'Public-domain chant; source notation and transcriber credited in the bundled GABC',
-  tags: ['Hymn', 'Gregorian', 'Pentecost'],
   liturgical: {
-    categories: ['holy-spirit', 'pentecost', 'confirmation', 'ordination'],
-    seasons: ['Easter', 'Pentecost'],
+    categories: ['holy-spirit'],
+    seasons: ['Easter'],
     offices: ['Vespers'],
     feasts: ['pentecost'],
-    solemnities: [],
   },
   notation: melody({
     meter: { numerator: 1, denominator: 1 },

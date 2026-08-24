@@ -8,13 +8,11 @@ export const adoroTeDevote = defineHymn({
   sourceUrl:
     'https://www.gregorianum.org/index.php?mobileaction=toggle_view_mobile&title=Adoro_te_devote',
   license: 'Public-domain chant; source notation and transcriber credited in the bundled GABC',
-  tags: ['Hymn', 'Eucharistic', 'Lent'],
   liturgical: {
     categories: ['eucharistic', 'passion', 'christological'],
     seasons: ['Lent', 'General'],
     offices: [],
     feasts: ['corpus-christi', 'holy-thursday'],
-    solemnities: [],
   },
   notation: melody({
     meter: { numerator: 1, denominator: 1 },

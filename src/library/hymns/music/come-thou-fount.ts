@@ -8,13 +8,11 @@ export const comeThouFount = defineHymn({
   sourceUrl:
     'https://abcnotation.com/tunePage?a=dmc.lizmilner.com%2Fviewabc.vbhtml%3Ffile%3DCome+Thou+Fount+of+Every+Blessing%2F0002',
   license: 'Public-domain melody; ABC source transcription credited in this asset',
-  tags: ['Hymn'],
   liturgical: {
     categories: ['christological'],
     seasons: ['General', 'Ordinary Time'],
     offices: [],
     feasts: [],
-    solemnities: [],
   },
   notation: melody({
     meter: { numerator: 3, denominator: 4 },

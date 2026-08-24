@@ -7,13 +7,11 @@ export const whenISurveyTheWondrousCross = defineHymn({
   source: 'HAMBURG, Lowell Mason, 1824, adapted from a Gregorian chant; public-domain tune',
   sourceUrl: 'https://en.wikipedia.org/wiki/When_I_Survey_the_Wondrous_Cross',
   license: 'Public-domain melody; ABC source transcription credited in this asset',
-  tags: ['Hymn', 'Lent', 'Holy Week'],
   liturgical: {
-    categories: ['lent', 'holy-week', 'cross-passion'],
+    categories: ['passion'],
     seasons: ['Lent', 'Holy Week'],
     offices: [],
     feasts: ['good-friday'],
-    solemnities: [],
   },
   notation: melody({
     meter: { numerator: 4, denominator: 4 },

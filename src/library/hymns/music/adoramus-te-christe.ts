@@ -7,13 +7,11 @@ export const adoramusTeChriste = defineHymn({
   source: 'The Liber Usualis, 1961, p. 746, Gregorian chant Mode I',
   sourceUrl: 'https://www.gregorianum.org/wiki/Adoramus_te_Christe_%28Antiphona%29',
   license: 'Public-domain chant; source notation and transcriber credited in the bundled GABC',
-  tags: ['Antiphon', 'Lent', 'Passion'],
   liturgical: {
-    categories: ['cross', 'passion', 'christological'],
+    categories: ['passion', 'christological'],
     seasons: ['Lent'],
     offices: [],
     feasts: ['good-friday', 'exaltation-of-the-holy-cross'],
-    solemnities: [],
   },
   notation: melody({
     meter: { numerator: 1, denominator: 1 },

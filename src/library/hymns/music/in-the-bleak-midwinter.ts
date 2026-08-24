@@ -8,13 +8,11 @@ export const inTheBleakMidwinter = defineHymn({
   sourceUrl:
     'https://abcnotation.com/tunePage?a=trillian.mit.edu%2F~jc%2Fmusic%2Fabc%2FEngland%2FInTheBleakMidwinter%2F0004',
   license: 'Public-domain melody; ABC source transcription credited in this asset',
-  tags: ['Hymn', 'Christmas', 'Favorite'],
   liturgical: {
-    categories: ['christological', 'incarnation', 'nativity'],
+    categories: ['christological', 'incarnation'],
     seasons: ['Christmas'],
     offices: [],
     feasts: ['nativity-of-the-lord'],
-    solemnities: [],
   },
   notation: melody({
     meter: { numerator: 4, denominator: 4 },

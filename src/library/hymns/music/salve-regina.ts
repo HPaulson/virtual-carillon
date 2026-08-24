@@ -8,13 +8,11 @@ export const salveRegina = defineHymn({
   sourceUrl:
     'https://www.gregorianum.org/index.php?mobileaction=toggle_view_desktop&title=Salve_Regina_%28Tonus_Solemnis%29',
   license: 'Public-domain chant; source notation and transcriber credited in the bundled GABC',
-  tags: ['Hymn', 'Marian', 'Gregorian'],
   liturgical: {
-    categories: ['marian', 'blessed-virgin-mary'],
+    categories: ['marian'],
     seasons: ['General', 'Ordinary Time'],
     offices: ['Compline'],
-    feasts: ['queenship-of-mary', 'assumption-of-mary', 'visitation'],
-    solemnities: [],
+    feasts: [],
   },
   notation: melody({
     meter: { numerator: 1, denominator: 1 },

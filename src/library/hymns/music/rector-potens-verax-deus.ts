@@ -7,13 +7,11 @@ export const rectorPotensVeraxDeus = defineHymn({
   source: 'Traditional Latin office hymn, Gregorian chant for the Roman Breviary daytime office',
   sourceUrl: 'https://gregobase.selapa.net/chant.php?id=7885',
   license: 'Public-domain Gregorian hymn; source notation and transcription credited in this asset',
-  tags: ['Hymn', 'Gregorian', 'Daytime', 'Sext'],
   liturgical: {
     categories: ['christological'],
     seasons: ['General', 'Ordinary Time'],
     offices: ['Daytime'],
     feasts: [],
-    solemnities: [],
   },
   notation: melody({
     meter: { numerator: 1, denominator: 1 },

@@ -8,7 +8,6 @@ interface BaselineHymn {
   source?: string;
   sourceUrl: string;
   license: string;
-  tags: string[];
   seasons?: string[];
   offices?: string[];
   arrangement?: unknown;
@@ -38,7 +37,6 @@ describe('structured hymn migration', () => {
       expect(hymn?.melody.source).toBe(expected.source);
       expect(hymn?.sourceUrl).toBe(expected.sourceUrl);
       expect(hymn?.license).toBe(expected.license);
-      expect(hymn?.tags).toEqual(expected.tags);
       expect(hymn?.melody.liturgicalSeasons).toEqual(expected.seasons);
       // Canonical-hour metadata was deliberately audited and narrowed after
       // this legacy fixture was created; it is no longer a migration invariant.
@@ -62,9 +60,6 @@ describe('structured hymn migration', () => {
       expect(hymn.melody.notationFormat).toBe('abc');
       expect(hymn.melody.notation).toMatch(/^X:/);
       expect(hymn.notation.sections.length).toBeGreaterThan(0);
-      expect(
-        hymn.tags.some((tag) => ['English', 'Latin', 'Spanish', 'Welsh', 'Anglican'].includes(tag)),
-      ).toBe(false);
     }
   });
 });

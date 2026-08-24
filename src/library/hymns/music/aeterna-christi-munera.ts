@@ -8,13 +8,11 @@ export const aeternaChristiMunera = defineHymn({
   sourceUrl:
     'https://www.divinumofficium.com/cgi-bin/horas/Pofficium.pl?command=prayMatutinum&date1=5-8-2024&lang2=English&testmode=seasonal&version=Ordo+Praedicatorum+-+1962&votive=',
   license: 'Public-domain Gregorian hymn; source tradition and transcription credited in this asset',
-  tags: ['Hymn', 'Gregorian', 'Apostles', 'Martyrs', 'Matins'],
   liturgical: {
-    categories: ['apostles', 'saints', 'martyrs'],
+    categories: ['apostles', 'saints'],
     seasons: ['General', 'Ordinary Time'],
     offices: ['Matins'],
     feasts: [],
-    solemnities: [],
   },
   notation: melody({
     meter: { numerator: 1, denominator: 1 },

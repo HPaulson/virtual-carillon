@@ -7,13 +7,11 @@ export const psalm51Miserere = defineHymn({
   source: 'Graduale Simplex, 1988, Psalmus 50 in the Vulgate numbering, Tone I f',
   sourceUrl: 'https://www.gregorianum.org/wiki/Psalmus_50%2C_Miserere_mei%2C_Deus_%28Tonus_I_f%29',
   license: 'Public-domain chant; source notation and transcriber credited in the bundled GABC',
-  tags: ['Psalm', 'Gregorian', 'Lent', 'Penitential'],
   liturgical: {
-    categories: ['penitential', 'repentance', 'psalm', 'all-souls'],
+    categories: ['penitential', 'psalm'],
     seasons: ['Lent'],
     offices: [],
     feasts: ['ash-wednesday', 'all-souls'],
-    solemnities: [],
   },
   notation: melody({
     meter: { numerator: 1, denominator: 1 },

@@ -11,7 +11,7 @@ describe('category hymn schedules', () => {
         name: 'Marian Angelus hymn',
         enabled: true,
         type: 'hymn_category',
-        categoryIds: ['marian', 'blessed-virgin-mary'],
+        categoryIds: ['marian'],
         canonicalHour: 'lauds',
         times: ['12:00'],
         weekdays: ['sun'],
@@ -23,12 +23,12 @@ describe('category hymn schedules', () => {
 
     expect(toSimpleSchedule(config).routines[0]).toMatchObject({
       type: 'hymn_category',
-      categoryIds: ['marian', 'blessed-virgin-mary'],
+      categoryIds: ['marian'],
       canonicalHour: 'lauds',
     });
     expect(config.routines[0].actions[0]).toMatchObject({
       type: 'select_hymn',
-      categoryIds: ['marian', 'blessed-virgin-mary'],
+      categoryIds: ['marian'],
       canonicalHours: ['lauds'],
     });
   });

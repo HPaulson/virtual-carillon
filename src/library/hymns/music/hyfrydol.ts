@@ -8,13 +8,11 @@ export const hyfrydol = defineHymn({
   sourceUrl:
     'https://abcnotation.com/tunePage?a=trillian.mit.edu%2F~jc%2Fmusic%2Fabc%2Fmirror%2Fwww.stephenmerrony.co.uk%2FHyfrydol_2%2F0000',
   license: 'Public-domain melody; ABC source transcription credited in this asset',
-  tags: ['Hymn', 'Advent', 'Christmas'],
   liturgical: {
-    categories: ['christological'],
-    seasons: ['Advent', 'Christmas'],
+    categories: ['general'],
+    seasons: ['General'],
     offices: [],
     feasts: [],
-    solemnities: [],
   },
   notation: melody({
     meter: { numerator: 3, denominator: 4 },

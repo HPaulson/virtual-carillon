@@ -8,13 +8,11 @@ export const oComeAllYeFaithful = defineHymn({
   sourceUrl:
     'https://abcnotation.com/tunePage?a=trillian.mit.edu%2F~jc%2Fmusic%2Fabc%2Fxmas%2FO_Come_All_Ye_Faithful_G%2F0000',
   license: 'Public-domain melody; ABC source transcription credited in this asset',
-  tags: ['Hymn', 'Christmas', 'Epiphany'],
   liturgical: {
-    categories: ['christmas', 'christological', 'epiphany'],
+    categories: ['christological'],
     seasons: ['Christmas', 'Epiphany'],
     offices: [],
     feasts: ['nativity-of-the-lord', 'epiphany-of-the-lord'],
-    solemnities: [],
   },
   notation: melody({
     meter: { numerator: 4, denominator: 4 },

@@ -12,7 +12,7 @@ const assumptionDay: LiturgicalDay = {
   date: '2026-08-15', season: 'Ordinary Time', seasonIds: ['ordinary-time'], source: 'test',
   celebrations: [{
     key: 'Assumption', name: 'Assumption of the Blessed Virgin Mary', rank: 'SOLEMNITY', rankId: 'solemnity', grade: 6,
-    liturgicalTags: createLiturgicalTags({ feasts: ['assumption-of-mary'], categories: ['marian', 'blessed-virgin-mary'], seasons: ['general'] }),
+    liturgicalTags: createLiturgicalTags({ feasts: ['assumption-of-mary'], categories: ['marian'], seasons: ['general'] }),
   }],
 };
 
@@ -116,6 +116,55 @@ describe('feast-aware hymn catalog', () => {
     const noOffice = new HymnCatalog([exactNoOffice]);
     expect(noOffice.selectForDay(officeDay, { preferredCanonicalHours: ['lauds'], seed: 1 }).asset?.id)
       .toBe('assumption-no-office');
+  });
+
+  it('uses a canonical-hour theme when no hymn is tagged for that hour', () => {
+    const laudsDay: LiturgicalDay = {
+      date: '2026-08-18', season: undefined, seasonIds: [], celebrations: [], source: 'test',
+    };
+    const catalog = new HymnCatalog([
+      hymn('ordinary', { categories: ['christological'] }),
+      hymn('praise', { categories: ['praise'] }),
+    ]);
+    const selection = catalog.selectForDay(laudsDay, {
+      preferredCanonicalHours: ['lauds'], seed: 1,
+    });
+    expect(selection.asset?.id).toBe('praise');
+    expect(selection.scoring?.find((candidate) => candidate.id === 'praise')?.score).toBe(85);
+    expect(selection.asset?.liturgicalTags?.canonicalHours).toEqual([]);
+  });
+
+  it('keeps feast and official-hour matches ahead of thematic matches', () => {
+    const day: LiturgicalDay = {
+      date: '2026-08-19', season: undefined, seasonIds: [], celebrations: [{
+        name: 'Assumption', rank: 'SOLEMNITY', rankId: 'solemnity', grade: 6,
+        liturgicalTags: createLiturgicalTags({ feasts: ['assumption-of-mary'] }),
+      }], source: 'test',
+    };
+    const catalog = new HymnCatalog([
+      hymn('theme', { categories: ['praise'] }),
+      hymn('office', { canonicalHours: ['lauds'] }),
+      hymn('feast', { feasts: ['assumption-of-mary'] }),
+    ]);
+    const selection = catalog.selectForDay(day, { preferredCanonicalHours: ['lauds'], seed: 1 });
+    expect(selection.asset?.id).toBe('feast');
+    expect(selection.scoring?.find((candidate) => candidate.id === 'office')?.score).toBe(90);
+    expect(selection.scoring?.find((candidate) => candidate.id === 'theme')?.score).toBe(85);
+  });
+
+  it('supports the other canonical-hour themes without creating hour tags', () => {
+    const day: LiturgicalDay = {
+      date: '2026-08-20', season: undefined, seasonIds: [], celebrations: [], source: 'test',
+    };
+    for (const [hour, category] of [
+      ['matins', 'contemplative'], ['daytime', 'passion'], ['vespers', 'thanksgiving'],
+      ['compline', 'confidence'],
+    ] as const) {
+      const selection = new HymnCatalog([hymn(category, { categories: [category] })])
+        .selectForDay(day, { preferredCanonicalHours: [hour], seed: 1 });
+      expect(selection.asset?.id).toBe(category);
+      expect(selection.asset?.liturgicalTags?.canonicalHours).toEqual([]);
+    }
   });
 
   it('avoids the immediately previous random hymn when alternatives exist', () => {

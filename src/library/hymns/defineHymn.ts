@@ -3,12 +3,14 @@ import type { ArrangementPlan } from '../../melodies/types.js';
 import {
   createLiturgicalTags,
   seasonId,
+  type LiturgicalOfficeInput,
   type LiturgicalOfficeId,
 } from '../../liturgical/taxonomy.js';
 import { notationPhraseBeats, notationToAbc } from './notation/toAbc.js';
 import type { HymnAsset, HymnDefinition } from './types.js';
 
 const DEFAULT_LICENSE = 'Public-domain melody; source transcription credited in this asset';
+
 
 export function defineHymn(definition: HymnDefinition): HymnAsset {
   const abc = notationToAbc(definition.notation, { id: definition.id, title: definition.name });
@@ -35,7 +37,6 @@ export function defineHymn(definition: HymnDefinition): HymnAsset {
     feasts: liturgical.feasts,
     // Solemnity/memorial are celebration ranks supplied by LitCal. They are
     // not intrinsic hymn properties; feast association remains in `feasts`.
-    solemnities: [],
     offices: offices.map(toOfficeId),
     canonicalHours: offices.map(toOfficeId),
   });
@@ -50,7 +51,6 @@ export function defineHymn(definition: HymnDefinition): HymnAsset {
     license,
     notationFormat: 'abc' as const,
     notation: abc,
-    tags: definition.tags,
     liturgicalSeasons: liturgical.seasons,
     officeUsage: offices,
     feastTypes: undefined,
@@ -95,7 +95,6 @@ export function defineHymn(definition: HymnDefinition): HymnAsset {
     melody,
     notation: definition.notation,
     liturgicalTags,
-    tags: definition.tags,
     liturgicalSeasons: liturgical.seasons,
     feastTypes: undefined,
     sourceUrl: definition.sourceUrl,
@@ -104,6 +103,6 @@ export function defineHymn(definition: HymnDefinition): HymnAsset {
   };
 }
 
-function toOfficeId(value: string): LiturgicalOfficeId {
+function toOfficeId(value: LiturgicalOfficeInput): LiturgicalOfficeId {
   return value.toLowerCase().replace(/\s+/g, '-') as LiturgicalOfficeId;
 }

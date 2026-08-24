@@ -7,13 +7,11 @@ export const godRestYeMerryGentlemen = defineHymn({
   source: 'Traditional English carol, source from Colin Hume’s ABC collection',
   sourceUrl: 'https://abcnotation.com/tunePage?a=colinhume.com%2FABC.txt%2F0242',
   license: 'Public-domain melody; ABC source transcription credited in this asset',
-  tags: ['Hymn', 'Christmas'],
   liturgical: {
-    categories: ['christmas', 'christological'],
+    categories: ['christological'],
     seasons: ['Christmas'],
     offices: [],
     feasts: ['nativity-of-the-lord'],
-    solemnities: [],
   },
   notation: melody({
     meter: { numerator: 2, denominator: 2 },

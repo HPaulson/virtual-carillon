@@ -7,13 +7,11 @@ export const christIsMadeTheSureFoundation = defineHymn({
   source: 'John Mason Neale translation of the traditional Latin Angularis fundamentum; WESTMINSTER ABBEY tune',
   sourceUrl: 'https://hymnary.org/text/christ_is_made_the_sure_foundation',
   license: 'Public-domain text and melody; source tune record and transcription credited in this asset',
-  tags: ['Hymn', 'Church Dedication', 'Foundation', 'Praise'],
   liturgical: {
-    categories: ['dedication-of-a-church', 'christological', 'praise'],
+    categories: ['christological', 'praise'],
     seasons: ['General', 'Ordinary Time'],
     offices: ['Lauds'],
     feasts: ['dedication-of-a-church'],
-    solemnities: [],
   },
   notation: melody({
     meter: { numerator: 4, denominator: 4 },

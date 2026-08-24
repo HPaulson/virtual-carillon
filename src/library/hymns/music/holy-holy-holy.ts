@@ -7,13 +7,11 @@ export const holyHolyHoly = defineHymn({
   source: 'NICAEA, John Bacchus Dykes, 1861, public-domain hymn tune',
   sourceUrl: 'https://en.wikipedia.org/wiki/Holy%2C_Holy%2C_Holy%21_Lord_God_Almighty',
   license: 'Public-domain melody; ABC source transcription credited in this asset',
-  tags: ['Hymn', 'Trinity'],
   liturgical: {
-    categories: ['trinity', 'christological'],
+    categories: ['christological'],
     seasons: ['General', 'Ordinary Time'],
     offices: [],
     feasts: ['trinity-sunday'],
-    solemnities: [],
   },
   notation: melody({
     meter: { numerator: 4, denominator: 2 },

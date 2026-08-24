@@ -8,13 +8,11 @@ export const hailTheDayThatSeesHimRise = defineHymn({
   sourceUrl:
     'https://abcnotation.com/tunePage?a=pghardy.net%2Ftunebooks%2Fpgh_songs_tunebook%2F0007',
   license: 'Public-domain melody; ABC source transcription credited in this asset',
-  tags: ['Hymn', 'Ascension'],
   liturgical: {
-    categories: ['ascension', 'christological'],
-    seasons: ['Ascension'],
+    categories: ['christological'],
+    seasons: ['Easter'],
     offices: [],
     feasts: ['ascension-of-the-lord'],
-    solemnities: [],
   },
   notation: easterHymnNotation,
   arrangement: { style: 'celebratory', tonic: 'C3' },

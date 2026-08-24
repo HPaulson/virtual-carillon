@@ -8,13 +8,11 @@ export const jesusChristIsRisenToday = defineHymn({
   sourceUrl:
     'https://abcnotation.com/tunePage?a=pghardy.net%2Ftunebooks%2Fpgh_songs_tunebook%2F0007',
   license: 'Public-domain melody; ABC source transcription credited in this asset',
-  tags: ['Hymn', 'Easter'],
   liturgical: {
-    categories: ['easter', 'resurrection'],
+    categories: ['resurrection'],
     seasons: ['Easter'],
     offices: [],
-    feasts: ['easter-sunday'],
-    solemnities: [],
+    feasts: [],
   },
   notation: melody({
     meter: { numerator: 4, denominator: 4 },
