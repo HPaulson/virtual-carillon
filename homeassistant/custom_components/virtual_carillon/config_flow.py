@@ -229,6 +229,9 @@ class VirtualCarillonOptionsFlow(config_entries.OptionsFlow):
                     "weekdays": list(user_input[CONF_WESTMINSTER_DAYS]),
                     "mediaPlayers": _entities(user_input.get(CONF_WESTMINSTER_MEDIA_PLAYERS, [])),
                 }
+                volume = str(user_input.get(CONF_VOLUME, "")).strip()
+                if volume:
+                    westminster["volume"] = int(float(volume))
                 for field, key in ((CONF_WESTMINSTER_NOT_BEFORE, "notBefore"), (CONF_WESTMINSTER_NOT_AFTER, "notAfter")):
                     value = _optional_time(user_input.get(field))
                     if value:
@@ -442,6 +445,9 @@ def _westminster_schema(westminster: dict[str, Any]):
         ),
         vol.Required(CONF_WESTMINSTER_DAYS, default=westminster.get("weekdays", list(WEEKDAYS))): selector.SelectSelector(
             selector.SelectSelectorConfig(options=WEEKDAY_OPTIONS, multiple=True)
+        ),
+        vol.Optional(CONF_VOLUME, default="" if westminster.get("volume") is None else str(westminster["volume"])): selector.TextSelector(
+            selector.TextSelectorConfig(type=selector.TextSelectorType.NUMBER)
         ),
         vol.Optional(
             CONF_WESTMINSTER_MEDIA_PLAYERS,

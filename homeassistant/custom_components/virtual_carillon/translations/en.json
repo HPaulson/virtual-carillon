@@ -52,6 +52,7 @@
           "westminster_days": "Days",
           "westminster_not_before": "Never before",
           "westminster_not_after": "Never after",
+          "volume": "Volume (%)",
           "westminster_media_players": "Media players"
         }
       },

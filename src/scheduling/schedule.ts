@@ -68,6 +68,7 @@ export const WestminsterScheduleSchema = z.object({
   weekdays: WeekdaysSchema,
   notBefore: TimeSchema.optional(),
   notAfter: TimeSchema.optional(),
+  volume: VolumeSchema,
   mediaPlayers: OptionalMediaPlayersSchema,
   outputs: NativeOutputsSchema.default([]),
 });
@@ -112,6 +113,8 @@ export interface SchedulePlayback {
   actionIndex: number;
   waitBeforeSeconds: number;
   waitAfterSeconds: number;
+  /** Selection audit emitted only after this action is successfully claimed. */
+  selectionAudit?: string;
 }
 
 export interface ScheduleClaim {

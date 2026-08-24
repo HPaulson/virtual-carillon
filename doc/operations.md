@@ -4,13 +4,14 @@
 
 ### Publish changes and update Home Assistant
 
-From the repository root, run the publish helper with an optional commit message:
+From the repository root, copy `.env.example` to `.env` and set `REMOTE_HOST` to your SSH host alias and `HA_CONTAINER` to the Home Assistant container name. The `.env` file is ignored by Git. Then run the publish helper with an optional commit message:
 
 ```bash
+cp .env.example .env
 ./scripts/push-live.sh "Describe the change"
 ```
 
-It typechecks the project, commits and pushes the current branch to GitHub, copies the complete Home Assistant custom integration to `your-ssh-host`, restarts Home Assistant, and waits for it to become healthy. The remote host and HA container name can be overridden with `REMOTE_HOST` and `HA_CONTAINER`.
+It typechecks the project, commits and pushes the current branch to GitHub, copies the complete Home Assistant custom integration to the configured remote host, restarts Home Assistant, and waits for it to become healthy. `ENV_FILE=/path/to/file.env` can be used when the deployment settings are stored somewhere other than `.env`.
 
 Docker is the recommended Home Assistant deployment. The single Compose file runs the API, SQLite database, and rendered-audio cache. Home Assistant can configure routines and select media players; for API-only native playback, configure `outputs` (or no targets for the platform default) and the Node service evaluates and plays the schedule itself:
 

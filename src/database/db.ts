@@ -12,6 +12,7 @@ export class CarillonDatabase {
     this.db.exec('PRAGMA busy_timeout = 5000');
     try { this.db.exec('PRAGMA journal_mode = WAL'); } catch (error) { if (!(error instanceof Error) || !error.message.includes('database is locked')) throw error; }
     this.db.exec('CREATE TABLE IF NOT EXISTS events (id INTEGER PRIMARY KEY AUTOINCREMENT, asset TEXT NOT NULL, output TEXT, status TEXT NOT NULL, message TEXT, created_at TEXT NOT NULL)');
+    this.migrateLegacySchedules();
     this.db.exec('CREATE TABLE IF NOT EXISTS schedules (id INTEGER PRIMARY KEY CHECK (id = 1), config TEXT NOT NULL, updated_at TEXT NOT NULL)');
     this.db.exec('CREATE TABLE IF NOT EXISTS schedule_runs (slot_key TEXT PRIMARY KEY, payload TEXT NOT NULL, status TEXT NOT NULL, claimed_at TEXT NOT NULL, completed_at TEXT, message TEXT)');
     this.db.exec('CREATE TABLE IF NOT EXISTS hymn_day_resets (date TEXT PRIMARY KEY, reset_at TEXT NOT NULL)');
@@ -20,9 +21,12 @@ export class CarillonDatabase {
   recentEvents(limit = 20) { return this.db.prepare('SELECT id,asset,output,status,message,created_at as createdAt FROM events ORDER BY id DESC LIMIT ?').all(limit); }
   completedScheduleAssets(date: string): string[] {
     const reset = this.db.prepare('SELECT reset_at as resetAt FROM hymn_day_resets WHERE date = ?').get(date) as { resetAt?: string } | undefined;
+    // A claimed run has already reserved its hymn, even while HA is still
+    // playing it. This prevents a nearby schedule tick from selecting the
+    // same hymn before the first run reaches /complete.
     const rows = (reset?.resetAt
-      ? this.db.prepare("SELECT payload FROM schedule_runs WHERE status = 'completed' AND slot_key LIKE ? AND completed_at > ?").all(`${date}T%`, reset.resetAt)
-      : this.db.prepare("SELECT payload FROM schedule_runs WHERE status = 'completed' AND slot_key LIKE ?").all(`${date}T%`)) as Array<{ payload?: string }>;
+      ? this.db.prepare("SELECT payload FROM schedule_runs WHERE status IN ('claimed', 'completed') AND slot_key LIKE ? AND COALESCE(completed_at, claimed_at) > ?").all(`${date}T%`, reset.resetAt)
+      : this.db.prepare("SELECT payload FROM schedule_runs WHERE status IN ('claimed', 'completed') AND slot_key LIKE ?").all(`${date}T%`)) as Array<{ payload?: string }>;
     return rows.flatMap((row) => {
       try {
         const actions = JSON.parse(row.payload ?? '[]') as Array<{ asset?: string }>;
@@ -57,5 +61,32 @@ export class CarillonDatabase {
   completeScheduleRun(slotKey: string, status: 'completed' | 'failed', message?: string, now = new Date().toISOString()) {
     this.db.prepare('UPDATE schedule_runs SET status = ?, completed_at = ?, message = ? WHERE slot_key = ?').run(status, now, message ?? null, slotKey);
   }
+
+  private migrateLegacySchedules() {
+    const columns = this.db.prepare('PRAGMA table_info(schedules)').all() as Array<{ name?: string }>;
+    if (!columns.length || columns.some((column) => column.name === 'config')) return;
+
+    const legacyRows = this.db.prepare('SELECT enabled, output FROM schedules').all() as Array<{ enabled?: number; output?: string | null }>;
+    this.db.exec('ALTER TABLE schedules RENAME TO schedules_legacy_v1');
+    this.db.exec('CREATE TABLE schedules (id INTEGER PRIMARY KEY CHECK (id = 1), config TEXT NOT NULL, updated_at TEXT NOT NULL)');
+
+    const enabled = legacyRows.some((row) => row.enabled === 1);
+    const outputs = [...new Set(legacyRows.map((row) => row.output).filter((output): output is string => Boolean(output)))];
+    const config = {
+      enabled,
+      westminster: {
+        enabled,
+        cadence: 'every_15',
+        weekdays: ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'],
+        mediaPlayers: [],
+        outputs,
+      },
+      routines: [],
+      litcal: { enabled: true, calendar: 'general' },
+    };
+    this.db.prepare('INSERT INTO schedules (id, config, updated_at) VALUES (1, ?, ?)').run(JSON.stringify(config), new Date().toISOString());
+    console.info(`[database] migrated legacy schedules table (${legacyRows.length} rows preserved as schedules_legacy_v1)`);
+  }
+
   close() { this.db.close(); }
 }

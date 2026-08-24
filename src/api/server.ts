@@ -179,10 +179,11 @@ export async function createServer(services: ServerServices): Promise<FastifyIns
       }
       const slotKey = scheduleSlotKey(time, stored.updatedAt, 'home_assistant');
       const claimed = services.database.claimScheduleRun(slotKey, JSON.stringify(actions));
+      if (claimed) logSelectionAudits(parsed.data.at, actions);
       const summary = actions
         .map((action) => `${action.asset} -> ${action.mediaPlayers.join(',') || 'native'}`)
         .join('; ');
-      console.info(`[schedule] ${parsed.data.at} due=true claimed=${claimed} slot=${slotKey} actions=${summary}`);
+      console.info(`[schedule] ${parsed.data.at} due=true claimed=${claimed} slot=${slotKey} actions=${claimed ? summary : 'none (slot already claimed)'}`);
       return { due: true, claimed, slotKey, actions: claimed ? actions : [] };
     } catch (error) {
       return reply.code(400).send({ error: error instanceof Error ? error.message : String(error) });
@@ -383,6 +384,7 @@ async function scheduledPlaybacks(
     playbacks.push({
       asset: westminster,
       durationSeconds: services.library.list().find((candidate) => candidate.id === westminster)?.duration,
+      ...(config.westminster.volume === undefined ? {} : { volume: config.westminster.volume }),
       mediaPlayers: config.westminster.mediaPlayers,
       outputs: config.westminster.outputs,
       routineId: 'westminster',
@@ -400,11 +402,11 @@ async function scheduledPlaybacks(
         continue;
       }
       if (!targetMatches(action.mediaPlayers, action.outputs, runner)) continue;
-      const asset = await resolveScheduleAsset(action, time.date, config, services, hymnCatalog);
-      if (!asset) continue;
+      const resolved = await resolveScheduleAsset(action, time.date, config, services, hymnCatalog);
+      if (!resolved) continue;
       playbacks.push({
-        asset,
-        durationSeconds: services.library.list().find((candidate) => candidate.id === asset)?.duration,
+        asset: resolved.asset,
+        durationSeconds: services.library.list().find((candidate) => candidate.id === resolved.asset)?.duration,
         ...(action.volume === undefined ? {} : { volume: action.volume }),
         mediaPlayers: action.mediaPlayers,
         outputs: action.outputs,
@@ -412,6 +414,7 @@ async function scheduledPlaybacks(
         actionIndex,
         waitBeforeSeconds: pendingDelay,
         waitAfterSeconds: 0,
+        ...(resolved.selectionAudit ? { selectionAudit: resolved.selectionAudit } : {}),
       });
       pendingDelay = 0;
     }
@@ -435,6 +438,7 @@ async function runNativeSchedule(at: Date | string, outputOverride: string | und
   const slotKey = scheduleSlotKey(time, stored.updatedAt, 'native');
   const claimed = services.database.claimScheduleRun(slotKey, JSON.stringify(actions));
   if (!claimed) return { due: true as const, claimed: false as const, slotKey, actions: [] as SchedulePlayback[] };
+  logSelectionAudits(time.date, actions);
   try {
     await playScheduledNatively(actions, outputOverride, services);
     services.database.completeScheduleRun(slotKey, 'completed');
@@ -476,8 +480,8 @@ async function resolveScheduleAsset(
   config: ScheduleConfig,
   services: ServerServices,
   hymnCatalog: HymnCatalog,
-): Promise<string | undefined> {
-  if (action.type === 'play') return action.asset;
+): Promise<{ asset: string; selectionAudit?: string } | undefined> {
+  if (action.type === 'play') return { asset: action.asset };
 
   const day = config.litcal.enabled
     ? (await services.liturgicalCalendar?.getDay(date, config.litcal.calendar)) ?? neutralLiturgicalDay(date)
@@ -487,17 +491,33 @@ async function resolveScheduleAsset(
   query.alreadyPlayed = services.database.completedScheduleAssets?.(date) ?? [];
   const selection = hymnCatalog.selectForDay(day, query);
   const asset = selection.asset;
-  const tags = asset?.liturgicalTags;
-  const descriptors = selection.selectedScoreBreakdown?.length
-    ? selection.selectedScoreBreakdown.map(({ label, score }) => `${label} (${score})`).join(' · ')
-    : tags
-      ? [...tags.categories, ...tags.offices, ...tags.seasons, ...tags.feasts].join(', ')
-      : selection.matchedBy;
-  const score = selection.selectedScore === undefined
-    ? 'n/a'
-    : `total ${selection.selectedScore} · rank #${selection.selectedRank ?? 'n/a'}`;
-  console.info(`[schedule] ♪ ${asset?.name ?? asset?.id ?? 'No hymn selected'} — ${descriptors} → ${score}`);
-  return selection.asset?.id;
+  if (!asset) return undefined;
+  const candidateAudit = (selection.scoring ?? [])
+    .slice()
+    .sort((left, right) => right.score - left.score || left.id.localeCompare(right.id))
+    .map(({ id, score, breakdown }) => {
+      const contributions = breakdown.length
+        ? breakdown.map(({ label, score: points }) => `${label} (${points >= 0 ? '+' : ''}${points})`).join(', ')
+        : 'no score contributions (0)';
+      return `${id}: total ${score >= 0 ? '+' : ''}${score} [${contributions}]`;
+    })
+    .join(' | ');
+  const selected = selection.selectedScore === undefined
+    ? `${asset.name ?? asset.id} (${asset.id})`
+    : `${asset.name ?? asset.id} (${asset.id}) total ${selection.selectedScore >= 0 ? '+' : ''}${selection.selectedScore} rank #${selection.selectedRank ?? 'n/a'}`;
+  const context = [
+    `matched=${selection.matchedBy}`,
+    `celebration=${selection.celebration?.name ?? 'none'}`,
+    `season=${day.season ?? 'General'}`,
+    `alreadyPlayed=${(query.alreadyPlayed ?? []).join(',') || 'none'}`,
+  ].join(' · ');
+  return { asset: asset.id, selectionAudit: `[schedule] ♪ ${selected} — ${context} · candidates: ${candidateAudit}` };
+}
+
+function logSelectionAudits(at: string, actions: SchedulePlayback[]) {
+  for (const action of actions) {
+    if (action.selectionAudit) console.info(`${action.selectionAudit} · at=${at} · action=${action.routineId}[${action.actionIndex}]`);
+  }
 }
 
 function tokensMatch(expected: string, provided: string): boolean {

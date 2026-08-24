@@ -167,6 +167,7 @@ describe('server-owned schedule API', () => {
         enabled: true,
         cadence: 'hourly',
         weekdays: ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'],
+        volume: 41,
         mediaPlayers: [],
         outputs: ['default'],
       },
@@ -278,10 +279,13 @@ describe('server-owned schedule API', () => {
     const schedule = {
       enabled: true,
       westminster: {
-        enabled: false,
+        enabled: true,
         cadence: 'every_15',
         weekdays: ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'],
-        mediaPlayers: [],
+        volume: 27,
+        notBefore: '14:00',
+        notAfter: '16:00',
+        mediaPlayers: ['media_player.kitchen'],
         outputs: [],
       },
       routines: [{
@@ -321,10 +325,10 @@ describe('server-owned schedule API', () => {
 
     const first = await app.inject({ method: 'POST', url: '/api/schedule/claim', payload: { at: '2026-08-24T15:00:00-04:00' } });
     expect(first.statusCode).toBe(200);
-    expect(first.json().actions.map((action: { asset: string }) => action.asset)).toEqual(['westminster-hour-3', 'hymn-to-joy']);
-    expect(first.json().actions[0].waitAfterSeconds).toBe(2);
-    expect(first.json().actions[1].mediaPlayers).toEqual(['media_player.kitchen']);
-    expect(first.json().actions.map((action: { volume: number }) => action.volume)).toEqual([35, 48]);
+    expect(first.json().actions.map((action: { asset: string }) => action.asset)).toEqual(['westminster-hour-3', 'westminster-hour-3', 'hymn-to-joy']);
+    expect(first.json().actions[1].waitAfterSeconds).toBe(2);
+    expect(first.json().actions[2].mediaPlayers).toEqual(['media_player.kitchen']);
+    expect(first.json().actions.map((action: { volume: number }) => action.volume)).toEqual([27, 35, 48]);
 
     const second = await app.inject({ method: 'POST', url: '/api/schedule/claim', payload: { at: '2026-08-24T15:00:00-04:00' } });
     expect(second.json().claimed).toBe(false);

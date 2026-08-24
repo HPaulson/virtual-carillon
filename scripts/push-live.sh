@@ -3,8 +3,18 @@
 set -Eeuo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-REMOTE_HOST="${REMOTE_HOST:-your-ssh-host}"
-HA_CONTAINER="${HA_CONTAINER:-home-assistant-container}"
+ENV_FILE="${ENV_FILE:-$ROOT_DIR/dev.env}"
+
+if [[ -f "$ENV_FILE" ]]; then
+  set -a
+  # shellcheck disable=SC1090
+  source "$ENV_FILE"
+  set +a
+fi
+
+: "${REMOTE_HOST:?Set REMOTE_HOST in $ENV_FILE (for example, your SSH host alias)}"
+: "${HA_CONTAINER:?Set HA_CONTAINER in $ENV_FILE (your Home Assistant container name)}"
+
 BRANCH="$(git -C "$ROOT_DIR" branch --show-current)"
 COMMIT_MESSAGE="${1:-Update Virtual Carillon}"
 LOCAL_ARCHIVE="$(mktemp -t virtual-carillon-ha.XXXXXX.tar.gz)"

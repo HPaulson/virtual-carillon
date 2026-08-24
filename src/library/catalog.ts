@@ -61,7 +61,7 @@ export interface HymnSelection {
   candidates: AssetDefinition[];
   matchedBy: HymnMatchLevel;
   celebration?: LiturgicalCelebration;
-  scoring?: Array<{ id: string; score: number; alreadyPlayed: boolean }>;
+  scoring?: Array<{ id: string; score: number; alreadyPlayed: boolean; breakdown: Array<{ label: string; score: number }> }>;
   selectedScore?: number;
   selectedRank?: number;
   selectedScoreBreakdown?: Array<{ label: string; score: number }>;
@@ -193,7 +193,13 @@ export class HymnCatalog {
       let score = 0;
       const breakdown: Array<{ label: string; score: number }> = [];
       const addMatch = (assetValues: string[], targetValues: string[], points: number) => {
-        const matches = assetValues.filter((value) => targetValues.includes(value));
+        // Query values are passed through `values()`, which is intended for
+        // human-friendly comparisons and turns `ordinary-time` into
+        // `ordinary time`. Compare IDs canonically here as well, otherwise
+        // every hyphenated season is incorrectly reported as out of season.
+        const matches = assetValues.filter((value) =>
+          targetValues.some((target) => normalise(value) === normalise(target)),
+        );
         if (matches.length) {
           score += points;
           breakdown.push({ label: matches.join(', '), score: points });
@@ -207,7 +213,16 @@ export class HymnCatalog {
       const themes = targets.preferredHours.flatMap((hour) => CANONICAL_HOUR_THEMES[hour as LiturgicalOfficeId] ?? []);
       addMatch(tags.categories, themes, SCORE.canonicalHourTheme);
       addMatch(tags.offices, targets.preferredHours, 25);
-      if (targets.seasonTargets.length && tags.seasons.length && !directIntersects(tags.seasons, targets.seasonTargets)) {
+      // `general` is deliberately neutral: it is a fallback/any-season tag,
+      // not evidence that a hymn is wrong for Ordinary Time (or another
+      // concrete season). Only concrete, non-general seasons can be out of
+      // season.
+      if (
+        targets.seasonTargets.length &&
+        tags.seasons.length &&
+        !tags.seasons.includes('general') &&
+        !directIntersects(tags.seasons, targets.seasonTargets)
+      ) {
         score -= 45;
         breakdown.push({ label: 'out of season', score: -45 });
       }
@@ -253,10 +268,11 @@ export class HymnCatalog {
       candidates,
       matchedBy,
       celebration,
-      scoring: scored.map(({ asset: candidate, score }) => ({
+      scoring: scored.map(({ asset: candidate, score, breakdown }) => ({
         id: candidate.id,
         score,
         alreadyPlayed: alreadyPlayed.has(candidate.id),
+        breakdown: [...breakdown].sort((left, right) => right.score - left.score),
       })),
       selectedScore,
       selectedRank,
@@ -391,8 +407,8 @@ function intersects(left: string[], right: string[]): boolean {
   return values(left).some((value) => target.has(value));
 }
 function directIntersects(left: string[], right: string[]): boolean {
-  const target = new Set(right);
-  return left.some((value) => target.has(value));
+  const target = new Set(right.map(normalise));
+  return left.some((value) => target.has(normalise(value)));
 }
 function normalise(value: string): string {
   return value

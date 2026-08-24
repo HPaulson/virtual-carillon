@@ -134,6 +134,44 @@ describe('feast-aware hymn catalog', () => {
     expect(selection.asset?.liturgicalTags?.canonicalHours).toEqual([]);
   });
 
+  it('matches hyphenated season IDs in scored automatic selection', () => {
+    const day: LiturgicalDay = {
+      date: '2026-08-24', season: 'Ordinary Time', seasonIds: ['ordinary-time'], source: 'test',
+      celebrations: [{
+        name: 'Saint Bartholomew, Apostle', rank: 'FEAST', rankId: 'feast', grade: 4,
+        liturgicalTags: createLiturgicalTags({ categories: ['saints', 'apostles'] }),
+      }],
+    };
+    const selection = new HymnCatalog([
+      hymn('apostle', { categories: ['apostles', 'saints'], seasons: ['general', 'ordinary-time'] }),
+      hymn('ordinary', { seasons: ['ordinary-time'] }),
+    ]).selectForDay(day, { seed: 1 });
+
+    expect(selection.asset?.id).toBe('apostle');
+    expect(selection.selectedScore).toBe(80);
+    expect(selection.selectedScoreBreakdown).toEqual([
+      { label: 'apostles, saints', score: 45 },
+      { label: 'ordinary-time', score: 35 },
+    ]);
+  });
+
+  it('prefers an unused seasonal hymn over repeating a played feast-category hymn', () => {
+    const day: LiturgicalDay = {
+      date: '2026-08-24', season: 'Ordinary Time', seasonIds: ['ordinary-time'], source: 'test',
+      celebrations: [{
+        name: 'Saint Bartholomew, Apostle', rank: 'FEAST', rankId: 'feast', grade: 4,
+        liturgicalTags: createLiturgicalTags({ categories: ['saints', 'apostles'] }),
+      }],
+    };
+    const selection = new HymnCatalog([
+      hymn('apostle', { categories: ['apostles', 'saints'], seasons: ['ordinary-time'] }),
+      hymn('ordinary', { seasons: ['ordinary-time'] }),
+    ]).selectForDay(day, { alreadyPlayed: ['apostle'] });
+
+    expect(selection.asset?.id).toBe('ordinary');
+    expect(selection.reusedPlayedAsset).toBe(false);
+  });
+
   it('keeps feast and official-hour matches ahead of thematic matches', () => {
     const day: LiturgicalDay = {
       date: '2026-08-19', season: undefined, seasonIds: [], celebrations: [{
