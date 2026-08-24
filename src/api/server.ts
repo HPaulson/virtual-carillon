@@ -179,7 +179,7 @@ export async function createServer(services: ServerServices): Promise<FastifyIns
       }
       const slotKey = scheduleSlotKey(time, stored.updatedAt, 'home_assistant');
       const claimed = services.database.claimScheduleRun(slotKey, JSON.stringify(actions));
-      if (claimed) logSelectionAudits(parsed.data.at, actions);
+      if (claimed) logSelectionAudits(actions);
       const summary = actions
         .map((action) => `${action.asset} -> ${action.mediaPlayers.join(',') || 'native'}`)
         .join('; ');
@@ -438,7 +438,7 @@ async function runNativeSchedule(at: Date | string, outputOverride: string | und
   const slotKey = scheduleSlotKey(time, stored.updatedAt, 'native');
   const claimed = services.database.claimScheduleRun(slotKey, JSON.stringify(actions));
   if (!claimed) return { due: true as const, claimed: false as const, slotKey, actions: [] as SchedulePlayback[] };
-  logSelectionAudits(time.date, actions);
+  logSelectionAudits(actions);
   try {
     await playScheduledNatively(actions, outputOverride, services);
     services.database.completeScheduleRun(slotKey, 'completed');
@@ -492,31 +492,21 @@ async function resolveScheduleAsset(
   const selection = hymnCatalog.selectForDay(day, query);
   const asset = selection.asset;
   if (!asset) return undefined;
-  const candidateAudit = (selection.scoring ?? [])
-    .slice()
-    .sort((left, right) => right.score - left.score || left.id.localeCompare(right.id))
-    .map(({ id, score, breakdown }) => {
-      const contributions = breakdown.length
-        ? breakdown.map(({ label, score: points }) => `${label} (${points >= 0 ? '+' : ''}${points})`).join(', ')
-        : 'no score contributions (0)';
-      return `${id}: total ${score >= 0 ? '+' : ''}${score} [${contributions}]`;
-    })
-    .join(' | ');
-  const selected = selection.selectedScore === undefined
-    ? `${asset.name ?? asset.id} (${asset.id})`
-    : `${asset.name ?? asset.id} (${asset.id}) total ${selection.selectedScore >= 0 ? '+' : ''}${selection.selectedScore} rank #${selection.selectedRank ?? 'n/a'}`;
-  const context = [
-    `matched=${selection.matchedBy}`,
-    `celebration=${selection.celebration?.name ?? 'none'}`,
-    `season=${day.season ?? 'General'}`,
-    `alreadyPlayed=${(query.alreadyPlayed ?? []).join(',') || 'none'}`,
-  ].join(' · ');
-  return { asset: asset.id, selectionAudit: `[schedule] ♪ ${selected} — ${context} · candidates: ${candidateAudit}` };
+  const selectedContributions = (selection.selectedScoreBreakdown ?? [])
+    .map(({ label, score: points }) => `${label} (${points})`)
+    .join(', ');
+  const total = selection.selectedScore ?? 0;
+  const rank = selection.selectedRank ?? 'n/a';
+  const details = selectedContributions || 'no scoring contributions (0)';
+  return {
+    asset: asset.id,
+    selectionAudit: `${asset.name ?? asset.id} • ${details} - ${total}, #${rank}`,
+  };
 }
 
-function logSelectionAudits(at: string, actions: SchedulePlayback[]) {
+function logSelectionAudits(actions: SchedulePlayback[]) {
   for (const action of actions) {
-    if (action.selectionAudit) console.info(`${action.selectionAudit} · at=${at} · action=${action.routineId}[${action.actionIndex}]`);
+    if (action.selectionAudit) console.info(action.selectionAudit);
   }
 }
 

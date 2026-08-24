@@ -149,6 +149,7 @@ describe('feast-aware hymn catalog', () => {
 
     expect(selection.asset?.id).toBe('apostle');
     expect(selection.selectedScore).toBe(80);
+    expect(selection.selectedRank).toBe(1);
     expect(selection.selectedScoreBreakdown).toEqual([
       { label: 'apostles, saints', score: 45 },
       { label: 'ordinary-time', score: 35 },

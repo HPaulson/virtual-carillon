@@ -248,9 +248,7 @@ export class HymnCatalog {
     const selectedScore = scored.find(({ asset: candidate }) => candidate.id === asset.id)?.score;
     const selectedRank = selectedScore === undefined
       ? undefined
-      : [...scored]
-        .sort((left, right) => right.score - left.score)
-        .findIndex(({ asset: candidate }) => candidate.id === asset.id) + 1;
+      : 1 + scored.filter(({ score }) => score > selectedScore).length;
     const selectedScoreBreakdown = scored
       .find(({ asset: candidate }) => candidate.id === asset.id)?.breakdown
       ?.sort((left, right) => right.score - left.score);
@@ -289,10 +287,10 @@ export class HymnCatalog {
       this.cursors.set(cursorKey, (cursor + 1) % candidates.length);
       return asset;
     }
-    const index = query.seed === undefined
-      ? Math.floor(Math.random() * candidates.length)
-      : stableHash(`${query.seed}|${day.date}|${key}|${candidates.map((asset) => asset.id).join(',')}`) % candidates.length;
-    return candidates[index];
+    // Scored ties are deterministic: the alphabetically first asset is rank 1.
+    // This keeps a reset or a dry run from changing the selected hymn merely
+    // because Math.random() or a seed picked a different tied candidate.
+    return [...candidates].sort((left, right) => left.id.localeCompare(right.id))[0];
   }
 
   private choose(
