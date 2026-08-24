@@ -6,6 +6,7 @@ RUN corepack enable
 COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
 COPY tsconfig.json eslint.config.mjs .prettierrc.json ./
+COPY scripts ./scripts
 COPY src ./src
 RUN pnpm build
 
