@@ -64,8 +64,8 @@ WEEKDAY_OPTIONS = [
     {"value": "sat", "label": "Saturday"},
 ]
 ASSET_TYPE_OPTIONS = [
-    {"value": "manual", "label": "Manual — select a specific asset or hymn"},
-    {"value": "automatic", "label": "Automatic — select by LitCal"},
+    {"value": "manual", "label": "Manual — Select a specific hymn"},
+    {"value": "automatic", "label": "Automatic — Hymn selected based on liturgical calendar"},
 ]
 CANONICAL_HOUR_OPTIONS = [
     {"value": "", "label": "Default"},
@@ -201,10 +201,18 @@ class VirtualCarillonOptionsFlow(config_entries.OptionsFlow):
     async def async_step_add_routine(self, user_input: dict[str, Any] | None = None):
         if user_input is not None:
             self._routine_mode = user_input[CONF_PLAY_TYPE]
-            return await self.async_step_add_routine_details()
+            return await self._async_step_add_routine_details()
         return self.async_show_form(step_id="add_routine", data_schema=_routine_mode_schema("automatic"))
 
-    async def async_step_add_routine_details(self, user_input: dict[str, Any] | None = None):
+    async def async_step_add_routine_manual(self, user_input: dict[str, Any] | None = None):
+        self._routine_mode = "manual"
+        return await self._async_step_add_routine_details(user_input)
+
+    async def async_step_add_routine_automatic(self, user_input: dict[str, Any] | None = None):
+        self._routine_mode = "automatic"
+        return await self._async_step_add_routine_details(user_input)
+
+    async def _async_step_add_routine_details(self, user_input: dict[str, Any] | None = None):
         errors = {}
         if user_input is not None:
             if self._routine_mode == "manual" and not str(user_input.get(CONF_ASSET, "")).strip():
@@ -241,13 +249,21 @@ class VirtualCarillonOptionsFlow(config_entries.OptionsFlow):
     async def async_step_edit_routine_mode(self, user_input: dict[str, Any] | None = None):
         if user_input is not None:
             self._routine_mode = user_input[CONF_PLAY_TYPE]
-            return await self.async_step_edit_routine_details()
+            return await self._async_step_edit_routine_details()
         return self.async_show_form(
             step_id="edit_routine_mode",
             data_schema=_routine_mode_schema(self._routine_mode),
         )
 
-    async def async_step_edit_routine_details(self, user_input: dict[str, Any] | None = None):
+    async def async_step_edit_routine_manual(self, user_input: dict[str, Any] | None = None):
+        self._routine_mode = "manual"
+        return await self._async_step_edit_routine_details(user_input)
+
+    async def async_step_edit_routine_automatic(self, user_input: dict[str, Any] | None = None):
+        self._routine_mode = "automatic"
+        return await self._async_step_edit_routine_details(user_input)
+
+    async def _async_step_edit_routine_details(self, user_input: dict[str, Any] | None = None):
         routine = next(routine for routine in self._schedule["routines"] if routine["id"] == self._editing_routine_id)
         errors = {}
         if user_input is not None:
