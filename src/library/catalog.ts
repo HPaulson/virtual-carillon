@@ -369,7 +369,7 @@ export class HymnCatalog {
     const dailyKey = day.date;
     if (query.seed === undefined && recentExclusion > 0 && candidates.length > recentExclusion) {
       const previous = new Set(this.recent.get(dailyKey) ?? []);
-      const withoutRecent = candidates.filter((candidate) => !previous.has(candidate.id));
+      const withoutRecent = pool.filter((candidate) => !previous.has(candidate.id));
       if (withoutRecent.length) pool = withoutRecent;
     }
     const index =
