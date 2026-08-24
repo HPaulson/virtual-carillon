@@ -15,7 +15,6 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from .const import (
     CONF_ASSET,
     CONF_CANONICAL_HOUR,
-    CONF_FALLBACK_ASSET,
     CONF_LITCAL_CALENDAR,
     CONF_LITCAL_ENABLED,
     CONF_MEDIA_PLAYERS,
@@ -64,16 +63,16 @@ WEEKDAY_OPTIONS = [
     {"value": "sat", "label": "Saturday"},
 ]
 ASSET_TYPE_OPTIONS = [
-    {"value": "asset", "label": "Asset"},
-    {"value": "liturgical_hymn", "label": "Liturgical Hymn"},
+    {"value": "manual", "label": "Manual — select a specific asset or hymn"},
+    {"value": "automatic", "label": "Automatic — select by LitCal"},
 ]
 CANONICAL_HOUR_OPTIONS = [
-    {"value": "", "label": "Automatic — no hour filter"},
-    {"value": "matins", "label": "Automatic — Matins"},
-    {"value": "lauds", "label": "Automatic — Lauds / Morning Prayer"},
-    {"value": "daytime", "label": "Automatic — Daytime Office"},
-    {"value": "vespers", "label": "Automatic — Vespers / Evening Prayer"},
-    {"value": "compline", "label": "Automatic — Compline / Night Prayer"},
+    {"value": "", "label": "Default — let LitCal choose"},
+    {"value": "matins", "label": "Matins"},
+    {"value": "lauds", "label": "Lauds / Morning Prayer"},
+    {"value": "daytime", "label": "Daytime Office"},
+    {"value": "vespers", "label": "Vespers / Evening Prayer"},
+    {"value": "compline", "label": "Compline / Night Prayer"},
 ]
 WESTMINSTER_CADENCE_OPTIONS = [
     {"value": "every_15", "label": "Every 15 minutes"},
@@ -146,6 +145,7 @@ class VirtualCarillonOptionsFlow(config_entries.OptionsFlow):
                 litcal_calendar=existing.get(CONF_LITCAL_CALENDAR, DEFAULT_LITCAL_CALENDAR),
             )
             self._assets = await self._async_get_assets()
+            self._assets.extend(await self._async_get_hymns())
 
         menu_options = ["global", "westminster", "add_routine"]
         if self._schedule["routines"]:
@@ -200,7 +200,7 @@ class VirtualCarillonOptionsFlow(config_entries.OptionsFlow):
     async def async_step_add_routine(self, user_input: dict[str, Any] | None = None):
         errors = {}
         if user_input is not None:
-            if user_input.get(CONF_PLAY_TYPE) == "asset" and not str(user_input.get(CONF_ASSET, "")).strip():
+            if user_input.get(CONF_PLAY_TYPE) == "manual" and not str(user_input.get(CONF_ASSET, "")).strip():
                 errors["base"] = "asset_required"
             elif not _valid_times(user_input.get(CONF_TIMES, "")):
                 errors["base"] = "invalid_times"
@@ -232,7 +232,7 @@ class VirtualCarillonOptionsFlow(config_entries.OptionsFlow):
         routine = next(routine for routine in self._schedule["routines"] if routine["id"] == self._editing_routine_id)
         errors = {}
         if user_input is not None:
-            if user_input.get(CONF_PLAY_TYPE) == "asset" and not str(user_input.get(CONF_ASSET, "")).strip():
+            if user_input.get(CONF_PLAY_TYPE) == "manual" and not str(user_input.get(CONF_ASSET, "")).strip():
                 errors["base"] = "asset_required"
             elif not _valid_times(user_input.get(CONF_TIMES, "")):
                 errors["base"] = "invalid_times"
@@ -303,6 +303,20 @@ class VirtualCarillonOptionsFlow(config_entries.OptionsFlow):
             pass
         return []
 
+    async def _async_get_hymns(self) -> list[dict[str, Any]]:
+        url = self.config_entry.data[CONF_URL].rstrip("/")
+        try:
+            async with async_get_clientsession(self.hass).get(
+                f"{url}/api/hymns",
+                headers=_headers(self.config_entry.data.get(CONF_TOKEN, "")),
+                timeout=10,
+            ) as response:
+                if response.status == 200:
+                    return (await response.json()).get("hymns", [])
+        except Exception:
+            pass
+        return []
+
     async def _async_save_schedule(self, schedule):
         url = self.config_entry.data[CONF_URL].rstrip("/")
         async with async_get_clientsession(self.hass).put(
@@ -353,10 +367,7 @@ def _routine_schema(assets: list[dict[str, Any]], routine: dict[str, Any] | None
         vol.Required(CONF_PLAY_TYPE, default=defaults["play_type"]): selector.SelectSelector(
             selector.SelectSelectorConfig(options=ASSET_TYPE_OPTIONS)
         ),
-        vol.Optional(CONF_ASSET, default=defaults["asset"]): selector.SelectSelector(
-            selector.SelectSelectorConfig(options=_asset_options(assets, include_empty=True))
-        ),
-        vol.Optional(CONF_FALLBACK_ASSET, default=defaults["fallback_asset"]): selector.SelectSelector(
+        vol.Required(CONF_ASSET, default=defaults["asset"]): selector.SelectSelector(
             selector.SelectSelectorConfig(options=_asset_options(assets, include_empty=True))
         ),
         vol.Optional(CONF_CANONICAL_HOUR, default=defaults["canonical_hour"]): selector.SelectSelector(
@@ -385,7 +396,7 @@ def _add_optional_time(schema: dict[Any, Any], field: str, value: str | None):
 def _asset_options(assets: list[dict[str, Any]], *, include_empty: bool):
     options = [{"value": "", "label": "None"}] if include_empty else []
     valid_assets = sorted(
-        (asset for asset in assets if asset.get("id")),
+        {str(asset["id"]): asset for asset in assets if asset.get("id")}.values(),
         key=lambda asset: (str(asset.get("name", asset["id"])).casefold(), str(asset["id"]).casefold()),
     )
     options.extend(
@@ -400,9 +411,8 @@ def _routine_defaults(routine: dict[str, Any] | None):
         return {
             "name": "",
             "enabled": True,
-            "play_type": "asset",
+            "play_type": "manual",
             "asset": "",
-            "fallback_asset": "ave-maris-stella",
             "canonical_hour": "",
             "times": "12:00",
             "weekdays": list(WEEKDAYS),
@@ -416,7 +426,6 @@ def _routine_defaults(routine: dict[str, Any] | None):
         action = {
             "type": "select_hymn" if routine.get("type") == "liturgical_hymn" else "play",
             "asset": "angelus" if routine.get("type") == "angelus" else routine.get("asset", ""),
-            "fallbackAsset": routine.get("fallbackAsset", "ave-maris-stella"),
             "mediaPlayers": routine.get("mediaPlayers", []),
         }
         trigger = {
@@ -429,9 +438,8 @@ def _routine_defaults(routine: dict[str, Any] | None):
     return {
         "name": routine.get("name", ""),
         "enabled": routine.get("enabled", True),
-        "play_type": "liturgical_hymn" if action.get("type") == "select_hymn" else "asset",
+        "play_type": "automatic" if action.get("type") == "select_hymn" else "manual",
         "asset": action.get("asset", ""),
-        "fallback_asset": action.get("fallbackAsset", "ave-maris-stella"),
         "canonical_hour": (action.get("canonicalHours") or [""])[0],
         "times": ", ".join(trigger.get("times", [trigger.get("time", "12:00")])),
         "weekdays": trigger.get("weekdays", list(WEEKDAYS)),
@@ -457,8 +465,8 @@ def _routine_from_input(user_input: dict[str, Any], *, routine_id: str | None = 
         if value:
             trigger[key] = value
 
-    play_type = user_input.get(CONF_PLAY_TYPE, "asset")
-    if play_type == "liturgical_hymn":
+    play_type = user_input.get(CONF_PLAY_TYPE, "manual")
+    if play_type == "automatic":
         action = {
             "type": "select_hymn",
             "strategy": "random",
@@ -467,10 +475,7 @@ def _routine_from_input(user_input: dict[str, Any], *, routine_id: str | None = 
         canonical_hour = str(user_input.get(CONF_CANONICAL_HOUR, "")).strip()
         if canonical_hour:
             action["canonicalHours"] = [canonical_hour]
-        fallback = str(user_input.get(CONF_FALLBACK_ASSET, "")).strip()
-        if fallback:
-            action["fallbackAsset"] = fallback
-        default_name = "Liturgical hymn"
+        default_name = "Automatic hymn"
     else:
         action = {
             "type": "play",
@@ -527,8 +532,6 @@ def _normalise_routine(routine: dict[str, Any], index: int):
     }
     if is_hymn:
         action["strategy"] = routine.get("strategy", "random")
-        if routine.get("fallbackAsset"):
-            action["fallbackAsset"] = routine["fallbackAsset"]
         if routine.get("canonicalHour"):
             action["canonicalHours"] = [routine["canonicalHour"]]
     else:
@@ -567,8 +570,6 @@ def _simple_schedule(schedule: dict[str, Any]):
             "outputs": action.get("outputs", []),
         }
         if is_hymn:
-            if action.get("fallbackAsset"):
-                simple["fallbackAsset"] = action["fallbackAsset"]
             if action.get("canonicalHours"):
                 simple["canonicalHour"] = action["canonicalHours"][0]
         else:

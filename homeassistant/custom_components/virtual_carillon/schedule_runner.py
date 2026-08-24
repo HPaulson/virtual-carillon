@@ -52,6 +52,11 @@ class ScheduleRunner:
                 media_players = [str(player) for player in action.get("mediaPlayers", [])]
                 new_players = [player for player in media_players if player not in queued_players]
                 existing_players = [player for player in media_players if player in queued_players]
+                _LOGGER.info(
+                    "Schedule action: asset=%s players=%s",
+                    action.get("asset"),
+                    media_players,
+                )
                 if new_players:
                     await self.coordinator.async_play(action["asset"], new_players, refresh=False)
                 if existing_players:

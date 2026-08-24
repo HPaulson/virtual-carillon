@@ -24,11 +24,11 @@
     "step": {
       "init": {
         "title": "Virtual Carillon schedules",
-        "description": "Turn on Westminster once, then add simple asset or liturgical-hymn schedules. Each schedule can contain multiple times, selected days, a daily time window, and Home Assistant media players.",
+        "description": "Turn on Westminster once, then add manual or automatic schedules. Manual schedules play a selected asset or hymn; automatic schedules let LitCal choose the hymn. Each schedule can contain multiple times, selected days, a daily time window, and Home Assistant media players.",
         "menu_options": {
           "global": "Global settings",
           "westminster": "Westminster",
-          "add_routine": "Play asset or hymn at...",
+          "add_routine": "Add a manual or automatic schedule...",
           "edit_routine": "Edit a schedule",
           "remove_routine": "Remove a schedule",
           "finish": "Save schedules"
@@ -55,15 +55,14 @@
         }
       },
       "add_routine": {
-        "title": "Play asset or liturgical hymn at...",
-        "description": "Choose an asset or Liturgical Hymn, enter one or more exact times such as 12:00, 18:00, select days, and optionally limit the daily time window.",
+        "title": "Add a manual or automatic schedule",
+        "description": "Choose Manual to play a specific asset or hymn, or Automatic to let LitCal choose a hymn. Enter one or more exact times such as 12:00, 18:00, select days, and optionally limit the daily time window.",
         "data": {
           "routine_name": "Name (optional)",
           "routine_enabled": "Enable schedule",
-          "play_type": "Play",
-          "asset": "Asset",
-          "fallback_asset": "Fallback asset if no hymn matches",
-          "canonical_hour": "Automatic hymn hour",
+          "play_type": "Mode",
+          "asset": "Manual asset or hymn",
+          "canonical_hour": "Automatic hour",
           "times": "Times (HH:MM, comma separated)",
           "weekdays": "Days",
           "not_before": "Never before",
@@ -79,14 +78,13 @@
       },
       "edit_routine_details": {
         "title": "Edit scheduled playback",
-        "description": "Change the asset or hymn, times, days, time window, or speakers.",
+        "description": "Change the mode, selected asset or hymn, automatic hour, times, days, time window, or speakers.",
         "data": {
           "routine_name": "Name (optional)",
           "routine_enabled": "Enable schedule",
-          "play_type": "Play",
-          "asset": "Asset",
-          "fallback_asset": "Fallback asset if no hymn matches",
-          "canonical_hour": "Automatic hymn hour",
+          "play_type": "Mode",
+          "asset": "Manual asset or hymn",
+          "canonical_hour": "Automatic hour",
           "times": "Times (HH:MM, comma separated)",
           "weekdays": "Days",
           "not_before": "Never before",

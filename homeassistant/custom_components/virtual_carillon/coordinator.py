@@ -53,7 +53,12 @@ class CarillonCoordinator(DataUpdateCoordinator):
         refresh: bool = True,
         enqueue: str | None = None,
     ):
-        media_id = f"{MEDIA_SOURCE_PREFIX}{quote(asset, safe='')}"
+        _LOGGER.info(
+            "Playing asset=%s on %s (volume=100%%, enqueue=%s)",
+            asset,
+            media_players,
+            enqueue,
+        )
         await self.hass.services.async_call(
             "media_player",
             "volume_set",
@@ -101,7 +106,15 @@ class CarillonCoordinator(DataUpdateCoordinator):
         ) as response:
             if response.status >= 300:
                 raise RuntimeError(await response.text())
-            return await response.json()
+            result = await response.json()
+            if result.get("due"):
+                _LOGGER.info(
+                    "Schedule due at %s: slot=%s claimed=%s",
+                    at.isoformat(),
+                    result.get("slotKey"),
+                    result.get("claimed"),
+                )
+            return result
 
     async def async_complete_schedule(self, slot_key: str, status: str, message: str | None = None):
         from homeassistant.helpers.aiohttp_client import async_get_clientsession
@@ -113,6 +126,12 @@ class CarillonCoordinator(DataUpdateCoordinator):
         ) as response:
             if response.status >= 300:
                 raise RuntimeError(await response.text())
+        _LOGGER.info(
+            "Schedule complete: slot=%s status=%s%s",
+            slot_key,
+            status,
+            f" message={message}" if message else "",
+        )
 
     async def async_stop(self, media_players: list[str]):
         await self.hass.services.async_call(

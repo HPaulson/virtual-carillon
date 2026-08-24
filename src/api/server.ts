@@ -169,9 +169,18 @@ export async function createServer(services: ServerServices): Promise<FastifyIns
       const stored = currentStoredSchedule(services);
       const time = localScheduleTime(parsed.data.at);
       const actions = await scheduledPlaybacks(time, stored.config, services, hymnCatalog, 'home_assistant');
-      if (!actions.length) return { due: false, actions: [] };
+      if (!actions.length) {
+        if (time.minute % 15 === 0) {
+          console.info(`[schedule] ${parsed.data.at} due=false actions=none`);
+        }
+        return { due: false, actions: [] };
+      }
       const slotKey = scheduleSlotKey(time, stored.updatedAt, 'home_assistant');
       const claimed = services.database.claimScheduleRun(slotKey, JSON.stringify(actions));
+      const summary = actions
+        .map((action) => `${action.asset} -> ${action.mediaPlayers.join(',') || 'native'}`)
+        .join('; ');
+      console.info(`[schedule] ${parsed.data.at} due=true claimed=${claimed} slot=${slotKey} actions=${summary}`);
       return { due: true, claimed, slotKey, actions: claimed ? actions : [] };
     } catch (error) {
       return reply.code(400).send({ error: error instanceof Error ? error.message : String(error) });
@@ -181,6 +190,7 @@ export async function createServer(services: ServerServices): Promise<FastifyIns
     const parsed = ScheduleCompleteSchema.safeParse(request.body);
     if (!parsed.success) return reply.code(400).send({ error: parsed.error.flatten() });
     services.database.completeScheduleRun(parsed.data.slotKey, parsed.data.status, parsed.data.message);
+    console.info(`[schedule] complete slot=${parsed.data.slotKey} status=${parsed.data.status}${parsed.data.message ? ` message=${parsed.data.message}` : ''}`);
     return { ok: true };
   });
   app.post('/api/schedule/run', async (request, reply) => {
