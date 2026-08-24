@@ -13,11 +13,12 @@ import { LiturgicalCalendarClient, LiturgicalDay } from '../liturgical/litcal.js
 import { conditionMatches, LiturgicalCondition, toHymnQuery } from '../liturgical/resolver.js';
 import {
   DEFAULT_SCHEDULE_CONFIG,
-  ScheduleConfigSchema,
   localScheduleTime,
   normalizeSchedule,
   routineMatches,
   scheduleSlotKey,
+  toSimpleSchedule,
+  westminsterAsset,
   type ScheduleConfig,
   type ScheduleAction,
   type SchedulePlayback,
@@ -81,6 +82,11 @@ const ScheduleCompleteSchema = z.object({
   status: z.enum(['completed', 'failed']),
   message: z.string().optional(),
 });
+const ScheduleRunSchema = z.object({
+  at: z.string().min(1).optional(),
+  output: z.string().min(1).optional(),
+});
+type ScheduleRunner = 'home_assistant' | 'native';
 const ImportSchema = z.object({
   name: z.string().min(1),
   sourcePath: z.string().min(1),
@@ -106,6 +112,15 @@ export interface ServerServices {
 export async function createServer(services: ServerServices): Promise<FastifyInstance> {
   const app = Fastify({ logger: false });
   const hymnCatalog = services.hymnCatalog ?? new HymnCatalog(services.library);
+  const nativeScheduleTimer = setInterval(() => {
+    void runNativeSchedule(new Date(), undefined, services).then((result) => {
+      if ('error' in result) app.log.error(`Native schedule playback failed: ${result.error}`);
+    }).catch((error) => {
+      app.log.error(`Native schedule evaluation failed: ${error instanceof Error ? error.message : String(error)}`);
+    });
+  }, 5000);
+  nativeScheduleTimer.unref();
+  app.addHook('onClose', async () => clearInterval(nativeScheduleTimer));
   await app.register(cors, { origin: true });
   app.addHook('onRequest', async (request, reply) => {
     if (request.method === 'OPTIONS' || !services.apiToken || (!request.url.startsWith('/api/') && request.url !== '/api')) return;
@@ -126,24 +141,36 @@ export async function createServer(services: ServerServices): Promise<FastifyIns
     bluetooth: await bluetoothStatus(),
     recentEvents: services.database.recentEvents(10),
   }));
-  app.get('/api/schedule', async () => services.database.getSchedule() ?? {
-    config: DEFAULT_SCHEDULE_CONFIG,
-    updatedAt: 'default',
-  });
+  // The public schedule contract uses the product vocabulary (Westminster,
+  // assets, Angelus, and liturgical hymns). The stored action graph remains an
+  // implementation detail used by the HA claim endpoint.
+  app.get('/api/schedule', async () => simpleStoredSchedule(services));
+  app.get('/api/schedule/simple', async () => simpleStoredSchedule(services));
   app.put('/api/schedule', async (request, reply) => {
-    const parsed = ScheduleConfigSchema.safeParse(request.body);
-    if (!parsed.success) return reply.code(400).send({ error: parsed.error.flatten() });
-    return services.database.saveSchedule(normalizeSchedule(parsed.data));
+    try {
+      return simpleSavedSchedule(services.database.saveSchedule(normalizeSchedule(request.body)));
+    } catch (error) {
+      if (error instanceof z.ZodError) return reply.code(400).send({ error: error.flatten() });
+      throw error;
+    }
+  });
+  app.put('/api/schedule/simple', async (request, reply) => {
+    try {
+      return simpleSavedSchedule(services.database.saveSchedule(normalizeSchedule(request.body)));
+    } catch (error) {
+      if (error instanceof z.ZodError) return reply.code(400).send({ error: error.flatten() });
+      throw error;
+    }
   });
   app.post('/api/schedule/claim', async (request, reply) => {
     const parsed = ScheduleClaimSchema.safeParse(request.body);
     if (!parsed.success) return reply.code(400).send({ error: parsed.error.flatten() });
     try {
-      const stored = services.database.getSchedule() ?? { config: DEFAULT_SCHEDULE_CONFIG, updatedAt: 'default' };
+      const stored = currentStoredSchedule(services);
       const time = localScheduleTime(parsed.data.at);
-      const actions = await scheduledPlaybacks(time, stored.config, services, hymnCatalog);
+      const actions = await scheduledPlaybacks(time, stored.config, services, hymnCatalog, 'home_assistant');
       if (!actions.length) return { due: false, actions: [] };
-      const slotKey = scheduleSlotKey(time, stored.updatedAt);
+      const slotKey = scheduleSlotKey(time, stored.updatedAt, 'home_assistant');
       const claimed = services.database.claimScheduleRun(slotKey, JSON.stringify(actions));
       return { due: true, claimed, slotKey, actions: claimed ? actions : [] };
     } catch (error) {
@@ -155,6 +182,16 @@ export async function createServer(services: ServerServices): Promise<FastifyIns
     if (!parsed.success) return reply.code(400).send({ error: parsed.error.flatten() });
     services.database.completeScheduleRun(parsed.data.slotKey, parsed.data.status, parsed.data.message);
     return { ok: true };
+  });
+  app.post('/api/schedule/run', async (request, reply) => {
+    const parsed = ScheduleRunSchema.safeParse(request.body ?? {});
+    if (!parsed.success) return reply.code(400).send({ error: parsed.error.flatten() });
+    try {
+      const result = await runNativeSchedule(parsed.data.at ?? new Date(), parsed.data.output, services);
+      return 'error' in result ? reply.code(503).send(result) : result;
+    } catch (error) {
+      return reply.code(400).send({ error: error instanceof Error ? error.message : String(error) });
+    }
   });
   app.get('/api/devices', async () => ({
     outputs: await discoverOutputs(),
@@ -267,16 +304,45 @@ export async function createServer(services: ServerServices): Promise<FastifyIns
   return app;
 }
 
+function currentStoredSchedule(services: ServerServices) {
+  const stored = services.database.getSchedule();
+  return stored
+    ? { ...stored, config: normalizeSchedule(stored.config) }
+    : { config: DEFAULT_SCHEDULE_CONFIG, updatedAt: 'default' };
+}
+
+function simpleStoredSchedule(services: ServerServices) {
+  const stored = currentStoredSchedule(services);
+  return { config: toSimpleSchedule(stored.config), updatedAt: stored.updatedAt };
+}
+
+function simpleSavedSchedule(stored: { config: ScheduleConfig; updatedAt: string }) {
+  return { config: toSimpleSchedule(stored.config), updatedAt: stored.updatedAt };
+}
+
 async function scheduledPlaybacks(
   time: ReturnType<typeof localScheduleTime>,
   config: ScheduleConfig,
   services: ServerServices,
   hymnCatalog: HymnCatalog,
+  runner: ScheduleRunner,
 ): Promise<SchedulePlayback[]> {
   if (!config.enabled) return [];
 
   const playbacks: SchedulePlayback[] = [];
   let pendingDelay = 0;
+  const westminster = westminsterAsset(config.westminster, time);
+  if (westminster && targetMatches(config.westminster.mediaPlayers, config.westminster.outputs, runner)) {
+    playbacks.push({
+      asset: westminster,
+      mediaPlayers: config.westminster.mediaPlayers,
+      outputs: config.westminster.outputs,
+      routineId: 'westminster',
+      actionIndex: 0,
+      waitBeforeSeconds: 0,
+      waitAfterSeconds: 0,
+    });
+  }
   for (const routine of config.routines) {
     if (!routineMatches(routine, time)) continue;
     for (const [actionIndex, action] of routine.actions.entries()) {
@@ -285,11 +351,13 @@ async function scheduledPlaybacks(
         else pendingDelay += action.seconds;
         continue;
       }
+      if (!targetMatches(action.mediaPlayers, action.outputs, runner)) continue;
       const asset = await resolveScheduleAsset(action, time.date, config, services, hymnCatalog);
       if (!asset) continue;
       playbacks.push({
         asset,
         mediaPlayers: action.mediaPlayers,
+        outputs: action.outputs,
         routineId: routine.id,
         actionIndex,
         waitBeforeSeconds: pendingDelay,
@@ -299,6 +367,57 @@ async function scheduledPlaybacks(
     }
   }
   return playbacks;
+}
+
+function targetMatches(mediaPlayers: string[], outputs: string[], runner: ScheduleRunner): boolean {
+  if (runner === 'home_assistant') return mediaPlayers.length > 0;
+  // With neither target list populated, the API-only path means the platform
+  // default output. Explicit native outputs take precedence when supplied.
+  return outputs.length > 0 || mediaPlayers.length === 0;
+}
+
+async function runNativeSchedule(at: Date | string, outputOverride: string | undefined, services: ServerServices) {
+  const hymnCatalog = services.hymnCatalog ?? new HymnCatalog(services.library);
+  const stored = currentStoredSchedule(services);
+  const time = localScheduleTime(at);
+  const actions = await scheduledPlaybacks(time, stored.config, services, hymnCatalog, 'native');
+  if (!actions.length) return { due: false as const, actions: [] as SchedulePlayback[] };
+  const slotKey = scheduleSlotKey(time, stored.updatedAt, 'native');
+  const claimed = services.database.claimScheduleRun(slotKey, JSON.stringify(actions));
+  if (!claimed) return { due: true as const, claimed: false as const, slotKey, actions: [] as SchedulePlayback[] };
+  try {
+    await playScheduledNatively(actions, outputOverride, services);
+    services.database.completeScheduleRun(slotKey, 'completed');
+    return { due: true as const, claimed: true as const, completed: true as const, slotKey, actions };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    services.database.completeScheduleRun(slotKey, 'failed', message);
+    return { due: true as const, claimed: true as const, completed: false as const, slotKey, error: message };
+  }
+}
+
+async function playScheduledNatively(actions: SchedulePlayback[], outputOverride: string | undefined, services: ServerServices) {
+  const available = await discoverOutputs();
+  for (const action of actions) {
+    if (action.waitBeforeSeconds > 0) await sleepSeconds(action.waitBeforeSeconds);
+    const requestedOutputs = outputOverride ? [outputOverride] : action.outputs;
+    const targets = requestedOutputs.length
+      ? requestedOutputs.map((requested) => available.find((item) => item.id === requested || item.name === requested))
+      : [undefined];
+    if (targets.some((target, index) => requestedOutputs[index] !== undefined && !target)) {
+      throw new Error(`Unknown native output: ${requestedOutputs.find((requested) => !available.some((item) => item.id === requested || item.name === requested))}`);
+    }
+    for (const target of targets) {
+      const result = await services.library.playAsset(action.asset, target);
+      services.database.addEvent({ asset: action.asset, output: target?.name, status: 'played' });
+      void result;
+    }
+    if (action.waitAfterSeconds > 0) await sleepSeconds(action.waitAfterSeconds);
+  }
+}
+
+function sleepSeconds(seconds: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, seconds * 1000));
 }
 
 async function resolveScheduleAsset(

@@ -34,7 +34,7 @@ The API token protects the engine API. The Home Assistant media proxy intentiona
 
 Install the custom component from `homeassistant/custom_components/virtual_carillon` into `/config/custom_components/virtual_carillon`, restart Home Assistant, and add **Virtual Carillon** from Settings → Devices & services. Enter the Dokploy URL and the same API token.
 
-The integration adds a **Virtual Carillon** media source to Home Assistant's media browser. Browse assets or hymns, choose an asset, and select any compatible Home Assistant media player. It also adds target-based actions and an integration-owned routine list. Open the integration's **Configure** flow to add as many timed routines as needed, with asset playback, seasonal hymn selection, delays, weekdays, exclusions, allowed-time windows, and media-player targets.
+The integration adds a **Virtual Carillon** media source to Home Assistant's media browser. Browse assets or hymns, choose an asset, and select any compatible Home Assistant media player. It also adds target-based actions and an integration-owned schedule. Open the integration's **Configure** flow to set Westminster once, then add as many “play asset or Liturgical Hymn at...” schedules as needed, with multiple exact times, days, allowed-time windows, and media-player targets.
 
 ```yaml
 service: virtual_carillon.play

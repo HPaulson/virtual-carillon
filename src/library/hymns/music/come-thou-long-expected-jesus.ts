@@ -11,7 +11,7 @@ export const comeThouLongExpectedJesus = defineHymn({
   liturgical: {
     categories: ['advent', 'christological'],
     seasons: ['Advent'],
-    offices: ['Lauds', 'Vespers'],
+    offices: [],
     feasts: [],
     solemnities: [],
   },

@@ -15,6 +15,7 @@ export const LITURGICAL_CATEGORIES = {
   general: 'General',
   marian: 'Marian',
   'blessed-virgin-mary': 'Blessed Virgin Mary',
+  saints: 'Saints',
   christological: 'Christological',
   eucharistic: 'Eucharistic',
   'sacred-heart': 'Sacred Heart',
@@ -49,11 +50,15 @@ export const LITURGICAL_FEASTS = {
   annunciation: 'Annunciation',
   'assumption-of-mary': 'Assumption of Mary',
   'nativity-of-mary': 'Nativity of Mary',
+  'purification-of-the-lord': 'Presentation / Purification of the Lord',
   'immaculate-conception': 'Immaculate Conception',
   'mary-mother-of-god': 'Mary, Mother of God',
   visitation: 'Visitation',
   'queenship-of-mary': 'Queenship of Mary',
   'our-lady-of-sorrows': 'Our Lady of Sorrows',
+  'our-lady-of-lourdes': 'Our Lady of Lourdes',
+  'christ-the-king': 'Our Lord Jesus Christ, King of the Universe',
+  'ash-wednesday': 'Ash Wednesday',
   'epiphany-of-the-lord': 'Epiphany of the Lord',
   'nativity-of-the-lord': 'Nativity of the Lord',
   'baptism-of-the-lord': 'Baptism of the Lord',
@@ -77,14 +82,10 @@ export type LiturgicalFeastId = keyof typeof LITURGICAL_FEASTS;
 export type LiturgicalOfficeId =
   | 'matins'
   | 'lauds'
-  | 'terce'
-  | 'sext'
-  | 'none'
+  | 'daytime'
   | 'vespers'
   | 'compline'
-  | 'morning-prayer'
-  | 'evening-prayer'
-  | 'night-prayer';
+  ;
 export type LiturgicalRankId =
   | 'feria'
   | 'commemoration'
@@ -161,7 +162,18 @@ export function inferLiturgicalTags(input: {
   for (const season of input.liturgicalSeasons ?? []) tags.seasons.push(seasonId(season));
   const addCategory = (...values: string[]) => tags.categories.push(...values);
   const addFeast = (...values: string[]) => tags.feasts.push(...values);
+  const addSaint = (...values: string[]) => tags.saints.push(...values);
   const addSeason = (value: LiturgicalSeasonId) => tags.seasons.push(value);
+
+  // LitCal does not expose a stable project-level saint taxonomy. Preserve a
+  // deterministic identity when the event looks like a saint celebration so
+  // a future/proper hymn can opt into it, while category inference still
+  // provides a useful fallback for obscure saints.
+  if (isSaintCelebration(text)) {
+    const saintId = stableSaintId(input.key, input.name);
+    if (saintId) addSaint(saintId);
+    addCategory('saints');
+  }
 
   if (text.includes('assumption')) {
     addFeast('assumption-of-mary');
@@ -273,6 +285,21 @@ export function inferLiturgicalTags(input: {
   if (rank === 'solemnity' || rank === 'higher-solemnity') tags.solemnities.push(...tags.feasts);
   if (rank === 'memorial' || rank === 'optional-memorial') tags.memorials.push(...tags.feasts);
   return createLiturgicalTags(tags);
+}
+
+function isSaintCelebration(text: string): boolean {
+  return /(^| )(saint|saints|st |sts |san |santa |santo |sancti|beatus|blessed )/.test(text);
+}
+
+function stableSaintId(key?: string, name?: string): string | undefined {
+  const value = key || name;
+  if (!value) return undefined;
+  const id = value
+    .replace(/([a-z])([A-Z])/g, '$1-$2')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  return id || undefined;
 }
 
 export function seasonId(value?: string): LiturgicalSeasonId {

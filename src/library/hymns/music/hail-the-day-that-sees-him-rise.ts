@@ -12,9 +12,9 @@ export const hailTheDayThatSeesHimRise = defineHymn({
   liturgical: {
     categories: ['ascension', 'christological'],
     seasons: ['Ascension'],
-    offices: ['Lauds'],
+    offices: [],
     feasts: ['ascension-of-the-lord'],
-    solemnities: ['ascension-of-the-lord'],
+    solemnities: [],
   },
   notation: easterHymnNotation,
   arrangement: { style: 'celebratory', tonic: 'C3' },

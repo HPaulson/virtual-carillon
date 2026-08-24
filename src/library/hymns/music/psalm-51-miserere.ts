@@ -11,9 +11,9 @@ export const psalm51Miserere = defineHymn({
   liturgical: {
     categories: ['penitential', 'repentance', 'psalm'],
     seasons: ['Lent'],
-    offices: ['Lauds', 'Vespers'],
-    feasts: ['ash-wednesday', 'good-friday'],
-    solemnities: ['ash-wednesday'],
+    offices: [],
+    feasts: [],
+    solemnities: [],
   },
   notation: melody({
     meter: { numerator: 1, denominator: 1 },

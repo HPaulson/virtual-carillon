@@ -12,7 +12,7 @@ export const abideWithMe = defineHymn({
   liturgical: {
     categories: ['christological'],
     seasons: ['General', 'Ordinary Time'],
-    offices: ['Vespers', 'Compline'],
+    offices: [],
     feasts: [],
     solemnities: [],
   },

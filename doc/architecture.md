@@ -2,15 +2,15 @@
 
 ## System boundary
 
-The Node service owns bell synthesis, asset rendering, audio serving, persistence of playback events, schedule persistence/evaluation, and diagnostics. Home Assistant is the frontend and output adapter: its integration options flow configures the schedule, while HA sends due events to selected media players. Home Assistant does not contain audio/DSP logic.
+The Node service owns bell synthesis, asset rendering, audio serving, persistence of playback events, schedule persistence/evaluation, and diagnostics. Its public schedule API speaks in app concepts—Westminster, assets, Angelus, and Liturgical Hymn—and can run through native device outputs without Home Assistant. Home Assistant is the optional friendly frontend and output adapter: its integration options flow configures the same schedule, while HA sends due events to selected media players. Home Assistant does not contain audio/DSP logic.
 
 ```text
-HA config flow ── routine list ─────────► Fastify API + SQLite
+HA config flow ── semantic schedule ───► Fastify API + SQLite
         │                                  │
-        └──── claim due event ◄────────────┘
-                    │
-                    ▼
-            HA media_player targets
+        └──── claim due event ◄────────────┘──── native schedule timer
+                    │                                  │
+                    ▼                                  ▼
+            HA media_player targets              host audio output
 ```
 
 ## Source map

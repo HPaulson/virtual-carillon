@@ -11,9 +11,9 @@ export const pangeLingua = defineHymn({
   liturgical: {
     categories: ['eucharistic', 'christological', 'corpus-christi'],
     seasons: ['General', 'Ordinary Time'],
-    offices: ['Vespers'],
+    offices: [],
     feasts: ['corpus-christi', 'holy-thursday'],
-    solemnities: ['corpus-christi'],
+    solemnities: [],
   },
   notation: melody({
     meter: { numerator: 1, denominator: 1 },

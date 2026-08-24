@@ -34,7 +34,7 @@ target:
   entity_id: media_player.kitchen
 ```
 
-Automatic selection uses the highest-priority LitCal celebration and the catalog's exact-feast → category → season → General fallback:
+Automatic selection uses the highest-priority LitCal celebration and the catalog's exact-feast → exact-saint → saint/category → season → General fallback:
 
 ```yaml
 service: virtual_carillon.select_hymn
@@ -57,7 +57,7 @@ data:
   offices: [vespers]
 ```
 
-The **Virtual Carillon** media source appears in Home Assistant's media browser. Browse all assets or hymns, then choose any media player supported by Home Assistant. The integration proxies rendered audio through Home Assistant, so the Node container does not need PipeWire, ALSA, Bluetooth, or speaker access.
+The **Virtual Carillon** media source appears in Home Assistant's media browser. Browse all assets or hymns, then choose any media player supported by Home Assistant. For a Liturgical Hymn schedule, **Automatic hymn hour** can be left unfiltered or set to Matins, Lauds, Daytime, Vespers, or Compline. The hour-specific choices first prefer historically tagged hymns, then fall back through the normal feast/category/season matching when no office-tagged candidate exists. The integration proxies rendered audio through Home Assistant, so the Node container does not need PipeWire, ALSA, Bluetooth, or speaker access.
 
 The status sensor's `hymns` attribute exposes each hymn's `liturgicalTags` fields for dashboards and selectors, including categories, feasts, seasons, offices, and canonical hours.
 
@@ -65,18 +65,11 @@ The status sensor's `hymns` attribute exposes each hymn's `liturgicalTags` field
 
 The normal schedule is configured once inside the **Virtual Carillon** integration and stored by the Node service in SQLite. Home Assistant supplies the media-player targets and remains responsible for actual playback; it does not need one automation per bell event.
 
-Open **Settings → Devices & services → Virtual Carillon → Configure**. The schedule editor lets you:
+Open **Settings → Devices & services → Virtual Carillon → Configure**. The schedule editor has two simple building blocks:
 
-- enable or disable the schedule and LitCal;
-- add any number of named routines;
-- run a routine at an exact time, hourly, every 15 minutes, or every 30 minutes;
-- select weekdays, excluded times, and an optional allowed-time window for each routine (for example, weekdays but never before 06:00 or after 22:00);
-- add ordered actions to each routine: play any asset, select a seasonal hymn, or wait for a configurable delay;
-- choose one or more Home Assistant `media_player` entities for every playback action;
-- edit or remove routines later without writing YAML automations.
+- **Westminster** — enable it, choose every 15 minutes, every 30 minutes, or hourly, then choose days, a daily time window, and media players. The quarter chimes and the correct 1–12 hour strike count are selected automatically.
+- **Play asset or hymn at...** — choose any asset from the dropdown or **Liturgical Hymn**, enter one or more exact times such as `12:00, 18:00`, choose days, optionally set Never before/Never after, and choose media players. Add as many of these schedules as needed.
 
-This supports Westminster, Angelus, hymns, Divine Office signals, user recordings, and arbitrary combinations without baking a particular household's schedule into the application. The configured list is saved through `/api/schedule` and survives container restarts. At each due minute the server evaluates all matching routines, resolves hymn selection, and returns one ordered sequence for the HA integration to play.
-
-For example, a user can create separate routines for quarter chimes, an hourly hour-strike asset, Angelus at 12:00, Angelus at 18:00, and a 15:00 seasonal hymn. Each can target a different media player or player group and can be limited to a daily time window. Overnight windows such as 22:00–06:00 are supported. The included blueprint remains available for advanced automations that need conditions beyond the editor.
+This supports Angelus at both noon and 18:00 on only Mondays and Wednesdays as one schedule, or any other combination, without YAML or one automation per event. Liturgical Hymn uses the current LitCal season and feast context and falls back to the selected asset when configured. The configured list is saved through the public semantic `/api/schedule` endpoint and survives container restarts. The same schedule can be configured by API clients; HA simply supplies `media_player` targets when speakers are managed by Home Assistant.
 
 Virtual Carillon does not configure or control the user's speaker integrations. Any Wi-Fi, Bluetooth, Chromecast, Sonos, laptop, or other media player recognized by Home Assistant can be targeted through normal Home Assistant media-player actions.

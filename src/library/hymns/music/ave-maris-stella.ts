@@ -11,16 +11,9 @@ export const aveMarisStella = defineHymn({
   liturgical: {
     categories: ['marian', 'blessed-virgin-mary'],
     seasons: ['General', 'Ordinary Time'],
-    offices: ['Vespers', 'Compline'],
-    feasts: [
-      'assumption-of-mary',
-      'nativity-of-mary',
-      'immaculate-conception',
-      'annunciation',
-      'visitation',
-      'queenship-of-mary',
-    ],
-    solemnities: ['assumption-of-mary', 'immaculate-conception', 'annunciation'],
+    offices: ['Vespers'],
+    feasts: [],
+    solemnities: [],
   },
   notation: melody({
     meter: { numerator: 1, denominator: 1 },

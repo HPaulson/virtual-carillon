@@ -11,9 +11,9 @@ export const whenISurveyTheWondrousCross = defineHymn({
   liturgical: {
     categories: ['lent', 'holy-week', 'cross-passion'],
     seasons: ['Lent', 'Holy Week'],
-    offices: ['Vespers', 'Compline'],
+    offices: [],
     feasts: ['good-friday'],
-    solemnities: ['good-friday'],
+    solemnities: [],
   },
   notation: melody({
     meter: { numerator: 4, denominator: 4 },

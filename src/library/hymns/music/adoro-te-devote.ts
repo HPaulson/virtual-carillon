@@ -12,9 +12,9 @@ export const adoroTeDevote = defineHymn({
   liturgical: {
     categories: ['eucharistic', 'passion', 'christological'],
     seasons: ['Lent', 'General'],
-    offices: ['Vespers'],
+    offices: [],
     feasts: ['corpus-christi', 'holy-thursday'],
-    solemnities: ['corpus-christi'],
+    solemnities: [],
   },
   notation: melody({
     meter: { numerator: 1, denominator: 1 },

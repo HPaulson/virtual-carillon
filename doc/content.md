@@ -86,11 +86,19 @@ The rights of a composition, a particular edition, an arrangement, and a recordi
 
 ## Liturgical taxonomy
 
-Every hymn exposes a `liturgicalTags` object made from stable IDs. The fields are deliberately arrays, so a hymn can be Marian, Christological, Eucharistic, associated with several feasts, and appropriate for more than one canonical hour at the same time. The model supports seasons, feasts, solemnities, memorials, saints, categories, offices, and canonical hours. Examples include `assumption-of-mary`, `marian`, `corpus-christi`, `vespers`, and `compline`.
+Every hymn exposes a `liturgicalTags` object made from stable IDs. The fields have distinct meanings:
+
+- `seasons` are broad periods such as `advent`, `lent`, `easter`, and `ordinary-time`.
+- `feasts` are named calendar celebrations or genuinely proper observances, such as `assumption-of-mary`, `corpus-christi`, or `good-friday`. Themes such as “passion” and seasons such as Advent are categories/seasons, not feast IDs.
+- `categories` are reusable subject or use affinities, such as `marian`, `eucharistic`, `cross-passion`, `resurrection`, `praise`, or `saints`.
+- `offices`/`canonicalHours` are reserved for an actual Liturgy-of-the-Hours or antiphon tradition. The supported office categories are Matins, Lauds, Daytime, Vespers, and Compline. They are not synonyms for a feast or a convenient time of day. Most ordinary hymn tunes therefore have no office tag; the Marian antiphons, *Te lucis*, and documented *Veni Creator* usage are examples that do.
+- `solemnities` and `memorials` describe the rank of a LitCal celebration. They are useful on calendar events, but are not intrinsic hymn properties and are not used to select hymns.
+
+The fields are arrays because a hymn can have several legitimate seasons, feast associations, categories, or canonical hours. A schedule may select `Automatic — Lauds`, `Automatic — Vespers`, or another canonical hour. Automatic selection first tries the requested office while preserving feast → saint → category → season precedence; if no office-tagged candidate exists, it repeats that precedence without requiring the office tag. The ordinary automatic mode does not infer an office from the clock time.
 
 The same tagging contract is present on `AudioAsset`, not only hymns, so future recordings, chants, prayers, and bell sequences can participate in the catalog without embedding feast rules in individual files. Imported recordings may supply `liturgicalTags` through the API or persistent asset manifest.
 
-When LitCal is enabled, its celebrations are normalized into these tags. The highest-grade celebration becomes the day's primary celebration; automatic hymn selection prefers an exact feast, then a broader category, then the season, and finally General. Selection defaults to random, supports sequential and fixed strategies, accepts a test seed, and keeps a small recent-exclusion window for unseeded random playback.
+When LitCal is enabled, its celebrations are normalized into these tags. The highest-grade celebration becomes the day's primary celebration; automatic hymn selection prefers an exact feast, then an exact saint identity when available, then saint/category affinity, then the season, and finally the genuinely general pool. `General` is not treated as a category that outranks Ordinary Time. Selection defaults to random, supports sequential and fixed strategies, accepts a test seed, and keeps a small recent-exclusion window for unseeded random playback.
 
 ## Recordings
 

@@ -12,7 +12,7 @@ export const oGodBeyondAllPraising = defineHymn({
   liturgical: {
     categories: ['praise', 'christological'],
     seasons: ['General', 'Ordinary Time'],
-    offices: ['Lauds', 'Vespers'],
+    offices: [],
     feasts: [],
     solemnities: [],
   },

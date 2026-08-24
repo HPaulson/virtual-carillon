@@ -11,7 +11,7 @@ export const hymnToJoy = defineHymn({
   liturgical: {
     categories: ['trinity', 'christological', 'praise'],
     seasons: ['Easter', 'General', 'Ordinary Time'],
-    offices: ['Lauds'],
+    offices: [],
     feasts: [],
     solemnities: [],
   },

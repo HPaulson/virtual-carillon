@@ -12,9 +12,9 @@ export const asWithGladnessMenOfOld = defineHymn({
   liturgical: {
     categories: ['christmas', 'epiphany', 'christological'],
     seasons: ['Christmas', 'Epiphany'],
-    offices: ['Lauds'],
+    offices: [],
     feasts: ['epiphany-of-the-lord'],
-    solemnities: ['epiphany-of-the-lord'],
+    solemnities: [],
   },
   notation: melody({
     meter: { numerator: 4, denominator: 4 },

@@ -12,9 +12,9 @@ export const awayInAManger = defineHymn({
   liturgical: {
     categories: ['christological', 'incarnation'],
     seasons: ['Christmas'],
-    offices: ['Lauds', 'Vespers'],
-    feasts: ['christmas'],
-    solemnities: ['christmas'],
+    offices: [],
+    feasts: ['nativity-of-the-lord'],
+    solemnities: [],
   },
   notation: melody({
     meter: { numerator: 3, denominator: 4 },

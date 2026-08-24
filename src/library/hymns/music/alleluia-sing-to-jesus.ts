@@ -11,9 +11,9 @@ export const alleluiaSingToJesus = defineHymn({
   liturgical: {
     categories: ['ascension', 'eucharistic', 'christological'],
     seasons: ['Ascension', 'General'],
-    offices: ['Lauds', 'Vespers'],
+    offices: [],
     feasts: ['ascension-of-the-lord', 'corpus-christi'],
-    solemnities: ['ascension-of-the-lord', 'corpus-christi'],
+    solemnities: [],
   },
   notation: hyfrydolNotation,
   arrangement: { style: 'celebratory', tonic: 'F3' },

@@ -3,27 +3,31 @@ import type { LiturgicalCalendarName } from '../liturgical/litcal.js';
 
 const TimeSchema = z.string().regex(/^(?:[01]\d|2[0-3]):[0-5]\d$/);
 const WeekdaySchema = z.enum(['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat']);
+const WeekdaysSchema = z.array(WeekdaySchema).min(1);
+const OptionalMediaPlayersSchema = z.array(z.string().regex(/^media_player\.[a-z0-9_]+$/i));
+const NativeOutputsSchema = z.array(z.string().min(1));
 
 const TriggerSchema = z.object({
   frequency: z.enum(['exact', 'hourly', 'every_15', 'every_30']),
   time: TimeSchema,
-  weekdays: z.array(WeekdaySchema).min(1),
+  times: z.array(TimeSchema).min(1).optional(),
+  weekdays: WeekdaysSchema,
   excludedTimes: z.array(TimeSchema),
   notBefore: TimeSchema.optional(),
   notAfter: TimeSchema.optional(),
 });
 
-const MediaPlayersSchema = z.array(z.string().regex(/^media_player\.[a-z0-9_]+$/i)).min(1);
-
 const PlayActionSchema = z.object({
   type: z.literal('play'),
   asset: z.string().min(1),
-  mediaPlayers: MediaPlayersSchema,
+  mediaPlayers: OptionalMediaPlayersSchema.default([]),
+  outputs: NativeOutputsSchema.default([]),
 });
 
 const SelectHymnActionSchema = z.object({
   type: z.literal('select_hymn'),
-  mediaPlayers: MediaPlayersSchema,
+  mediaPlayers: OptionalMediaPlayersSchema.default([]),
+  outputs: NativeOutputsSchema.default([]),
   strategy: z.enum(['fixed', 'sequential', 'random']).default('random'),
   fixedAssetId: z.string().min(1).optional(),
   fallbackAsset: z.string().min(1).optional(),
@@ -57,6 +61,16 @@ export const ScheduleRoutineSchema = z.object({
   actions: z.array(ScheduleActionSchema).min(1),
 });
 
+export const WestminsterScheduleSchema = z.object({
+  enabled: z.boolean(),
+  cadence: z.enum(['every_15', 'every_30', 'hourly']),
+  weekdays: WeekdaysSchema,
+  notBefore: TimeSchema.optional(),
+  notAfter: TimeSchema.optional(),
+  mediaPlayers: OptionalMediaPlayersSchema,
+  outputs: NativeOutputsSchema.default([]),
+});
+
 const LitcalScheduleSchema = z.object({
   enabled: z.boolean(),
   calendar: z.enum(['general', 'US', 'IT', 'NL', 'VA', 'CA']),
@@ -64,6 +78,7 @@ const LitcalScheduleSchema = z.object({
 
 export const ScheduleConfigSchema = z.object({
   enabled: z.boolean(),
+  westminster: WestminsterScheduleSchema,
   routines: z.array(ScheduleRoutineSchema),
   litcal: LitcalScheduleSchema,
 });
@@ -71,6 +86,7 @@ export const ScheduleConfigSchema = z.object({
 export type ScheduleConfig = z.infer<typeof ScheduleConfigSchema>;
 export type ScheduleRoutine = z.infer<typeof ScheduleRoutineSchema>;
 export type ScheduleAction = z.infer<typeof ScheduleActionSchema>;
+export type WestminsterSchedule = z.infer<typeof WestminsterScheduleSchema>;
 
 export interface StoredSchedule {
   config: ScheduleConfig;
@@ -87,6 +103,7 @@ export interface LocalScheduleTime {
 export interface SchedulePlayback {
   asset: string;
   mediaPlayers: string[];
+  outputs: string[];
   routineId: string;
   actionIndex: number;
   waitBeforeSeconds: number;
@@ -100,18 +117,98 @@ export interface ScheduleClaim {
 
 export const DEFAULT_SCHEDULE_CONFIG: ScheduleConfig = {
   enabled: false,
+  westminster: {
+    enabled: false,
+    cadence: 'every_15',
+    weekdays: ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'],
+    mediaPlayers: [],
+    outputs: [],
+  },
   routines: [],
   litcal: { enabled: true, calendar: 'general' },
 };
 
 export function normalizeSchedule(input: unknown): ScheduleConfig {
-  const value = (input && typeof input === 'object' ? input : {}) as Partial<ScheduleConfig>;
+  const value = (input && typeof input === 'object' ? input : {}) as Partial<ScheduleConfig> & Record<string, unknown>;
   return ScheduleConfigSchema.parse({
     ...DEFAULT_SCHEDULE_CONFIG,
     ...value,
-    routines: value.routines ?? DEFAULT_SCHEDULE_CONFIG.routines,
+    westminster: { ...DEFAULT_SCHEDULE_CONFIG.westminster, ...(value.westminster ?? {}) },
+    routines: Array.isArray(value.routines)
+      ? value.routines.map((routine, index) => normalizeRoutine(routine, index))
+      : DEFAULT_SCHEDULE_CONFIG.routines,
     litcal: { ...DEFAULT_SCHEDULE_CONFIG.litcal, ...(value.litcal ?? {}) },
   });
+}
+
+function normalizeRoutine(value: unknown, index: number): unknown {
+  if (!value || typeof value !== 'object') return value;
+  const routine = value as Record<string, unknown>;
+  if (Array.isArray(routine.actions)) return routine;
+
+  const type = routine.type === 'liturgical_hymn' ? 'liturgical_hymn' : 'play';
+  const times = Array.isArray(routine.times) && routine.times.length ? routine.times : ['12:00'];
+  const canonicalHour = typeof routine.canonicalHour === 'string'
+    ? routine.canonicalHour
+    : Array.isArray(routine.canonicalHours) && typeof routine.canonicalHours[0] === 'string'
+      ? routine.canonicalHours[0]
+      : undefined;
+  const action = type === 'liturgical_hymn'
+    ? {
+      type: 'select_hymn',
+      strategy: routine.strategy ?? 'random',
+      fallbackAsset: routine.fallbackAsset,
+      canonicalHours: canonicalHour ? [canonicalHour] : undefined,
+      mediaPlayers: routine.mediaPlayers ?? [],
+      outputs: routine.outputs ?? [],
+    }
+    : {
+      type: 'play',
+      asset: routine.type === 'angelus' ? 'angelus' : routine.asset,
+      mediaPlayers: routine.mediaPlayers ?? [],
+      outputs: routine.outputs ?? [],
+    };
+  return {
+    id: routine.id ?? `routine-${index + 1}`,
+    name: routine.name ?? (routine.type === 'liturgical_hymn' ? 'Liturgical hymn' : routine.asset ?? 'Scheduled asset'),
+    enabled: routine.enabled ?? true,
+    trigger: {
+      frequency: 'exact',
+      time: times[0],
+      times,
+      weekdays: routine.weekdays ?? ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'],
+      excludedTimes: routine.excludedTimes ?? [],
+      notBefore: routine.notBefore,
+      notAfter: routine.notAfter,
+    },
+    actions: [action],
+  };
+}
+
+export function toSimpleSchedule(config: ScheduleConfig) {
+  return {
+    enabled: config.enabled,
+    westminster: config.westminster,
+    litcal: config.litcal,
+    routines: config.routines.map((routine) => {
+      const action = routine.actions.find((candidate) => candidate.type !== 'delay');
+      const isHymn = action?.type === 'select_hymn';
+      return {
+        id: routine.id,
+        name: routine.name,
+        enabled: routine.enabled,
+        type: isHymn ? 'liturgical_hymn' : 'asset',
+        ...(isHymn ? { fallbackAsset: action.fallbackAsset } : { asset: action?.type === 'play' ? action.asset : undefined }),
+        ...(isHymn && action.canonicalHours?.length ? { canonicalHour: action.canonicalHours[0] } : {}),
+        times: routine.trigger.times ?? [routine.trigger.time],
+        weekdays: routine.trigger.weekdays,
+        notBefore: routine.trigger.notBefore,
+        notAfter: routine.trigger.notAfter,
+        mediaPlayers: action?.mediaPlayers ?? [],
+        outputs: action?.outputs ?? [],
+      };
+    }),
+  };
 }
 
 export function localScheduleTime(value: Date | string): LocalScheduleTime {
@@ -122,9 +219,8 @@ export function localScheduleTime(value: Date | string): LocalScheduleTime {
       date: match[1],
       hour: Number(match[2]),
       minute: Number(match[3]),
-      // The timestamp may carry an HA timezone offset. The date portion is
-      // already the user's local calendar date, so do not reinterpret it in
-      // the Node container's timezone when applying weekday rules.
+      // HA sends the local date and time with an offset. Use the date portion
+      // directly instead of reinterpreting it in the Node container timezone.
       weekday: weekdayForDate(match[1]),
     };
   }
@@ -136,15 +232,16 @@ export function localScheduleTime(value: Date | string): LocalScheduleTime {
   };
 }
 
-export function scheduleSlotKey(time: LocalScheduleTime, updatedAt: string): string {
-  return `${time.date}T${String(time.hour).padStart(2, '0')}:${String(time.minute).padStart(2, '0')}|${updatedAt}`;
+export function scheduleSlotKey(time: LocalScheduleTime, updatedAt: string, runner = 'default'): string {
+  return `${time.date}T${String(time.hour).padStart(2, '0')}:${String(time.minute).padStart(2, '0')}|${updatedAt}|${runner}`;
 }
 
 export function routineMatches(routine: ScheduleRoutine, time: LocalScheduleTime): boolean {
-  const current = `${String(time.hour).padStart(2, '0')}:${String(time.minute).padStart(2, '0')}`;
-  if (!routine.enabled || !withinConfiguredWeekdays(routine, time, current)) return false;
+  const current = formatTime(time.hour, time.minute);
+  if (!routine.enabled || !withinConfiguredWeekdays(routine.trigger, time, current)) return false;
   if (routine.trigger.excludedTimes.includes(current)) return false;
   if (!withinTimeWindow(current, routine.trigger.notBefore, routine.trigger.notAfter)) return false;
+
   switch (routine.trigger.frequency) {
     case 'hourly':
       return time.minute === 0;
@@ -153,19 +250,45 @@ export function routineMatches(routine: ScheduleRoutine, time: LocalScheduleTime
     case 'every_30':
       return time.minute % 30 === 0;
     case 'exact':
-      return routine.trigger.time === current;
+      return (routine.trigger.times ?? [routine.trigger.time]).includes(current);
   }
 }
 
-function withinConfiguredWeekdays(routine: ScheduleRoutine, time: LocalScheduleTime, current: string): boolean {
-  if (routine.trigger.weekdays.includes(weekdayName(time.weekday))) return true;
-  if (routine.trigger.notBefore === undefined || routine.trigger.notAfter === undefined) return false;
-  const start = minutesSinceMidnight(routine.trigger.notBefore);
-  const end = minutesSinceMidnight(routine.trigger.notAfter);
+export function westminsterMatches(schedule: WestminsterSchedule, time: LocalScheduleTime): boolean {
+  if (!schedule.enabled) return false;
+  const current = formatTime(time.hour, time.minute);
+  const trigger = {
+    weekdays: schedule.weekdays,
+    notBefore: schedule.notBefore,
+    notAfter: schedule.notAfter,
+  };
+  if (!withinConfiguredWeekdays(trigger, time, current) || !withinTimeWindow(current, schedule.notBefore, schedule.notAfter)) return false;
+  if (time.minute === 0) return true;
+  if (schedule.cadence === 'every_15') return [15, 30, 45].includes(time.minute);
+  return schedule.cadence === 'every_30' && time.minute === 30;
+}
+
+export function westminsterAsset(schedule: WestminsterSchedule, time: LocalScheduleTime): string | undefined {
+  if (!westminsterMatches(schedule, time)) return undefined;
+  if (time.minute === 0) return `westminster-hour-${time.hour % 12 || 12}`;
+  if (time.minute === 15) return 'westminster-quarter';
+  if (time.minute === 30) return 'westminster-half';
+  if (time.minute === 45) return 'westminster-three-quarter';
+  return undefined;
+}
+
+function withinConfiguredWeekdays(
+  trigger: Pick<ScheduleRoutine['trigger'], 'weekdays' | 'notBefore' | 'notAfter'>,
+  time: LocalScheduleTime,
+  current: string,
+): boolean {
+  if (trigger.weekdays.includes(weekdayName(time.weekday))) return true;
+  if (trigger.notBefore === undefined || trigger.notAfter === undefined) return false;
+  const start = minutesSinceMidnight(trigger.notBefore);
+  const end = minutesSinceMidnight(trigger.notAfter);
   if (start <= end || minutesSinceMidnight(current) > end) return false;
-  // For an overnight window, the selected weekday anchors the window at its
-  // start. Monday + 22:00–06:00 therefore includes Tuesday at 05:00.
-  return routine.trigger.weekdays.includes(weekdayName((time.weekday + 6) % 7));
+  // Monday + 22:00–06:00 includes Tuesday at 05:00.
+  return trigger.weekdays.includes(weekdayName((time.weekday + 6) % 7));
 }
 
 function withinTimeWindow(current: string, notBefore?: string, notAfter?: string): boolean {
@@ -173,8 +296,6 @@ function withinTimeWindow(current: string, notBefore?: string, notAfter?: string
   const start = notBefore === undefined ? undefined : minutesSinceMidnight(notBefore);
   const end = notAfter === undefined ? undefined : minutesSinceMidnight(notAfter);
   if (start !== undefined && end !== undefined) {
-    // A window whose end is earlier than its start crosses midnight, e.g.
-    // 22:00–06:00.
     return start <= end
       ? currentMinutes >= start && currentMinutes <= end
       : currentMinutes >= start || currentMinutes <= end;
@@ -187,6 +308,10 @@ function withinTimeWindow(current: string, notBefore?: string, notAfter?: string
 function minutesSinceMidnight(value: string): number {
   const [hour, minute] = value.split(':').map(Number);
   return hour * 60 + minute;
+}
+
+function formatTime(hour: number, minute: number): string {
+  return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
 }
 
 export function weekdayName(value: number): ScheduleRoutine['trigger']['weekdays'][number] {

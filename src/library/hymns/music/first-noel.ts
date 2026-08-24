@@ -12,9 +12,9 @@ export const firstNoel = defineHymn({
   liturgical: {
     categories: ['christmas', 'epiphany'],
     seasons: ['Christmas', 'Epiphany'],
-    offices: ['Lauds'],
+    offices: [],
     feasts: ['nativity-of-the-lord', 'epiphany-of-the-lord'],
-    solemnities: ['nativity-of-the-lord', 'epiphany-of-the-lord'],
+    solemnities: [],
   },
   notation: melody({
     meter: { numerator: 3, denominator: 4 },

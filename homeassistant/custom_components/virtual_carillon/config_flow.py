@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
+import re
 from typing import Any
 from uuid import uuid4
 
@@ -13,33 +14,27 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .const import (
     CONF_ASSET,
-    CONF_CANONICAL_HOURS,
-    CONF_CATEGORY_IDS,
-    CONF_DELAY_SECONDS,
-    CONF_EXCLUDED_TIMES,
+    CONF_CANONICAL_HOUR,
     CONF_FALLBACK_ASSET,
-    CONF_FEAST_IDS,
-    CONF_FIXED_ASSET_ID,
-    CONF_FREQUENCY,
     CONF_LITCAL_CALENDAR,
     CONF_LITCAL_ENABLED,
     CONF_MEDIA_PLAYERS,
     CONF_NOT_AFTER,
     CONF_NOT_BEFORE,
-    CONF_OFFICES,
-    CONF_RANK,
-    CONF_RECENT_EXCLUSION,
+    CONF_PLAY_TYPE,
     CONF_ROUTINE_ENABLED,
     CONF_ROUTINE_ID,
     CONF_ROUTINE_NAME,
     CONF_SCHEDULE,
-    CONF_SEED,
-    CONF_SEASONS,
     CONF_STRATEGY,
-    CONF_TAGS,
-    CONF_TIME,
+    CONF_TIMES,
     CONF_TOKEN,
-    CONF_WEEKDAYS,
+    CONF_WESTMINSTER_CADENCE,
+    CONF_WESTMINSTER_DAYS,
+    CONF_WESTMINSTER_ENABLED,
+    CONF_WESTMINSTER_MEDIA_PLAYERS,
+    CONF_WESTMINSTER_NOT_AFTER,
+    CONF_WESTMINSTER_NOT_BEFORE,
     DEFAULT_LITCAL_CALENDAR,
     DEFAULT_LITCAL_ENABLED,
     DEFAULT_URL,
@@ -49,11 +44,42 @@ from .const import (
 
 DEFAULT_SCHEDULE = {
     "enabled": False,
+    "westminster": {
+        "enabled": False,
+        "cadence": "every_15",
+        "weekdays": ["sun", "mon", "tue", "wed", "thu", "fri", "sat"],
+        "mediaPlayers": [],
+    },
     "routines": [],
     "litcal": {"enabled": DEFAULT_LITCAL_ENABLED, "calendar": DEFAULT_LITCAL_CALENDAR},
 }
 WEEKDAYS = ("sun", "mon", "tue", "wed", "thu", "fri", "sat")
-FREQUENCIES = ("exact", "hourly", "every_15", "every_30")
+WEEKDAY_OPTIONS = [
+    {"value": "sun", "label": "Sunday"},
+    {"value": "mon", "label": "Monday"},
+    {"value": "tue", "label": "Tuesday"},
+    {"value": "wed", "label": "Wednesday"},
+    {"value": "thu", "label": "Thursday"},
+    {"value": "fri", "label": "Friday"},
+    {"value": "sat", "label": "Saturday"},
+]
+ASSET_TYPE_OPTIONS = [
+    {"value": "asset", "label": "Asset"},
+    {"value": "liturgical_hymn", "label": "Liturgical Hymn"},
+]
+CANONICAL_HOUR_OPTIONS = [
+    {"value": "", "label": "Automatic — no hour filter"},
+    {"value": "matins", "label": "Automatic — Matins"},
+    {"value": "lauds", "label": "Automatic — Lauds / Morning Prayer"},
+    {"value": "daytime", "label": "Automatic — Daytime Office"},
+    {"value": "vespers", "label": "Automatic — Vespers / Evening Prayer"},
+    {"value": "compline", "label": "Automatic — Compline / Night Prayer"},
+]
+WESTMINSTER_CADENCE_OPTIONS = [
+    {"value": "every_15", "label": "Every 15 minutes"},
+    {"value": "every_30", "label": "Every 30 minutes"},
+    {"value": "hourly", "label": "Every hour"},
+]
 
 
 class VirtualCarillonConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
@@ -106,26 +132,22 @@ class VirtualCarillonConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 class VirtualCarillonOptionsFlow(config_entries.OptionsFlow):
     def __init__(self):
         self._schedule: dict[str, Any] | None = None
-        self._draft_routine: dict[str, Any] | None = None
-        self._draft_index: int | None = None
+        self._assets: list[dict[str, Any]] = []
 
     async def async_step_init(self, user_input: dict[str, Any] | None = None):
         if self._schedule is None:
             existing = {**self.config_entry.data, **self.config_entry.options}
+            schedule = existing.get(CONF_SCHEDULE)
+            if not schedule:
+                schedule = await self._async_get_schedule()
             self._schedule = _normalise_schedule(
-                existing.get(CONF_SCHEDULE),
+                schedule,
                 litcal_enabled=existing.get(CONF_LITCAL_ENABLED, DEFAULT_LITCAL_ENABLED),
                 litcal_calendar=existing.get(CONF_LITCAL_CALENDAR, DEFAULT_LITCAL_CALENDAR),
             )
-            if not existing.get(CONF_SCHEDULE):
-                remote = await self._async_get_schedule()
-                self._schedule = _normalise_schedule(
-                    remote,
-                    litcal_enabled=existing.get(CONF_LITCAL_ENABLED, DEFAULT_LITCAL_ENABLED),
-                    litcal_calendar=existing.get(CONF_LITCAL_CALENDAR, DEFAULT_LITCAL_CALENDAR),
-                )
+            self._assets = await self._async_get_assets()
 
-        menu_options = ["global", "add_routine"]
+        menu_options = ["global", "westminster", "add_routine"]
         if self._schedule["routines"]:
             menu_options.extend(["edit_routine", "remove_routine"])
         menu_options.append("finish")
@@ -150,123 +172,94 @@ class VirtualCarillonOptionsFlow(config_entries.OptionsFlow):
             }),
         )
 
-    async def async_step_add_routine(self, user_input: dict[str, Any] | None = None):
+    async def async_step_westminster(self, user_input: dict[str, Any] | None = None):
+        errors = {}
         if user_input is not None:
-            self._draft_index = None
-            self._draft_routine = _routine_from_input(user_input)
-            return await self.async_step_routine_actions()
-        return self.async_show_form(step_id="add_routine", data_schema=_routine_schema())
+            if user_input[CONF_WESTMINSTER_ENABLED] and not _entities(user_input.get(CONF_WESTMINSTER_MEDIA_PLAYERS, [])):
+                errors["base"] = "media_players_required"
+            else:
+                westminster = {
+                    "enabled": user_input[CONF_WESTMINSTER_ENABLED],
+                    "cadence": user_input[CONF_WESTMINSTER_CADENCE],
+                    "weekdays": list(user_input[CONF_WESTMINSTER_DAYS]),
+                    "mediaPlayers": _entities(user_input.get(CONF_WESTMINSTER_MEDIA_PLAYERS, [])),
+                }
+                for field, key in ((CONF_WESTMINSTER_NOT_BEFORE, "notBefore"), (CONF_WESTMINSTER_NOT_AFTER, "notAfter")):
+                    value = _optional_time(user_input.get(field))
+                    if value:
+                        westminster[key] = value
+                self._schedule["westminster"] = westminster
+                return await self.async_step_init()
+        westminster = self._schedule["westminster"]
+        return self.async_show_form(
+            step_id="westminster",
+            data_schema=_westminster_schema(westminster),
+            errors=errors,
+        )
+
+    async def async_step_add_routine(self, user_input: dict[str, Any] | None = None):
+        errors = {}
+        if user_input is not None:
+            if user_input.get(CONF_PLAY_TYPE) == "asset" and not str(user_input.get(CONF_ASSET, "")).strip():
+                errors["base"] = "asset_required"
+            elif not _valid_times(user_input.get(CONF_TIMES, "")):
+                errors["base"] = "invalid_times"
+            elif not _entities(user_input.get(CONF_MEDIA_PLAYERS, [])):
+                errors["base"] = "media_players_required"
+            else:
+                self._schedule["routines"].append(_routine_from_input(user_input))
+                return await self.async_step_init()
+        return self.async_show_form(
+            step_id="add_routine",
+            data_schema=_routine_schema(self._assets),
+            errors=errors,
+        )
 
     async def async_step_edit_routine(self, user_input: dict[str, Any] | None = None):
         routines = self._schedule["routines"]
         if user_input is not None:
-            self._draft_index = next(index for index, routine in enumerate(routines) if routine["id"] == user_input[CONF_ROUTINE_ID])
-            self._draft_routine = deepcopy(routines[self._draft_index])
+            routine = next(routine for routine in routines if routine["id"] == user_input[CONF_ROUTINE_ID])
+            self._editing_routine_id = routine["id"]
             return await self.async_step_edit_routine_details()
         return self.async_show_form(
             step_id="edit_routine",
-            data_schema=vol.Schema({vol.Required(CONF_ROUTINE_ID): vol.In({routine["id"]: routine["name"] for routine in routines})}),
+            data_schema=vol.Schema({
+                vol.Required(CONF_ROUTINE_ID): vol.In({routine["id"]: routine["name"] for routine in routines})
+            }),
         )
 
     async def async_step_edit_routine_details(self, user_input: dict[str, Any] | None = None):
+        routine = next(routine for routine in self._schedule["routines"] if routine["id"] == self._editing_routine_id)
+        errors = {}
         if user_input is not None:
-            self._draft_routine.update(_routine_from_input(user_input, routine_id=self._draft_routine["id"], actions=self._draft_routine["actions"]))
-            return await self.async_step_routine_actions()
-        return self.async_show_form(step_id="edit_routine_details", data_schema=_routine_schema(self._draft_routine))
+            if user_input.get(CONF_PLAY_TYPE) == "asset" and not str(user_input.get(CONF_ASSET, "")).strip():
+                errors["base"] = "asset_required"
+            elif not _valid_times(user_input.get(CONF_TIMES, "")):
+                errors["base"] = "invalid_times"
+            elif not _entities(user_input.get(CONF_MEDIA_PLAYERS, [])):
+                errors["base"] = "media_players_required"
+            else:
+                index = self._schedule["routines"].index(routine)
+                self._schedule["routines"][index] = _routine_from_input(user_input, routine_id=routine["id"])
+                return await self.async_step_init()
+        return self.async_show_form(
+            step_id="edit_routine_details",
+            data_schema=_routine_schema(self._assets, routine),
+            errors=errors,
+        )
 
     async def async_step_remove_routine(self, user_input: dict[str, Any] | None = None):
         if user_input is not None:
-            self._schedule["routines"] = [routine for routine in self._schedule["routines"] if routine["id"] != user_input[CONF_ROUTINE_ID]]
+            self._schedule["routines"] = [
+                routine for routine in self._schedule["routines"] if routine["id"] != user_input[CONF_ROUTINE_ID]
+            ]
             return await self.async_step_init()
         return self.async_show_form(
             step_id="remove_routine",
-            data_schema=vol.Schema({vol.Required(CONF_ROUTINE_ID): vol.In({routine["id"]: routine["name"] for routine in self._schedule["routines"]})}),
+            data_schema=vol.Schema({
+                vol.Required(CONF_ROUTINE_ID): vol.In({routine["id"]: routine["name"] for routine in self._schedule["routines"]})
+            }),
         )
-
-    async def async_step_routine_actions(self, user_input: dict[str, Any] | None = None):
-        menu_options = ["add_play", "add_hymn", "add_delay"]
-        if self._draft_routine["actions"]:
-            menu_options.append("remove_action")
-        menu_options.append("finish_routine")
-        return self.async_show_menu(
-            step_id="routine_actions",
-            menu_options=menu_options,
-        )
-
-    async def async_step_add_play(self, user_input: dict[str, Any] | None = None):
-        if user_input is not None:
-            self._draft_routine["actions"].append({
-                "type": "play",
-                "asset": user_input[CONF_ASSET].strip(),
-                "mediaPlayers": _entities(user_input[CONF_MEDIA_PLAYERS]),
-            })
-            return await self.async_step_routine_actions()
-        return self.async_show_form(step_id="add_play", data_schema=vol.Schema({
-            vol.Required(CONF_ASSET): str,
-            vol.Required(CONF_MEDIA_PLAYERS): selector.EntitySelector(selector.EntitySelectorConfig(domain="media_player", multiple=True)),
-        }))
-
-    async def async_step_add_hymn(self, user_input: dict[str, Any] | None = None):
-        if user_input is not None:
-            action = {
-                "type": "select_hymn",
-                "mediaPlayers": _entities(user_input[CONF_MEDIA_PLAYERS]),
-                "strategy": user_input[CONF_STRATEGY],
-                "recentExclusion": user_input[CONF_RECENT_EXCLUSION],
-            }
-            if str(user_input.get(CONF_SEED, "")).strip():
-                action["seed"] = str(user_input[CONF_SEED]).strip()
-            for field, key in (
-                (CONF_FIXED_ASSET_ID, "fixedAssetId"),
-                (CONF_FALLBACK_ASSET, "fallbackAsset"),
-                (CONF_SEASONS, "seasons"),
-                (CONF_RANK, "rank"),
-                (CONF_FEAST_IDS, "feastIds"),
-                (CONF_CATEGORY_IDS, "categoryIds"),
-                (CONF_OFFICES, "offices"),
-                (CONF_CANONICAL_HOURS, "canonicalHours"),
-                (CONF_TAGS, "tags"),
-            ):
-                value = user_input.get(field, "")
-                if field in (CONF_FIXED_ASSET_ID, CONF_FALLBACK_ASSET, CONF_RANK):
-                    if str(value).strip():
-                        action[key] = str(value).strip()
-                else:
-                    values = _csv(value)
-                    if values:
-                        action[key] = values
-            self._draft_routine["actions"].append(action)
-            return await self.async_step_routine_actions()
-        return self.async_show_form(step_id="add_hymn", data_schema=_hymn_schema())
-
-    async def async_step_add_delay(self, user_input: dict[str, Any] | None = None):
-        if user_input is not None:
-            self._draft_routine["actions"].append({"type": "delay", "seconds": user_input[CONF_DELAY_SECONDS]})
-            return await self.async_step_routine_actions()
-        return self.async_show_form(step_id="add_delay", data_schema=vol.Schema({
-            vol.Required(CONF_DELAY_SECONDS, default=2): selector.NumberSelector(
-                selector.NumberSelectorConfig(min=0, max=86400, step=0.5, mode=selector.NumberSelectorMode.BOX)
-            ),
-        }))
-
-    async def async_step_remove_action(self, user_input: dict[str, Any] | None = None):
-        actions = self._draft_routine["actions"]
-        if user_input is not None:
-            del actions[int(user_input["action_index"])]
-            return await self.async_step_routine_actions()
-        options = {str(index): _action_label(action, index) for index, action in enumerate(actions)}
-        return self.async_show_form(step_id="remove_action", data_schema=vol.Schema({vol.Required("action_index"): vol.In(options)}))
-
-    async def async_step_finish_routine(self, user_input: dict[str, Any] | None = None):
-        if not self._draft_routine["actions"]:
-            return await self.async_step_routine_actions()
-        if self._draft_index is None:
-            self._schedule["routines"].append(self._draft_routine)
-        else:
-            self._schedule["routines"][self._draft_index] = self._draft_routine
-        self._draft_routine = None
-        self._draft_index = None
-        return await self.async_step_init()
 
     async def async_step_finish(self, user_input: dict[str, Any] | None = None):
         try:
@@ -284,24 +277,41 @@ class VirtualCarillonOptionsFlow(config_entries.OptionsFlow):
     async def _async_get_schedule(self):
         url = self.config_entry.data[CONF_URL].rstrip("/")
         try:
-            async with async_get_clientsession(self.hass).get(f"{url}/api/schedule", headers=_headers(self.config_entry.data.get(CONF_TOKEN, "")), timeout=5) as response:
+            async with async_get_clientsession(self.hass).get(
+                f"{url}/api/schedule",
+                headers=_headers(self.config_entry.data.get(CONF_TOKEN, "")),
+                timeout=5,
+            ) as response:
                 if response.status == 200:
                     return (await response.json()).get("config") or DEFAULT_SCHEDULE
         except Exception:
             pass
         return DEFAULT_SCHEDULE
 
+    async def _async_get_assets(self) -> list[dict[str, Any]]:
+        url = self.config_entry.data[CONF_URL].rstrip("/")
+        try:
+            async with async_get_clientsession(self.hass).get(
+                f"{url}/api/assets",
+                headers=_headers(self.config_entry.data.get(CONF_TOKEN, "")),
+                timeout=10,
+            ) as response:
+                if response.status == 200:
+                    return (await response.json()).get("assets", [])
+        except Exception:
+            pass
+        return []
+
     async def _async_save_schedule(self, schedule):
         url = self.config_entry.data[CONF_URL].rstrip("/")
         async with async_get_clientsession(self.hass).put(
             f"{url}/api/schedule",
             headers={**_headers(self.config_entry.data.get(CONF_TOKEN, "")), "Content-Type": "application/json"},
-            json=schedule,
+            json=_simple_schedule(schedule),
             timeout=10,
         ) as response:
             if response.status >= 300:
                 raise RuntimeError(await response.text())
-            return await response.json()
 
 
 def _litcal_schema(schema: dict[Any, Any], defaults: dict[str, Any] | None = None):
@@ -315,90 +325,266 @@ def _litcal_schema(schema: dict[Any, Any], defaults: dict[str, Any] | None = Non
     return schema
 
 
-def _routine_schema(routine: dict[str, Any] | None = None):
-    routine = routine or {}
-    trigger = routine.get("trigger", {})
+def _westminster_schema(westminster: dict[str, Any]):
     schema = {
-        vol.Required(CONF_ROUTINE_NAME, default=routine.get("name", "")): str,
-        vol.Required(CONF_ROUTINE_ENABLED, default=routine.get("enabled", True)): selector.BooleanSelector(),
-        vol.Required(CONF_FREQUENCY, default=trigger.get("frequency", "exact")): selector.SelectSelector(selector.SelectSelectorConfig(options=list(FREQUENCIES))),
-        vol.Required(CONF_TIME, default=trigger.get("time", "12:00")): selector.TimeSelector(),
-        vol.Required(CONF_WEEKDAYS, default=trigger.get("weekdays", list(WEEKDAYS))): selector.SelectSelector(
-            selector.SelectSelectorConfig(options=list(WEEKDAYS), multiple=True)
+        vol.Required(CONF_WESTMINSTER_ENABLED, default=westminster.get("enabled", False)): selector.BooleanSelector(),
+        vol.Required(CONF_WESTMINSTER_CADENCE, default=westminster.get("cadence", "every_15")): selector.SelectSelector(
+            selector.SelectSelectorConfig(options=WESTMINSTER_CADENCE_OPTIONS)
         ),
-        vol.Optional(CONF_EXCLUDED_TIMES, default=", ".join(trigger.get("excludedTimes", []))): str,
+        vol.Required(CONF_WESTMINSTER_DAYS, default=westminster.get("weekdays", list(WEEKDAYS))): selector.SelectSelector(
+            selector.SelectSelectorConfig(options=WEEKDAY_OPTIONS, multiple=True)
+        ),
+        vol.Optional(
+            CONF_WESTMINSTER_MEDIA_PLAYERS,
+            default=westminster.get("mediaPlayers", []),
+        ): selector.EntitySelector(selector.EntitySelectorConfig(domain="media_player", multiple=True)),
     }
-    for field, key in ((CONF_NOT_BEFORE, "notBefore"), (CONF_NOT_AFTER, "notAfter")):
-        value = trigger.get(key)
-        if value:
-            schema[vol.Optional(field, default=f"{value}:00")] = selector.TimeSelector()
-        else:
-            schema[vol.Optional(field)] = selector.TimeSelector()
+    _add_optional_time(schema, CONF_WESTMINSTER_NOT_BEFORE, westminster.get("notBefore"))
+    _add_optional_time(schema, CONF_WESTMINSTER_NOT_AFTER, westminster.get("notAfter"))
     return vol.Schema(schema)
 
 
-def _hymn_schema():
-    return vol.Schema({
-        vol.Required(CONF_MEDIA_PLAYERS): selector.EntitySelector(selector.EntitySelectorConfig(domain="media_player", multiple=True)),
-        vol.Required(CONF_STRATEGY, default="random"): selector.SelectSelector(selector.SelectSelectorConfig(options=["random", "sequential", "fixed"])),
-        vol.Optional(CONF_FIXED_ASSET_ID, default=""): str,
-        vol.Optional(CONF_FALLBACK_ASSET, default=""): str,
-        vol.Required(CONF_RECENT_EXCLUSION, default=3): selector.NumberSelector(selector.NumberSelectorConfig(min=0, max=100, mode=selector.NumberSelectorMode.BOX)),
-        vol.Optional(CONF_SEED, default=""): str,
-        vol.Optional(CONF_SEASONS, default=""): str,
-        vol.Optional(CONF_RANK, default=""): str,
-        vol.Optional(CONF_FEAST_IDS, default=""): str,
-        vol.Optional(CONF_CATEGORY_IDS, default=""): str,
-        vol.Optional(CONF_OFFICES, default=""): str,
-        vol.Optional(CONF_CANONICAL_HOURS, default=""): str,
-        vol.Optional(CONF_TAGS, default=""): str,
-    })
+def _routine_schema(assets: list[dict[str, Any]], routine: dict[str, Any] | None = None):
+    defaults = _routine_defaults(routine)
+    schema = {
+        vol.Optional(CONF_ROUTINE_NAME, default=defaults["name"]): str,
+        vol.Required(CONF_ROUTINE_ENABLED, default=defaults["enabled"]): selector.BooleanSelector(),
+        vol.Required(CONF_PLAY_TYPE, default=defaults["play_type"]): selector.SelectSelector(
+            selector.SelectSelectorConfig(options=ASSET_TYPE_OPTIONS)
+        ),
+        vol.Optional(CONF_ASSET, default=defaults["asset"]): selector.SelectSelector(
+            selector.SelectSelectorConfig(options=_asset_options(assets, include_empty=True))
+        ),
+        vol.Optional(CONF_FALLBACK_ASSET, default=defaults["fallback_asset"]): selector.SelectSelector(
+            selector.SelectSelectorConfig(options=_asset_options(assets, include_empty=True))
+        ),
+        vol.Optional(CONF_CANONICAL_HOUR, default=defaults["canonical_hour"]): selector.SelectSelector(
+            selector.SelectSelectorConfig(options=CANONICAL_HOUR_OPTIONS)
+        ),
+        vol.Required(CONF_TIMES, default=defaults["times"]): str,
+        vol.Required("weekdays", default=defaults["weekdays"]): selector.SelectSelector(
+            selector.SelectSelectorConfig(options=WEEKDAY_OPTIONS, multiple=True)
+        ),
+        vol.Required(CONF_MEDIA_PLAYERS, default=defaults["media_players"]): selector.EntitySelector(
+            selector.EntitySelectorConfig(domain="media_player", multiple=True)
+        ),
+    }
+    _add_optional_time(schema, CONF_NOT_BEFORE, defaults["not_before"])
+    _add_optional_time(schema, CONF_NOT_AFTER, defaults["not_after"])
+    return vol.Schema(schema)
 
 
-def _routine_from_input(user_input: dict[str, Any], *, routine_id: str | None = None, actions: list[dict[str, Any]] | None = None):
+def _add_optional_time(schema: dict[Any, Any], field: str, value: str | None):
+    if value:
+        schema[vol.Optional(field, default=f"{value}:00")] = selector.TimeSelector()
+    else:
+        schema[vol.Optional(field)] = selector.TimeSelector()
+
+
+def _asset_options(assets: list[dict[str, Any]], *, include_empty: bool):
+    options = [{"value": "", "label": "None"}] if include_empty else []
+    options.extend({"value": asset["id"], "label": f"{asset.get('name', asset['id'])} ({asset['id']})"} for asset in assets if asset.get("id"))
+    return options
+
+
+def _routine_defaults(routine: dict[str, Any] | None):
+    if not routine:
+        return {
+            "name": "",
+            "enabled": True,
+            "play_type": "asset",
+            "asset": "",
+            "fallback_asset": "ave-maris-stella",
+            "canonical_hour": "",
+            "times": "12:00",
+            "weekdays": list(WEEKDAYS),
+            "media_players": [],
+            "not_before": None,
+            "not_after": None,
+        }
+    trigger = routine.get("trigger", {})
+    action = next((item for item in routine.get("actions", []) if item.get("type") != "delay"), {})
+    if not action and routine.get("type"):
+        action = {
+            "type": "select_hymn" if routine.get("type") == "liturgical_hymn" else "play",
+            "asset": "angelus" if routine.get("type") == "angelus" else routine.get("asset", ""),
+            "fallbackAsset": routine.get("fallbackAsset", "ave-maris-stella"),
+            "mediaPlayers": routine.get("mediaPlayers", []),
+        }
+        trigger = {
+            "times": routine.get("times", ["12:00"]),
+            "time": (routine.get("times") or ["12:00"])[0],
+            "weekdays": routine.get("weekdays", list(WEEKDAYS)),
+            "notBefore": routine.get("notBefore"),
+            "notAfter": routine.get("notAfter"),
+        }
+    return {
+        "name": routine.get("name", ""),
+        "enabled": routine.get("enabled", True),
+        "play_type": "liturgical_hymn" if action.get("type") == "select_hymn" else "asset",
+        "asset": action.get("asset", ""),
+        "fallback_asset": action.get("fallbackAsset", "ave-maris-stella"),
+        "canonical_hour": (action.get("canonicalHours") or [""])[0],
+        "times": ", ".join(trigger.get("times", [trigger.get("time", "12:00")])),
+        "weekdays": trigger.get("weekdays", list(WEEKDAYS)),
+        "media_players": action.get("mediaPlayers", []),
+        "not_before": trigger.get("notBefore"),
+        "not_after": trigger.get("notAfter"),
+    }
+
+
+def _routine_from_input(user_input: dict[str, Any], *, routine_id: str | None = None):
+    times = _csv(user_input.get(CONF_TIMES, ""))
+    if not times:
+        times = ["12:00"]
     trigger = {
-        "frequency": user_input[CONF_FREQUENCY],
-        "time": _time_value(user_input[CONF_TIME]),
-        "weekdays": list(user_input[CONF_WEEKDAYS]),
-        "excludedTimes": _csv(user_input.get(CONF_EXCLUDED_TIMES, "")),
+        "frequency": "exact",
+        "time": times[0],
+        "times": times,
+        "weekdays": list(user_input.get("weekdays", WEEKDAYS)),
+        "excludedTimes": [],
     }
     for field, key in ((CONF_NOT_BEFORE, "notBefore"), (CONF_NOT_AFTER, "notAfter")):
         value = _optional_time(user_input.get(field))
         if value:
             trigger[key] = value
+
+    play_type = user_input.get(CONF_PLAY_TYPE, "asset")
+    if play_type == "liturgical_hymn":
+        action = {
+            "type": "select_hymn",
+            "strategy": "random",
+            "mediaPlayers": _entities(user_input.get(CONF_MEDIA_PLAYERS, [])),
+        }
+        canonical_hour = str(user_input.get(CONF_CANONICAL_HOUR, "")).strip()
+        if canonical_hour:
+            action["canonicalHours"] = [canonical_hour]
+        fallback = str(user_input.get(CONF_FALLBACK_ASSET, "")).strip()
+        if fallback:
+            action["fallbackAsset"] = fallback
+        default_name = "Liturgical hymn"
+    else:
+        action = {
+            "type": "play",
+            "asset": str(user_input.get(CONF_ASSET, "")).strip(),
+            "mediaPlayers": _entities(user_input.get(CONF_MEDIA_PLAYERS, [])),
+        }
+        default_name = action["asset"] or "Asset"
+
+    name = str(user_input.get(CONF_ROUTINE_NAME, "")).strip() or default_name
     return {
         "id": routine_id or f"routine-{uuid4().hex[:12]}",
-        "name": user_input[CONF_ROUTINE_NAME].strip(),
-        "enabled": user_input[CONF_ROUTINE_ENABLED],
+        "name": name,
+        "enabled": user_input.get(CONF_ROUTINE_ENABLED, True),
         "trigger": trigger,
-        "actions": actions or [],
+        "actions": [action],
     }
 
 
 def _normalise_schedule(value: Any, *, litcal_enabled: bool, litcal_calendar: str):
-    if not isinstance(value, dict) or not isinstance(value.get("routines"), list):
-        return {
-            **deepcopy(DEFAULT_SCHEDULE),
-            "litcal": {"enabled": litcal_enabled, "calendar": litcal_calendar},
-        }
+    if not isinstance(value, dict):
+        value = {}
+    westminster = value.get("westminster") if isinstance(value.get("westminster"), dict) else {}
+    litcal = value.get("litcal") if isinstance(value.get("litcal"), dict) else {}
+    routines = value.get("routines", []) if isinstance(value.get("routines"), list) else []
+    normalised_routines = [
+        _normalise_routine(routine, index)
+        for index, routine in enumerate(routines)
+        if isinstance(routine, dict)
+    ]
     return {
         "enabled": bool(value.get("enabled", False)),
-        "routines": deepcopy(value.get("routines", [])),
+        "westminster": {
+            **deepcopy(DEFAULT_SCHEDULE["westminster"]),
+            **deepcopy(westminster),
+        },
+        "routines": normalised_routines,
         "litcal": {
-            "enabled": bool(value.get("litcal", {}).get("enabled", litcal_enabled)),
-            "calendar": value.get("litcal", {}).get("calendar", litcal_calendar),
+            "enabled": bool(litcal.get("enabled", litcal_enabled)),
+            "calendar": litcal.get("calendar", litcal_calendar),
         },
     }
 
 
-def _time_value(value: Any) -> str:
-    return str(value)[:5]
+def _normalise_routine(routine: dict[str, Any], index: int):
+    if isinstance(routine.get("actions"), list):
+        return deepcopy(routine)
+    times = routine.get("times") if isinstance(routine.get("times"), list) else _csv(routine.get("times", "12:00"))
+    times = times or ["12:00"]
+    is_hymn = routine.get("type") == "liturgical_hymn"
+    action = {
+        "type": "select_hymn" if is_hymn else "play",
+        "mediaPlayers": list(routine.get("mediaPlayers", [])),
+        "outputs": list(routine.get("outputs", [])),
+    }
+    if is_hymn:
+        action["strategy"] = routine.get("strategy", "random")
+        if routine.get("fallbackAsset"):
+            action["fallbackAsset"] = routine["fallbackAsset"]
+        if routine.get("canonicalHour"):
+            action["canonicalHours"] = [routine["canonicalHour"]]
+    else:
+        action["asset"] = "angelus" if routine.get("type") == "angelus" else routine.get("asset", "")
+    return {
+        "id": routine.get("id") or f"routine-{index + 1}",
+        "name": routine.get("name") or ("Liturgical hymn" if is_hymn else routine.get("asset", "Scheduled asset")),
+        "enabled": routine.get("enabled", True),
+        "trigger": {
+            "frequency": "exact",
+            "time": times[0],
+            "times": times,
+            "weekdays": routine.get("weekdays", list(WEEKDAYS)),
+            "excludedTimes": routine.get("excludedTimes", []),
+            **({"notBefore": routine["notBefore"]} if routine.get("notBefore") else {}),
+            **({"notAfter": routine["notAfter"]} if routine.get("notAfter") else {}),
+        },
+        "actions": [action],
+    }
+
+
+def _simple_schedule(schedule: dict[str, Any]):
+    routines = []
+    for routine in schedule.get("routines", []):
+        action = next((item for item in routine.get("actions", []) if item.get("type") != "delay"), {})
+        trigger = routine.get("trigger", {})
+        is_hymn = action.get("type") == "select_hymn"
+        simple = {
+            "id": routine["id"],
+            "name": routine.get("name", "Scheduled playback"),
+            "enabled": routine.get("enabled", True),
+            "type": "liturgical_hymn" if is_hymn else "asset",
+            "times": trigger.get("times", [trigger.get("time", "12:00")]),
+            "weekdays": trigger.get("weekdays", list(WEEKDAYS)),
+            "mediaPlayers": action.get("mediaPlayers", []),
+            "outputs": action.get("outputs", []),
+        }
+        if is_hymn:
+            if action.get("fallbackAsset"):
+                simple["fallbackAsset"] = action["fallbackAsset"]
+            if action.get("canonicalHours"):
+                simple["canonicalHour"] = action["canonicalHours"][0]
+        else:
+            simple["asset"] = action.get("asset", "")
+        for key in ("notBefore", "notAfter"):
+            if trigger.get(key):
+                simple[key] = trigger[key]
+        routines.append(simple)
+    return {
+        "enabled": schedule.get("enabled", False),
+        "westminster": deepcopy(schedule.get("westminster", DEFAULT_SCHEDULE["westminster"])),
+        "litcal": deepcopy(schedule.get("litcal", {"enabled": True, "calendar": "general"})),
+        "routines": routines,
+    }
 
 
 def _optional_time(value: Any) -> str | None:
     if value is None or not str(value).strip():
         return None
-    return _time_value(value)
+    return str(value)[:5]
+
+
+def _valid_times(value: Any) -> bool:
+    return bool(_csv(value)) and all(re.fullmatch(r"(?:[01]\d|2[0-3]):[0-5]\d", item) for item in _csv(value))
 
 
 def _csv(value: Any) -> list[str]:
@@ -408,15 +594,7 @@ def _csv(value: Any) -> list[str]:
 
 
 def _entities(value: Any) -> list[str]:
-    return [str(item) for item in (value if isinstance(value, list) else [value])]
-
-
-def _action_label(action: dict[str, Any], index: int) -> str:
-    if action["type"] == "play":
-        return f"{index + 1}: {action['asset']}"
-    if action["type"] == "select_hymn":
-        return f"{index + 1}: hymn ({action.get('strategy', 'random')})"
-    return f"{index + 1}: wait {action['seconds']} seconds"
+    return [str(item) for item in (value if isinstance(value, list) else [value]) if str(item)]
 
 
 def _headers(token: str):

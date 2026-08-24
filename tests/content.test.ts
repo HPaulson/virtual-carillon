@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { AudioEngine } from '../src/audio/engine.js';
 import { BUILTIN_HYMNS } from '../src/library/hymns.js';
+import { LITURGICAL_FEASTS } from '../src/liturgical/taxonomy.js';
 import {
   AssetLibrary,
   BUILTIN_ASSETS,
@@ -12,6 +13,31 @@ import os from 'node:os';
 import path from 'node:path';
 
 describe('authentic content model', () => {
+  it('uses stable feast IDs and canonical-hour values in hymn metadata', () => {
+    const feastIds = new Set(Object.keys(LITURGICAL_FEASTS));
+    const hours = new Set(['matins', 'lauds', 'daytime', 'vespers', 'compline']);
+    for (const hymn of BUILTIN_HYMNS) {
+      for (const feast of hymn.liturgicalTags.feasts)
+        expect(feastIds, `${hymn.id}: ${feast}`).toContain(feast);
+      for (const hour of hymn.liturgicalTags.canonicalHours)
+        expect(hours, `${hymn.id}: ${hour}`).toContain(hour);
+      expect(hymn.liturgicalTags.solemnities, `${hymn.id}: hymn rank tags`).toEqual([]);
+    }
+    expect(BUILTIN_HYMNS.filter((hymn) => hymn.liturgicalTags.canonicalHours.length).map((hymn) => hymn.id).sort()).toEqual([
+      'alma-redemptoris-mater',
+      'alma-redemptoris-mater-solemn',
+      'ave-maris-stella',
+      'ave-regina-caelorum',
+      'ave-regina-caelorum-solemn',
+      'regina-caeli',
+      'regina-caeli-solemn',
+      'salve-regina',
+      'salve-regina-solemn',
+      'te-lucis-ante-terminum',
+      'veni-creator-spiritus',
+    ].sort());
+  });
+
   it('registers the sourced seasonal hymn additions', () => {
     const ids = new Set(BUILTIN_HYMNS.map((hymn) => hymn.id));
     for (const id of [

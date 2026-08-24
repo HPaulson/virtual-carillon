@@ -12,9 +12,9 @@ export const reginaCaeliSimpleTone = defineHymn({
   liturgical: {
     categories: ['marian', 'resurrection'],
     seasons: ['Easter', 'Pentecost'],
-    offices: ['Compline', 'Vespers'],
-    feasts: ['easter-sunday', 'pentecost'],
-    solemnities: ['easter-sunday'],
+    offices: ['Compline'],
+    feasts: [],
+    solemnities: [],
   },
   notation: melody({
     meter: { numerator: 1, denominator: 1 },

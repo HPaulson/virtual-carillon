@@ -12,7 +12,7 @@ export const hyfrydol = defineHymn({
   liturgical: {
     categories: ['christological'],
     seasons: ['Advent', 'Christmas'],
-    offices: ['Lauds', 'Vespers'],
+    offices: [],
     feasts: [],
     solemnities: [],
   },

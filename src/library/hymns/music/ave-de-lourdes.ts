@@ -12,9 +12,9 @@ export const aveDeLourdes = defineHymn({
   liturgical: {
     categories: ['marian', 'blessed-virgin-mary', 'praise'],
     seasons: ['General', 'Ordinary Time'],
-    offices: ['Lauds', 'Vespers'],
-    feasts: ['immaculate-conception', 'assumption-of-mary', 'nativity-of-mary'],
-    solemnities: ['immaculate-conception', 'assumption-of-mary'],
+    offices: [],
+    feasts: ['our-lady-of-lourdes'],
+    solemnities: [],
   },
   notation: melody({
     meter: { numerator: 3, denominator: 4 },

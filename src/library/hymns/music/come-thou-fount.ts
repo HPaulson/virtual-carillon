@@ -12,7 +12,7 @@ export const comeThouFount = defineHymn({
   liturgical: {
     categories: ['christological'],
     seasons: ['General', 'Ordinary Time'],
-    offices: ['Lauds', 'Vespers'],
+    offices: [],
     feasts: [],
     solemnities: [],
   },

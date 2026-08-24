@@ -11,9 +11,9 @@ export const comeHolySpirit = defineHymn({
   liturgical: {
     categories: ['holy-spirit', 'pentecost', 'christological'],
     seasons: ['Easter', 'Pentecost'],
-    offices: ['Vespers', 'Lauds'],
+    offices: [],
     feasts: ['pentecost'],
-    solemnities: ['pentecost'],
+    solemnities: [],
   },
   notation: veniCreatorNotation,
   arrangement: { style: 'grand', tonic: 'E3' },

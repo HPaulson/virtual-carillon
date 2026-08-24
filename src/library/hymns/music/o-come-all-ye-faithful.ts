@@ -12,9 +12,9 @@ export const oComeAllYeFaithful = defineHymn({
   liturgical: {
     categories: ['christmas', 'christological', 'epiphany'],
     seasons: ['Christmas', 'Epiphany'],
-    offices: ['Lauds', 'Vespers'],
+    offices: [],
     feasts: ['nativity-of-the-lord', 'epiphany-of-the-lord'],
-    solemnities: ['nativity-of-the-lord', 'epiphany-of-the-lord'],
+    solemnities: [],
   },
   notation: melody({
     meter: { numerator: 4, denominator: 4 },

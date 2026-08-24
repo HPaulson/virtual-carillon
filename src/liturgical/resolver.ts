@@ -56,7 +56,7 @@ export function toHymnQuery(condition: LiturgicalCondition): HymnQuery {
     categoryIds: condition.categoryIds,
     seasonIds: seasons.length ? seasons : undefined,
     officeIds: condition.offices,
-    canonicalHours: condition.canonicalHours,
+    preferredCanonicalHours: condition.canonicalHours,
     tags: condition.tags,
     strategy: condition.strategy ?? 'random',
     fixedAssetId: condition.fixedAssetId,

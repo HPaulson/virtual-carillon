@@ -12,9 +12,9 @@ export const joyToTheWorld = defineHymn({
   liturgical: {
     categories: ['christological', 'incarnation', 'praise'],
     seasons: ['Advent', 'Christmas'],
-    offices: ['Lauds', 'Vespers'],
-    feasts: ['christmas'],
-    solemnities: ['christmas'],
+    offices: [],
+    feasts: ['nativity-of-the-lord'],
+    solemnities: [],
   },
   notation: melody({
     meter: { numerator: 2, denominator: 4 },

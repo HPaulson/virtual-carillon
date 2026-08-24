@@ -12,7 +12,7 @@ export const amazingGrace = defineHymn({
   liturgical: {
     categories: ['christological'],
     seasons: ['General', 'Ordinary Time'],
-    offices: ['Lauds', 'Vespers'],
+    offices: [],
     feasts: [],
     solemnities: [],
   },

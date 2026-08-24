@@ -13,7 +13,7 @@ export const oldHundredth = defineHymn({
   liturgical: {
     categories: ['praise'],
     seasons: ['General', 'Ordinary Time'],
-    offices: ['Lauds'],
+    offices: [],
     feasts: [],
     solemnities: [],
   },

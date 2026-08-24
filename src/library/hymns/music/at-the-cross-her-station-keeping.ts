@@ -11,9 +11,9 @@ export const atTheCrossHerStationKeeping = defineHymn({
   liturgical: {
     categories: ['passion', 'cross', 'marian'],
     seasons: ['Lent'],
-    offices: ['Vespers', 'Good Friday'],
-    feasts: ['passion', 'our-lady-of-sorrows'],
-    solemnities: ['good-friday'],
+    offices: [],
+    feasts: ['our-lady-of-sorrows'],
+    solemnities: [],
   },
   notation: melody({
     meter: { numerator: 1, denominator: 1 },

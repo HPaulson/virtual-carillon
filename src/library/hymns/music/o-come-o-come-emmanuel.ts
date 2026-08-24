@@ -12,9 +12,9 @@ export const oComeOComeEmmanuel = defineHymn({
   liturgical: {
     categories: ['advent', 'christological'],
     seasons: ['Advent'],
-    offices: ['Vespers', 'Compline'],
-    feasts: ['advent'],
-    solemnities: ['advent'],
+    offices: [],
+    feasts: [],
+    solemnities: [],
   },
   notation: melody({
     meter: { numerator: 4, denominator: 4 },

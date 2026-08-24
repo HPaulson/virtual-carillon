@@ -36,8 +36,10 @@ curl -H 'Authorization: Bearer YOUR_TOKEN' http://127.0.0.1:9876/api/devices
 curl -H 'Authorization: Bearer YOUR_TOKEN' http://127.0.0.1:9876/api/assets
 curl -H 'Authorization: Bearer YOUR_TOKEN' http://127.0.0.1:9876/api/hymns
 curl -H 'Authorization: Bearer YOUR_TOKEN' http://127.0.0.1:9876/api/schedule
+curl -H 'Authorization: Bearer YOUR_TOKEN' http://127.0.0.1:9876/api/devices
+# API-only clients can use POST /api/schedule/run for an immediate due-time smoke test.
 curl -H 'Authorization: Bearer YOUR_TOKEN' 'http://127.0.0.1:9876/api/liturgical/2026-08-15/hymn?calendar=general'
 curl -H 'Authorization: Bearer YOUR_TOKEN' http://127.0.0.1:9876/api/assets/test-bell/audio -o /tmp/test-bell.wav
 ```
 
-In Home Assistant, add the integration, open its **Configure** flow, create a test routine with an exact time and a `play` action, and save it. Confirm the routine is played on a known-good `media_player`, then remove the test routine. Also exercise the **Virtual Carillon** media source, `virtual_carillon.play`, and `virtual_carillon.select_hymn`. This validates the intended deployment path; speaker-specific behavior remains the responsibility of that media-player integration.
+In Home Assistant, add the integration, open its **Configure** flow, create a test “play asset at...” schedule for an exact time, and save it. Confirm it plays on a known-good `media_player`, then remove the test schedule. Also exercise Westminster and the **Liturgical Hymn** option. This validates the intended deployment path; speaker-specific behavior remains the responsibility of that media-player integration.

@@ -12,8 +12,8 @@ export const winchesterNew = defineHymn({
   liturgical: {
     categories: ['advent', 'christological'],
     seasons: ['Advent'],
-    offices: ['Lauds', 'Vespers'],
-    feasts: ['advent'],
+    offices: [],
+    feasts: [],
     solemnities: [],
   },
   notation: melody({

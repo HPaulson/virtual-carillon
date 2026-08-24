@@ -4,7 +4,7 @@ The server defaults to `http://127.0.0.1:9876`. CORS is enabled for local Home A
 
 If `VIRTUAL_CARILLON_API_TOKEN` is set, every `/api/*` endpoint requires an `Authorization: Bearer <token>` header. `GET /health` remains unauthenticated for Docker and reverse-proxy health checks.
 
-Home Assistant is the product frontend and media-player adapter. The integration stores a generic routine list through the schedule API; the Node service evaluates due routines and resolves hymn actions, while HA sends returned assets to the selected media players. The API is also the rendering, metadata, and native playback surface used by CLI/special-case clients.
+Home Assistant is the friendly frontend and media-player adapter, not a requirement. The public API uses the product vocabulary—Westminster, assets such as Angelus, and Liturgical Hymn—while the Node service keeps its internal action graph private. HA sends due assets to selected media players; API-only clients can target native device outputs instead.
 
 ## Health and devices
 
@@ -23,20 +23,65 @@ Home Assistant is the product frontend and media-player adapter. The integration
 
 - `GET /api/liturgical/:date?calendar=general` returns the normalized LitCal day for `general`, `US`, `IT`, `NL`, `VA`, or `CA`.
 - `GET /api/liturgical/:date/hymn?calendar=general` returns the day and automatic selection.
-- `GET /api/hymns` lists hymns and their complete `liturgicalTags`. Filter with `feastIds`, `categoryIds`, `seasonIds`, `officeIds`, `canonicalHours`, or `tags`.
+- `GET /api/hymns` lists hymns and their complete `liturgicalTags`. Filter with `feastIds`, `categoryIds`, `seasonIds`, `officeIds`, `canonicalHours`, or `tags`. `canonicalHours` is an explicit filter; schedule clock times do not implicitly become Liturgy-of-the-Hours labels.
 - `GET /api/hymns/:hymn` returns one hymn's metadata.
 - `POST /api/hymns/select` accepts `date`, `useLitCal`, `calendar`, `seasons`, `rank`, `feastIds`, `categoryIds`, `offices`, `canonicalHours`, `tags`, `strategy` (`random`, `sequential`, or `fixed`), `fixedAssetId`, `seed`, and `recentExclusion`.
 
-Season, rank, and feast fields are LitCal conditions. When a condition does not match, the response contains no selected asset so Home Assistant can use the configured fallback action. When `useLitCal` is false, selection uses a neutral general day. Automatic selection uses the highest-priority celebration and exact-feast → category → season → General fallback. Seeded random selection is reproducible; unseeded random selection avoids the recent window when alternatives exist.
+Season, rank, and feast fields are LitCal conditions. When a condition does not match, the response contains no selected asset so Home Assistant can use the configured fallback action. When `useLitCal` is false, selection uses a neutral general day. Automatic selection uses the highest-priority celebration and exact-feast → exact-saint → saint/category → season → General fallback. Seeded random selection is reproducible; unseeded random selection avoids the recent window when alternatives exist.
 
-## Server-owned routines
+## Schedules
 
-- `GET /api/schedule` returns the persisted schedule configuration and its `updatedAt` value.
-- `PUT /api/schedule` stores a schedule with `enabled`, a `routines` array, and global `litcal` settings. Each routine has a trigger (`exact`, `hourly`, `every_15`, or `every_30`), weekdays, exclusions, optional `notBefore`/`notAfter` time bounds (including overnight windows), and ordered `play`, `select_hymn`, or `delay` actions. Playback actions carry Home Assistant `mediaPlayers` targets.
+- `GET /api/schedule` returns the simple persisted configuration and its `updatedAt` value. `/api/schedule/simple` is an equivalent explicit alias.
+- `PUT /api/schedule` stores the simple configuration below. `/api/schedule/simple` is an equivalent explicit alias. The server also accepts the older internal action format for migration, but new clients should use this public form:
+
+```json
+{
+  "enabled": true,
+  "westminster": {
+    "enabled": true,
+    "cadence": "every_15",
+    "weekdays": ["sun", "mon", "tue", "wed", "thu", "fri", "sat"],
+    "notBefore": "07:00",
+    "notAfter": "22:00",
+    "mediaPlayers": [],
+    "outputs": []
+  },
+  "routines": [
+    {
+      "id": "angelus",
+      "name": "Angelus",
+      "enabled": true,
+      "type": "asset",
+      "asset": "angelus",
+      "times": ["12:00", "18:00"],
+      "weekdays": ["mon", "wed"],
+      "mediaPlayers": [],
+      "outputs": []
+    },
+    {
+      "id": "seasonal-hymn",
+      "name": "Seasonal hymn",
+      "enabled": true,
+      "type": "liturgical_hymn",
+      "times": ["15:00"],
+      "weekdays": ["sun", "mon", "tue", "wed", "thu", "fri", "sat"],
+      "notBefore": "09:00",
+      "notAfter": "21:00",
+      "fallbackAsset": "ave-maris-stella",
+      "mediaPlayers": [],
+      "outputs": []
+    }
+  ],
+  "litcal": { "enabled": true, "calendar": "general" }
+}
+```
+
+`westminster.cadence` is `every_15`, `every_30`, or `hourly`; the server chooses the correct quarter asset and actual 1–12 hour-strike asset. A routine's `type` is `asset` or `liturgical_hymn`; use `asset: "angelus"` for the Angelus. `times` accepts any number of exact `HH:MM` values. `weekdays`, `notBefore`, and `notAfter` apply to every listed time, including overnight windows such as 22:00–06:00. A Liturgical Hymn can optionally include `canonicalHour` when the selection should prefer a particular Office hour. `mediaPlayers` are Home Assistant entity IDs; `outputs` are native device IDs or names from `/api/devices`.
 - `POST /api/schedule/claim` accepts `{ "at": "<ISO timestamp>" }`, evaluates all routines due at that local date/time, and atomically claims the resulting playback sequence for the current schedule revision.
 - `POST /api/schedule/complete` accepts `{ "slotKey": "...", "status": "completed|failed" }` so the HA runner can record the result.
+- `POST /api/schedule/run` accepts `{ "at": "<ISO timestamp>", "output": "optional native output id or name" }`, evaluates the same schedule, and immediately renders/plays due events through native device output. If `output` is omitted, each routine's `outputs` are used; with no native targets, the platform default is used. This is also the API-only smoke-test/trigger path and does not require Home Assistant.
 
-The default schedule is disabled with no routines. No household-specific Westminster, Angelus, or hymn timetable is built into the default configuration.
+The default schedule is disabled with no routines. No household-specific Westminster, Angelus, or hymn timetable is built into the default configuration. When native targets are configured—or when a routine has neither HA nor native targets—the running server checks the schedule every five seconds and plays due events itself. HA-targeted routines use `/api/schedule/claim` and the integration's media-player handoff.
 
 ## Native playback
 

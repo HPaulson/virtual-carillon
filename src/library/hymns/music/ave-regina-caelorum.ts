@@ -12,9 +12,9 @@ export const aveReginaCaelorum = defineHymn({
   liturgical: {
     categories: ['marian', 'blessed-virgin-mary'],
     seasons: ['Christmas', 'Lent'],
-    offices: ['Compline', 'Vespers'],
-    feasts: ['purification-of-the-lord'],
-    solemnities: ['purification-of-the-lord'],
+    offices: ['Compline'],
+    feasts: [],
+    solemnities: [],
   },
   notation: melody({
     meter: { numerator: 1, denominator: 1 },

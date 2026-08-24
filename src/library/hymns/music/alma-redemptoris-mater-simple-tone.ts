@@ -11,9 +11,9 @@ export const almaRedemptorisMaterSimpleTone = defineHymn({
   liturgical: {
     categories: ['marian', 'advent', 'incarnation'],
     seasons: ['Advent', 'Christmas'],
-    offices: ['Compline', 'Vespers'],
-    feasts: ['nativity-of-mary', 'annunciation'],
-    solemnities: ['annunciation'],
+    offices: ['Compline'],
+    feasts: [],
+    solemnities: [],
   },
   notation: melody({
     meter: { numerator: 1, denominator: 1 },

@@ -12,9 +12,9 @@ export const gloriaInExcelsisDeo = defineHymn({
   liturgical: {
     categories: ['christological', 'incarnation', 'praise'],
     seasons: ['Christmas'],
-    offices: ['Lauds', 'Vespers'],
-    feasts: ['christmas'],
-    solemnities: ['christmas'],
+    offices: [],
+    feasts: ['nativity-of-the-lord'],
+    solemnities: [],
   },
   notation: melody({
     meter: { numerator: 4, denominator: 4 },

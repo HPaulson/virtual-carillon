@@ -12,15 +12,9 @@ export const salveRegina = defineHymn({
   liturgical: {
     categories: ['marian', 'blessed-virgin-mary'],
     seasons: ['General', 'Ordinary Time'],
-    offices: ['Compline', 'Vespers'],
-    feasts: [
-      'assumption-of-mary',
-      'nativity-of-mary',
-      'immaculate-conception',
-      'annunciation',
-      'queenship-of-mary',
-    ],
-    solemnities: ['assumption-of-mary', 'immaculate-conception', 'annunciation'],
+    offices: ['Compline'],
+    feasts: [],
+    solemnities: [],
   },
   notation: melody({
     meter: { numerator: 1, denominator: 1 },

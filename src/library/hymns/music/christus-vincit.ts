@@ -11,9 +11,9 @@ export const christusVincit = defineHymn({
   liturgical: {
     categories: ['christological', 'praise'],
     seasons: ['General', 'Ordinary Time'],
-    offices: ['Lauds', 'Vespers'],
+    offices: [],
     feasts: ['christ-the-king', 'easter-sunday'],
-    solemnities: ['christ-the-king'],
+    solemnities: [],
   },
   notation: melody({
     meter: { numerator: 1, denominator: 1 },

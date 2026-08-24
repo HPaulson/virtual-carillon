@@ -13,7 +13,7 @@ export const veniCreatorSpiritus = defineHymn({
     seasons: ['Easter', 'Pentecost'],
     offices: ['Vespers'],
     feasts: ['pentecost'],
-    solemnities: ['pentecost'],
+    solemnities: [],
   },
   notation: melody({
     meter: { numerator: 1, denominator: 1 },

@@ -23,111 +23,126 @@
   "options": {
     "step": {
       "init": {
-        "title": "Virtual Carillon schedule",
-        "description": "Build any number of recurring routines. Each routine can play assets, select seasonal hymns, and add delays. Home Assistant supplies the media players.",
+        "title": "Virtual Carillon schedules",
+        "description": "Turn on Westminster once, then add simple asset or liturgical-hymn schedules. Each schedule can contain multiple times, selected days, a daily time window, and Home Assistant media players.",
         "menu_options": {
-          "global": "Global schedule settings",
-          "add_routine": "Add a routine",
-          "edit_routine": "Edit a routine",
-          "remove_routine": "Remove a routine",
-          "finish": "Save schedule",
-          "add_play": "Add an asset to play",
-          "add_hymn": "Add seasonal hymn selection",
-          "add_delay": "Add a delay",
-          "remove_action": "Remove an action",
-          "finish_routine": "Finish this routine"
+          "global": "Global settings",
+          "westminster": "Westminster",
+          "add_routine": "Play asset or hymn at...",
+          "edit_routine": "Edit a schedule",
+          "remove_routine": "Remove a schedule",
+          "finish": "Save schedules"
         }
       },
       "global": {
-        "title": "Global schedule settings",
+        "title": "Global settings",
         "data": {
-          "schedule_enabled": "Enable schedule",
-          "litcal_enabled": "Use LitCal for hymn selection",
+          "schedule_enabled": "Enable schedules",
+          "litcal_enabled": "Use LitCal for liturgical hymns",
           "litcal_calendar": "LitCal calendar"
         }
       },
+      "westminster": {
+        "title": "Westminster",
+        "description": "Choose the cadence, days, daily time window, and Home Assistant speakers. Hour strikes automatically use the actual hour count.",
+        "data": {
+          "westminster_enabled": "Enable Westminster",
+          "westminster_cadence": "Every",
+          "westminster_days": "Days",
+          "westminster_not_before": "Never before",
+          "westminster_not_after": "Never after",
+          "westminster_media_players": "Media players"
+        }
+      },
       "add_routine": {
-        "title": "Add routine",
-        "description": "Choose when this routine runs. Exact time uses the selected time; repeating frequencies use the minute pattern. Use Never before and Never after to limit the daily window; an end earlier than the start crosses midnight.",
+        "title": "Play asset or liturgical hymn at...",
+        "description": "Choose an asset or Liturgical Hymn, enter one or more exact times such as 12:00, 18:00, select days, and optionally limit the daily time window.",
         "data": {
-          "routine_name": "Routine name",
-          "routine_enabled": "Enable routine",
-          "frequency": "Frequency",
-          "time": "Exact time",
-          "weekdays": "Weekdays",
-          "excluded_times": "Excluded times (HH:MM, comma separated)",
+          "routine_name": "Name (optional)",
+          "routine_enabled": "Enable schedule",
+          "play_type": "Play",
+          "asset": "Asset",
+          "fallback_asset": "Fallback asset if no hymn matches",
+          "canonical_hour": "Automatic hymn hour",
+          "times": "Times (HH:MM, comma separated)",
+          "weekdays": "Days",
           "not_before": "Never before",
-          "not_after": "Never after"
-        }
-      },
-      "edit_routine": {
-        "title": "Edit routine",
-        "data": {
-          "routine_id": "Routine"
-        }
-      },
-      "edit_routine_details": {
-        "title": "Routine timing",
-        "description": "Choose weekdays and an optional daily time window. An end earlier than the start crosses midnight.",
-        "data": {
-          "routine_name": "Routine name",
-          "routine_enabled": "Enable routine",
-          "frequency": "Frequency",
-          "time": "Exact time",
-          "weekdays": "Weekdays",
-          "excluded_times": "Excluded times (HH:MM, comma separated)",
-          "not_before": "Never before",
-          "not_after": "Never after"
-        }
-      },
-      "remove_routine": {
-        "title": "Remove routine",
-        "data": {
-          "routine_id": "Routine"
-        }
-      },
-      "add_play": {
-        "title": "Play an asset",
-        "description": "Enter any asset ID from Virtual Carillon and choose the Home Assistant speakers.",
-        "data": {
-          "asset": "Asset ID",
+          "not_after": "Never after",
           "media_players": "Media players"
         }
       },
-      "add_hymn": {
-        "title": "Select a hymn",
-        "description": "The server chooses a hymn using LitCal and the optional filters, then HA plays it on the selected media players.",
+      "edit_routine": {
+        "title": "Edit a schedule",
         "data": {
-          "media_players": "Media players",
-          "strategy": "Selection strategy",
-          "fixed_asset_id": "Fixed hymn asset ID",
-          "fallback_asset": "Fallback asset ID",
-          "recent_exclusion": "Avoid recently selected hymns",
-          "seed": "Selection seed (optional)",
-          "seasons": "Season IDs (comma separated)",
-          "rank": "Liturgical rank",
-          "feast_ids": "Feast IDs (comma separated)",
-          "category_ids": "Category IDs (comma separated)",
-          "offices": "Office IDs (comma separated)",
-          "canonical_hours": "Canonical hours (comma separated)",
-          "tags": "Tags (comma separated)"
+          "routine_id": "Schedule"
         }
       },
-      "add_delay": {
-        "title": "Add a delay",
+      "edit_routine_details": {
+        "title": "Edit scheduled playback",
+        "description": "Change the asset or hymn, times, days, time window, or speakers.",
         "data": {
-          "delay_seconds": "Seconds to wait"
+          "routine_name": "Name (optional)",
+          "routine_enabled": "Enable schedule",
+          "play_type": "Play",
+          "asset": "Asset",
+          "fallback_asset": "Fallback asset if no hymn matches",
+          "canonical_hour": "Automatic hymn hour",
+          "times": "Times (HH:MM, comma separated)",
+          "weekdays": "Days",
+          "not_before": "Never before",
+          "not_after": "Never after",
+          "media_players": "Media players"
         }
       },
-      "remove_action": {
-        "title": "Remove an action",
+      "remove_routine": {
+        "title": "Remove a schedule",
         "data": {
-          "action_index": "Action"
+          "routine_id": "Schedule"
         }
       }
     },
+    "error": {
+      "asset_required": "Choose an asset when Play is set to Asset.",
+      "invalid_times": "Enter one or more times in HH:MM format, separated by commas.",
+      "media_players_required": "Select at least one Home Assistant media player."
+    },
     "abort": {
       "cannot_connect": "The schedule could not be saved to Virtual Carillon."
+    }
+  },
+  "services": {
+    "play": {
+      "name": "Play asset",
+      "description": "Render and play an asset through the selected Home Assistant media players.",
+      "fields": {
+        "asset": {
+          "name": "Asset",
+          "description": "The stable Virtual Carillon asset ID to play."
+        }
+      }
+    },
+    "stop": {
+      "name": "Stop playback",
+      "description": "Stop playback on the selected Home Assistant media players."
+    },
+    "select_hymn": {
+      "name": "Select and play a hymn",
+      "description": "Select a hymn using LitCal and optional filters, then play it through the selected media players.",
+      "fields": {
+        "strategy": {"name": "Selection strategy", "description": "Fixed, random, or sequential selection."},
+        "fixed_asset_id": {"name": "Fixed asset ID", "description": "Exact hymn asset ID for fixed selection."},
+        "category_ids": {"name": "Category IDs", "description": "Category IDs to use as a selection filter."},
+        "feast_ids": {"name": "Feast IDs", "description": "Feast IDs to use as a LitCal condition and selection filter."},
+        "offices": {"name": "Office IDs", "description": "Office IDs to use as a selection filter."},
+        "seasons": {"name": "Season IDs", "description": "Season IDs to use as a LitCal condition and selection filter."},
+        "rank": {"name": "Liturgical rank", "description": "Liturgical rank condition."},
+        "canonical_hours": {"name": "Canonical hours", "description": "Canonical hour IDs to use as a selection filter."},
+        "tags": {"name": "Tags", "description": "Asset tags to use as a selection filter."},
+        "seed": {"name": "Seed", "description": "Optional deterministic selection seed."},
+        "recent_exclusion": {"name": "Recent exclusion", "description": "Number of recently selected assets to avoid."},
+        "date": {"name": "Liturgical date", "description": "Liturgical date to evaluate."},
+        "fallback_asset": {"name": "Fallback asset", "description": "Asset to play if no hymn matches."}
+      }
     }
   }
 }

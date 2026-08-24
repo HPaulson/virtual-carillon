@@ -20,9 +20,14 @@ export function defineHymn(definition: HymnDefinition): HymnAsset {
   const rhythmicCharacter = definition.notation.rhythmicCharacter ?? 'metered';
   const liturgicalTags = createLiturgicalTags({
     seasons: (liturgical.seasons ?? []).map(seasonId),
-    categories: [...(liturgical.categories ?? []), 'general'],
+    // General is a fallback season, not a category every hymn should match.
+    // Keeping it out of every asset prevents an unclassified celebration from
+    // winning before Ordinary Time or another actual season.
+    categories: liturgical.categories,
     feasts: liturgical.feasts,
-    solemnities: liturgical.solemnities,
+    // Solemnity/memorial are celebration ranks supplied by LitCal. They are
+    // not intrinsic hymn properties; feast association remains in `feasts`.
+    solemnities: [],
     offices: offices.map(toOfficeId),
     canonicalHours: offices.map(toOfficeId),
   });

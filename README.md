@@ -22,9 +22,9 @@ node dist/cli/index.js play test-bell
 node dist/cli/index.js server
 ```
 
-The container runs the engine on Linux and does not require access to the host's audio devices. Home Assistant's media-player integrations handle the actual speakers. Full Dokploy and Home Assistant guidance is in [docs/docker.md](docs/docker.md).
+The container runs the engine on Linux and does not require access to the host's audio devices for the HA path. Home Assistant's media-player integrations handle the actual speakers; a native installation can configure and run the same schedule through the API. Full Dokploy and Home Assistant guidance is in [docs/docker.md](docs/docker.md).
 
-Commands: `status`, `devices`, `play <asset>`, `stop`, `test`, `shuffle-hymns`, `doctor`, `instrument`, `diagnose <hymn>`, `server`, `assets`, and `import`. `shuffle-hymns` continuously plays shuffled hymns until interrupted; use `--count` for a finite run and `--pause` for a gap between hymns.
+Commands: `status`, `devices`, `play <asset>`, `stop`, `test`, `shuffle-hymns`, `doctor`, `instrument`, `diagnose <hymn>`, `server`, `schedule show`, `schedule reset`, `assets`, and `import`. `shuffle-hymns` continuously plays shuffled hymns until interrupted; use `--count` for a finite run and `--pause` for a gap between hymns.
 
 For a Linux server managed by Dokploy, deploy the same `compose.yaml` as a Docker Compose service. Configure only one `.env` through Dokploy, as described in [docs/docker.md](docs/docker.md).
 
@@ -32,7 +32,7 @@ The built-in library includes source-backed Westminster quarters, two documented
 
 ## Home Assistant
 
-The integration in `homeassistant/custom_components/virtual_carillon` connects to the Node API and provides a status sensor, hymn/asset metadata, today's LitCal data, a browsable media source, target-based actions, and a server-owned list of scheduled routines. `virtual_carillon.play` and `virtual_carillon.select_hymn` accept one or more Home Assistant `media_player` targets and expose the complete liturgical-selection query. Copy it to Home Assistant's `custom_components` directory, then add it from the UI with the engine URL and API token. Configure any number of recurring routines—assets, seasonal hymns, delays, weekdays, exclusions, and media players—in the integration's Configure flow; the included blueprint remains available for advanced custom automations. LitCal enablement and calendar selection are configured in the integration Options flow and cached for offline operation.
+The integration in `homeassistant/custom_components/virtual_carillon` connects to the Node API and provides a status sensor, hymn/asset metadata, today's LitCal data, a browsable media source, target-based actions, and a server-owned schedule. The integration Configure flow has a simple Westminster setup plus unlimited “play asset or Liturgical Hymn at...” schedules with multiple times, days, time windows, asset dropdowns, and Home Assistant media players. `virtual_carillon.play` and `virtual_carillon.select_hymn` remain available for advanced automations.
 
 ## Development
 

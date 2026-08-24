@@ -18,6 +18,17 @@ const assumptionDay: LiturgicalDay = {
 
 const generalDay: LiturgicalDay = { date: '2026-08-16', season: undefined, seasonIds: [], celebrations: [], source: 'test' };
 
+const saintDay: LiturgicalDay = {
+  date: '2026-10-15', season: 'Ordinary Time', seasonIds: ['ordinary-time'], source: 'test',
+  celebrations: [{
+    key: 'StTeresaOfJesus', name: 'Saint Teresa of Jesus, virgin and doctor of the Church',
+    rank: 'MEMORIAL', rankId: 'memorial', grade: 3,
+    liturgicalTags: createLiturgicalTags({
+      saints: ['st-teresa-of-jesus'], categories: ['saints', 'virgins', 'doctors'], seasons: ['ordinary-time'],
+    }),
+  }],
+};
+
 describe('feast-aware hymn catalog', () => {
   it('prefers an exact feast, then category, then season, then General', () => {
     const catalog = new HymnCatalog([
@@ -55,6 +66,56 @@ describe('feast-aware hymn catalog', () => {
     expect(catalog.selectForDay(generalDay, { strategy: 'sequential' }).asset?.id).toBe('second');
     expect(catalog.selectForDay(generalDay, { strategy: 'random', seed: 'test-seed' }).asset?.id)
       .toBe(catalog.selectForDay(generalDay, { strategy: 'random', seed: 'test-seed' }).asset?.id);
+  });
+
+  it('uses saint identity before saint type, then Ordinary Time', () => {
+    const catalog = new HymnCatalog([
+      hymn('ordinary', { seasons: ['ordinary-time'] }),
+      hymn('doctor', { categories: ['saints', 'doctors'] }),
+      hymn('teresa', { saints: ['st-teresa-of-jesus'] }),
+    ]);
+    expect(catalog.selectForDay(saintDay, { seed: 1 }).asset?.id).toBe('teresa');
+
+    const withoutProper = new HymnCatalog([
+      hymn('ordinary', { seasons: ['ordinary-time'] }),
+      hymn('doctor', { categories: ['saints', 'doctors'] }),
+    ]);
+    expect(withoutProper.selectForDay(saintDay, { seed: 1 }).asset?.id).toBe('doctor');
+
+    const withoutType = new HymnCatalog([hymn('ordinary', { seasons: ['ordinary-time'] })]);
+    expect(withoutType.selectForDay(saintDay, { seed: 1 }).asset?.id).toBe('ordinary');
+  });
+
+  it('does not treat General as a category that outranks Ordinary Time', () => {
+    const catalog = new HymnCatalog([
+      hymn('general', { seasons: ['general'], categories: ['general'] }),
+      hymn('ordinary', { seasons: ['ordinary-time'] }),
+    ]);
+    const day: LiturgicalDay = {
+      date: '2026-08-17', season: 'Ordinary Time', seasonIds: ['ordinary-time'],
+      celebrations: [{
+        name: 'A celebration without a recognized theme', grade: 3,
+        liturgicalTags: createLiturgicalTags({ categories: ['general'] }),
+      }], source: 'test',
+    };
+    expect(catalog.selectForDay(day, { seed: 1 }).asset?.id).toBe('ordinary');
+  });
+
+  it('prefers the requested office, then falls back through the normal tiers', () => {
+    const officeDay = assumptionDay;
+    const categoryOffice = hymn('marian-lauds', {
+      categories: ['marian'], canonicalHours: ['lauds'], seasons: ['general'],
+    });
+    const exactNoOffice = hymn('assumption-no-office', {
+      feasts: ['assumption-of-mary'], categories: ['marian'], seasons: ['general'],
+    });
+    const catalog = new HymnCatalog([exactNoOffice, categoryOffice]);
+    expect(catalog.selectForDay(officeDay, { preferredCanonicalHours: ['lauds'], seed: 1 }).asset?.id)
+      .toBe('marian-lauds');
+
+    const noOffice = new HymnCatalog([exactNoOffice]);
+    expect(noOffice.selectForDay(officeDay, { preferredCanonicalHours: ['lauds'], seed: 1 }).asset?.id)
+      .toBe('assumption-no-office');
   });
 
   it('avoids the immediately previous random hymn when alternatives exist', () => {

@@ -12,8 +12,8 @@ export const gabrielsMessage = defineHymn({
   liturgical: {
     categories: ['annunciation', 'incarnation', 'christological'],
     seasons: ['Advent', 'Christmas'],
-    offices: ['Lauds', 'Vespers'],
-    feasts: ['annunciation', 'christmas'],
+    offices: [],
+    feasts: ['annunciation'],
     solemnities: [],
   },
   notation: melody({

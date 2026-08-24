@@ -8,7 +8,7 @@ import {
 import type { AssetDefinition, AssetLibrary } from './library.js';
 
 export type SelectionStrategy = 'random' | 'sequential' | 'fixed';
-export type HymnMatchLevel = 'exact-feast' | 'category' | 'season' | 'general' | 'fixed' | 'none';
+export type HymnMatchLevel = 'exact-feast' | 'saint' | 'category' | 'season' | 'general' | 'fixed' | 'none';
 
 /** A reusable query shared by hymn selection and future liturgical asset catalogs. */
 export interface HymnQuery {
@@ -17,6 +17,8 @@ export interface HymnQuery {
   seasonIds?: string[];
   officeIds?: string[];
   canonicalHours?: string[];
+  /** Preferred office for automatic selection; unlike canonicalHours in list(), this is not a hard filter. */
+  preferredCanonicalHours?: string[];
   tags?: string[];
   strategy?: SelectionStrategy;
   fixedAssetId?: string;
@@ -67,26 +69,43 @@ export class HymnCatalog {
       : automatic
         ? celebrationTags.feasts
         : [];
+    const saintTargets = automatic ? celebrationTags.saints : [];
     const categoryTargets = explicitCategory.length
       ? explicitCategory
       : automatic
-        ? celebrationTags.categories
+        ? celebrationTags.categories.filter((category) => normalise(category) !== 'general')
         : [];
     const seasonTargets = explicitSeason.length
       ? explicitSeason
-      : values([...day.seasonIds, seasonId(day.season)]);
+        : values([...day.seasonIds, seasonId(day.season)]);
+    const preferredHours = values(query.preferredCanonicalHours ?? query.canonicalHours);
 
     const tiers: Array<{ level: HymnMatchLevel; ids: string[]; field: keyof LiturgicalTags }> = [
       { level: 'exact-feast', ids: feastTargets, field: 'feasts' },
+      { level: 'saint', ids: saintTargets, field: 'saints' },
       { level: 'category', ids: categoryTargets, field: 'categories' },
       { level: 'season', ids: seasonTargets, field: 'seasons' },
     ];
-    for (const tier of tiers) {
-      const candidates = available.filter((asset) =>
-        intersects(assetTags(asset)[tier.field] as string[], tier.ids),
-      );
-      if (candidates.length) return this.choose(candidates, tier.level, day, query, celebration);
+    const selectTier = (officeOnly: boolean): HymnSelection | undefined => {
+      for (const tier of tiers) {
+        const candidates = available.filter((asset) => {
+          const tags = assetTags(asset);
+          return (
+            intersects(tags[tier.field] as string[], tier.ids) &&
+            (!officeOnly || intersects(tags.canonicalHours, preferredHours))
+          );
+        });
+        if (candidates.length) return this.choose(candidates, tier.level, day, query, celebration);
+      }
+      return undefined;
+    };
+    if (preferredHours.length) {
+      const officeSelection = selectTier(true);
+      if (officeSelection) return officeSelection;
     }
+
+    const ordinarySelection = selectTier(false);
+    if (ordinarySelection) return ordinarySelection;
 
     const general = available.filter((asset) => {
       const tags = assetTags(asset);
@@ -183,6 +202,7 @@ function matchesContext(asset: AssetDefinition, query: HymnQuery): boolean {
     feastIds: undefined,
     categoryIds: undefined,
     seasonIds: undefined,
+    canonicalHours: undefined,
   });
 }
 
@@ -228,7 +248,11 @@ function normalise(value: string): string {
     .trim();
 }
 function contextKey(query: HymnQuery): string {
-  return JSON.stringify({ officeIds: query.officeIds, canonicalHours: query.canonicalHours });
+  return JSON.stringify({
+    officeIds: query.officeIds,
+    canonicalHours: query.canonicalHours,
+    preferredCanonicalHours: query.preferredCanonicalHours,
+  });
 }
 function stableHash(value: string): number {
   let hash = 2166136261;

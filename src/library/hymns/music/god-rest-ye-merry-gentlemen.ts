@@ -11,9 +11,9 @@ export const godRestYeMerryGentlemen = defineHymn({
   liturgical: {
     categories: ['christmas', 'christological'],
     seasons: ['Christmas'],
-    offices: ['Vespers', 'Compline'],
+    offices: [],
     feasts: ['nativity-of-the-lord'],
-    solemnities: ['nativity-of-the-lord'],
+    solemnities: [],
   },
   notation: melody({
     meter: { numerator: 2, denominator: 2 },

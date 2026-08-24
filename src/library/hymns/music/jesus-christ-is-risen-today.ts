@@ -12,9 +12,9 @@ export const jesusChristIsRisenToday = defineHymn({
   liturgical: {
     categories: ['easter', 'resurrection'],
     seasons: ['Easter'],
-    offices: ['Lauds'],
-    feasts: ['easter'],
-    solemnities: ['easter'],
+    offices: [],
+    feasts: ['easter-sunday'],
+    solemnities: [],
   },
   notation: melody({
     meter: { numerator: 4, denominator: 4 },

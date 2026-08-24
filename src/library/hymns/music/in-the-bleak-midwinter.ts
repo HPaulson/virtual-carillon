@@ -12,9 +12,9 @@ export const inTheBleakMidwinter = defineHymn({
   liturgical: {
     categories: ['christological', 'incarnation', 'nativity'],
     seasons: ['Christmas'],
-    offices: ['Vespers', 'Compline'],
-    feasts: ['christmas'],
-    solemnities: ['christmas'],
+    offices: [],
+    feasts: ['nativity-of-the-lord'],
+    solemnities: [],
   },
   notation: melody({
     meter: { numerator: 4, denominator: 4 },

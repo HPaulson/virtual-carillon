@@ -11,9 +11,9 @@ export const holyHolyHoly = defineHymn({
   liturgical: {
     categories: ['trinity', 'christological'],
     seasons: ['General', 'Ordinary Time'],
-    offices: ['Lauds'],
+    offices: [],
     feasts: ['trinity-sunday'],
-    solemnities: ['trinity-sunday'],
+    solemnities: [],
   },
   notation: melody({
     meter: { numerator: 4, denominator: 2 },

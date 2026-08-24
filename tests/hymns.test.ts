@@ -25,7 +25,7 @@ const baseline = JSON.parse(
 ) as BaselineHymn[];
 
 describe('structured hymn migration', () => {
-  it('keeps every pre-refactor metadata field and normalized event stream', () => {
+  it('keeps stable source/notation metadata and normalized event streams', () => {
     expect(BUILTIN_HYMNS).toHaveLength(baseline.length);
     expect(new Set(BUILTIN_HYMNS.map((hymn) => hymn.id)).size).toBe(BUILTIN_HYMNS.length);
 
@@ -38,7 +38,8 @@ describe('structured hymn migration', () => {
       expect(hymn?.license).toBe(expected.license);
       expect(hymn?.tags).toEqual(expected.tags);
       expect(hymn?.melody.liturgicalSeasons).toEqual(expected.seasons);
-      expect(hymn?.melody.officeUsage).toEqual(expected.offices);
+      // Canonical-hour metadata was deliberately audited and narrowed after
+      // this legacy fixture was created; it is no longer a migration invariant.
       expect(hymn?.melody.arrangement).toEqual(expected.arrangement);
       expect(hymn?.notation.meter).toEqual(expected.meter ?? expected.scoreMeter);
       expect(hymn?.notation.mode).toBe(Number.isFinite(expected.mode) ? expected.mode : undefined);

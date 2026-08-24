@@ -13,7 +13,7 @@ import { arrangeForCarillon } from '../melodies/arranger.js';
 import { scoreFromMelody } from '../melodies/types.js';
 import { wavDurationFromFile } from '../audio/wav.js';
 import { cycleHymns } from './hymn-cycle.js';
-import { DEFAULT_SCHEDULE_CONFIG } from '../scheduling/schedule.js';
+import { DEFAULT_SCHEDULE_CONFIG, normalizeSchedule, toSimpleSchedule } from '../scheduling/schedule.js';
 
 const config = loadConfig();
 const displayConfig = { ...config, apiToken: config.apiToken ? '[configured]' : undefined };
@@ -64,9 +64,16 @@ program.command('instrument').description('Report the virtual carillon range and
 program.command('diagnose').description('Report normalized score voices, register, and overlap diagnostics').argument('<asset>', 'hymn asset id').action((assetId) => { const asset = library.list().find((item) => item.id === assetId); if (!asset?.melody) throw new Error(`Asset is not a score-backed hymn: ${assetId}`); console.log(JSON.stringify(arrangeForCarillon(scoreFromMelody(asset.melody)).diagnostics, null, 2)); });
 program.command('server').description('Run the Home Assistant API server').option('-p, --port <port>', 'port').action(async (options) => { const app = await createServer({ engine, library, database, liturgicalCalendar, hymnCatalog, apiToken: config.apiToken }); await app.listen({ host: config.host, port: options.port ? Number(options.port) : config.port }); console.log(`Virtual Carillon listening on http://${config.host}:${options.port ? Number(options.port) : config.port}`); });
 program.command('assets').description('List built-in assets').action(() => console.table(library.list()));
-const schedule = program.command('schedule').description('Inspect the server-owned Home Assistant routine schedule');
-schedule.command('show').description('Show the persisted routine list').action(() => console.log(JSON.stringify(database.getSchedule() ?? { config: DEFAULT_SCHEDULE_CONFIG, updatedAt: 'default' }, null, 2)));
-schedule.command('reset').description('Reset the persisted schedule to disabled defaults').action(() => console.log(JSON.stringify(database.saveSchedule(DEFAULT_SCHEDULE_CONFIG), null, 2)));
+const schedule = program.command('schedule').description('Inspect the server-owned Westminster, asset, and hymn schedule');
+schedule.command('show').description('Show the persisted simple schedule').action(() => {
+  const stored = database.getSchedule();
+  const config = stored ? normalizeSchedule(stored.config) : DEFAULT_SCHEDULE_CONFIG;
+  console.log(JSON.stringify(stored ? { ...stored, config: toSimpleSchedule(config) } : { config: toSimpleSchedule(config), updatedAt: 'default' }, null, 2));
+});
+schedule.command('reset').description('Reset the persisted schedule to disabled defaults').action(() => {
+  const stored = database.saveSchedule(DEFAULT_SCHEDULE_CONFIG);
+  console.log(JSON.stringify({ ...stored, config: toSimpleSchedule(stored.config) }, null, 2));
+});
 await program.parseAsync();
 
 function parsePositiveInteger(value: string, option: string): number {

@@ -12,9 +12,9 @@ export const onceInRoyalDavidsCity = defineHymn({
   liturgical: {
     categories: ['christmas', 'christological'],
     seasons: ['Christmas'],
-    offices: ['Lauds'],
+    offices: [],
     feasts: ['nativity-of-the-lord'],
-    solemnities: ['nativity-of-the-lord'],
+    solemnities: [],
   },
   notation: melody({
     meter: { numerator: 4, denominator: 4 },
