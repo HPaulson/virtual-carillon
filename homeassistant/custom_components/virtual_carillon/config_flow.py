@@ -68,7 +68,7 @@ ASSET_TYPE_OPTIONS = [
     {"value": "automatic", "label": "Automatic — Hymn selected based on liturgical calendar"},
 ]
 CANONICAL_HOUR_OPTIONS = [
-    {"value": "", "label": "Default"},
+    {"value": "", "label": "None (Default)"},
     {"value": "matins", "label": "Matins (Office of Readings)"},
     {"value": "lauds", "label": "Lauds (Morning)"},
     {"value": "daytime", "label": "Terce/Sext/None (Daytime)"},
@@ -421,10 +421,14 @@ def _routine_schema(
         vol.Required(CONF_MEDIA_PLAYERS, default=defaults["media_players"]): selector.EntitySelector(
             selector.EntitySelectorConfig(domain="media_player", multiple=True)
         ),
-        vol.Optional(CONF_VOLUME, default=defaults["volume"]): selector.NumberSelector(
-            selector.NumberSelectorConfig(min=0, max=100, step=1, mode="slider")
-        ),
     }
+    volume_selector = selector.TextSelector(
+        selector.TextSelectorConfig(type=selector.TextSelectorType.NUMBER)
+    )
+    if defaults["volume"] is None:
+        schema[vol.Optional(CONF_VOLUME, default="")] = volume_selector
+    else:
+        schema[vol.Optional(CONF_VOLUME, default=str(defaults["volume"]))] = volume_selector
     selected_mode = mode or defaults["play_type"]
     if selected_mode == "manual":
         schema[vol.Required(CONF_ASSET, default=defaults["asset"])] = selector.SelectSelector(
@@ -540,9 +544,9 @@ def _routine_from_input(user_input: dict[str, Any], *, routine_id: str | None = 
         }
         default_name = action["asset"] or "Asset"
 
-    volume = user_input.get(CONF_VOLUME)
-    if volume is not None:
-        action["volume"] = int(volume)
+    volume = str(user_input.get(CONF_VOLUME, "")).strip()
+    if volume:
+        action["volume"] = int(float(volume))
     name = str(user_input.get(CONF_ROUTINE_NAME, "")).strip() or default_name
     return {
         "id": routine_id or f"routine-{uuid4().hex[:12]}",

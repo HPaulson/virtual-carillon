@@ -83,7 +83,7 @@
         "data": {
           "routine_name": "Name (optional)",
           "routine_enabled": "Enable schedule",
-          "canonical_hour": "Canonical hour (rare advanced option)",
+          "canonical_hour": "Specific Canonical Hour",
           "times": "Times (HH:MM, comma separated)",
           "weekdays": "Days",
           "not_before": "Never before",
@@ -127,7 +127,7 @@
         "data": {
           "routine_name": "Name (optional)",
           "routine_enabled": "Enable schedule",
-          "canonical_hour": "Canonical hour (rare advanced option)",
+          "canonical_hour": "Specific Canonical Hour",
           "times": "Times (HH:MM, comma separated)",
           "weekdays": "Days",
           "not_before": "Never before",
