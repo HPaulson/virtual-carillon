@@ -4,8 +4,14 @@ from urllib.parse import quote, unquote
 
 from aiohttp import web
 from homeassistant.components.http import HomeAssistantView
-from homeassistant.components.media_player import BrowseError, BrowseMediaSource, MediaClass
-from homeassistant.components.media_source import MediaSource, MediaSourceItem, PlayMedia, Unresolvable
+from homeassistant.components.media_player import BrowseError, MediaClass
+from homeassistant.components.media_source import (
+    BrowseMediaSource,
+    MediaSource,
+    MediaSourceItem,
+    PlayMedia,
+    Unresolvable,
+)
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
