@@ -80,12 +80,11 @@
       },
       "add_routine_category": {
         "title": "Configure category playback",
-        "description": "Choose one or more hymn categories, optionally prefer a canonical hour, then set the time, days, and speakers.",
+        "description": "Choose one or more hymn categories, then set the time, days, and speakers.",
         "data": {
           "routine_name": "Name (optional)",
           "routine_enabled": "Enable schedule",
           "category_ids": "Hymn categories",
-          "canonical_hour": "Traditional Liturgy of the Hours preference",
           "times": "Times (HH:MM, comma separated)",
           "weekdays": "Days",
           "not_before": "Never before",
@@ -140,12 +139,11 @@
       },
       "edit_routine_category": {
         "title": "Edit category playback",
-        "description": "Change the selected hymn categories, canonical-hour preference, times, days, time window, or speakers.",
+        "description": "Change the selected hymn categories, times, days, time window, or speakers.",
         "data": {
           "routine_name": "Name (optional)",
           "routine_enabled": "Enable schedule",
           "category_ids": "Hymn categories",
-          "canonical_hour": "Traditional Liturgy of the Hours preference",
           "times": "Times (HH:MM, comma separated)",
           "weekdays": "Days",
           "not_before": "Never before",

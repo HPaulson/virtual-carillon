@@ -63,6 +63,8 @@ export interface HymnSelection {
   celebration?: LiturgicalCelebration;
   scoring?: Array<{ id: string; score: number; alreadyPlayed: boolean }>;
   selectedScore?: number;
+  selectedRank?: number;
+  selectedScoreBreakdown?: Array<{ label: string; score: number }>;
   reusedPlayedAsset?: boolean;
 }
 
@@ -189,16 +191,31 @@ export class HymnCatalog {
     const scored = candidates.map((asset) => {
       const tags = asset.liturgicalTags ?? assetTags(asset);
       let score = 0;
-      if (directIntersects(tags.feasts, targets.feastTargets)) score += SCORE.feast;
-      if (directIntersects(tags.saints, targets.saintTargets)) score += SCORE.saint;
-      if (directIntersects(tags.categories, targets.categoryTargets)) score += SCORE.category;
-      if (directIntersects(tags.seasons, targets.seasonTargets)) score += SCORE.season;
-      if (directIntersects(tags.canonicalHours, targets.preferredHours)) score += SCORE.canonicalHour;
-      if (canonicalHourThemeMatch(tags.categories, targets.preferredHours)) score += SCORE.canonicalHourTheme;
-      if (directIntersects(tags.offices, targets.preferredHours)) score += 25;
-      if (targets.seasonTargets.length && tags.seasons.length && !directIntersects(tags.seasons, targets.seasonTargets)) score -= 45;
-      if (alreadyPlayed.has(asset.id)) score -= 1000;
-      return { asset, score };
+      const breakdown: Array<{ label: string; score: number }> = [];
+      const addMatch = (assetValues: string[], targetValues: string[], points: number) => {
+        const matches = assetValues.filter((value) => targetValues.includes(value));
+        if (matches.length) {
+          score += points;
+          breakdown.push({ label: matches.join(', '), score: points });
+        }
+      };
+      addMatch(tags.feasts, targets.feastTargets, SCORE.feast);
+      addMatch(tags.saints, targets.saintTargets, SCORE.saint);
+      addMatch(tags.categories, targets.categoryTargets, SCORE.category);
+      addMatch(tags.seasons, targets.seasonTargets, SCORE.season);
+      addMatch(tags.canonicalHours, targets.preferredHours, SCORE.canonicalHour);
+      const themes = targets.preferredHours.flatMap((hour) => CANONICAL_HOUR_THEMES[hour as LiturgicalOfficeId] ?? []);
+      addMatch(tags.categories, themes, SCORE.canonicalHourTheme);
+      addMatch(tags.offices, targets.preferredHours, 25);
+      if (targets.seasonTargets.length && tags.seasons.length && !directIntersects(tags.seasons, targets.seasonTargets)) {
+        score -= 45;
+        breakdown.push({ label: 'out of season', score: -45 });
+      }
+      if (alreadyPlayed.has(asset.id)) {
+        score -= 1000;
+        breakdown.push({ label: 'Played', score: -1000 });
+      }
+      return { asset, score, breakdown };
     });
 
     // Prefer an unused hymn with a real liturgical fit. If the only unused
@@ -213,6 +230,15 @@ export class HymnCatalog {
       this.recent.set(day.date, [asset.id, ...(this.recent.get(day.date) ?? [])].slice(0, Math.max(1, query.recentExclusion ?? 3)));
     }
     const tags = assetTags(asset);
+    const selectedScore = scored.find(({ asset: candidate }) => candidate.id === asset.id)?.score;
+    const selectedRank = selectedScore === undefined
+      ? undefined
+      : [...scored]
+        .sort((left, right) => right.score - left.score)
+        .findIndex(({ asset: candidate }) => candidate.id === asset.id) + 1;
+    const selectedScoreBreakdown = scored
+      .find(({ asset: candidate }) => candidate.id === asset.id)?.breakdown
+      ?.sort((left, right) => right.score - left.score);
     const matchedBy: HymnMatchLevel = directIntersects(tags.feasts, targets.feastTargets)
       ? 'exact-feast'
       : directIntersects(tags.saints, targets.saintTargets)
@@ -232,7 +258,9 @@ export class HymnCatalog {
         score,
         alreadyPlayed: alreadyPlayed.has(candidate.id),
       })),
-      selectedScore: scored.find(({ asset: candidate }) => candidate.id === asset.id)?.score,
+      selectedScore,
+      selectedRank,
+      selectedScoreBreakdown,
       reusedPlayedAsset: alreadyPlayed.has(asset.id),
     };
   }
@@ -306,11 +334,6 @@ export class HymnCatalog {
       .filter((asset) => asset.type === 'hymn')
       .map((asset) => ({ ...asset, liturgicalTags: assetTags(asset) }));
   }
-}
-
-function canonicalHourThemeMatch(categories: string[], preferredHours: string[]): boolean {
-  const themes = preferredHours.flatMap((hour) => CANONICAL_HOUR_THEMES[hour as LiturgicalOfficeId] ?? []);
-  return directIntersects(categories, [...new Set(themes)]);
 }
 
 function matchesQuery(asset: AssetDefinition, query: HymnQuery): boolean {

@@ -486,13 +486,17 @@ async function resolveScheduleAsset(
   const query = toHymnQuery(action);
   query.alreadyPlayed = services.database.completedScheduleAssets?.(date) ?? [];
   const selection = hymnCatalog.selectForDay(day, query);
-  console.info(
-    `[schedule] hymn-selection date=${date} selected=${selection.asset?.id ?? 'none'} ` +
-      `matchedBy=${selection.matchedBy} selectedScore=${selection.selectedScore ?? 'n/a'} ` +
-      `reusedPlayed=${selection.reusedPlayedAsset ?? false} ` +
-      `alreadyPlayed=${query.alreadyPlayed.join(',') || 'none'} ` +
-      `scores=${selection.scoring?.map((candidate) => `${candidate.id}:${candidate.score}${candidate.alreadyPlayed ? '*' : ''}`).join(',') ?? 'n/a'}`,
-  );
+  const asset = selection.asset;
+  const tags = asset?.liturgicalTags;
+  const descriptors = selection.selectedScoreBreakdown?.length
+    ? selection.selectedScoreBreakdown.map(({ label, score }) => `${label} (${score})`).join(' · ')
+    : tags
+      ? [...tags.categories, ...tags.offices, ...tags.seasons, ...tags.feasts].join(', ')
+      : selection.matchedBy;
+  const score = selection.selectedScore === undefined
+    ? 'n/a'
+    : `total ${selection.selectedScore} · rank #${selection.selectedRank ?? 'n/a'}`;
+  console.info(`[schedule] ♪ ${asset?.name ?? asset?.id ?? 'No hymn selected'} — ${descriptors} → ${score}`);
   return selection.asset?.id;
 }
 

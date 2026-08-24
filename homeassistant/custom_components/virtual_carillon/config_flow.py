@@ -244,7 +244,7 @@ class VirtualCarillonOptionsFlow(config_entries.OptionsFlow):
 
     async def async_step_add_routine(self, user_input: dict[str, Any] | None = None):
         if user_input is not None:
-            self._routine_mode = user_input[CONF_PLAY_TYPE]
+            self._routine_mode = _normalise_play_type(user_input[CONF_PLAY_TYPE])
             return await self._async_step_add_routine_details()
         return self.async_show_form(step_id="add_routine", data_schema=_routine_mode_schema("automatic"))
 
@@ -298,7 +298,7 @@ class VirtualCarillonOptionsFlow(config_entries.OptionsFlow):
 
     async def async_step_edit_routine_mode(self, user_input: dict[str, Any] | None = None):
         if user_input is not None:
-            self._routine_mode = user_input[CONF_PLAY_TYPE]
+            self._routine_mode = _normalise_play_type(user_input[CONF_PLAY_TYPE])
             return await self._async_step_edit_routine_details()
         return self.async_show_form(
             step_id="edit_routine_mode",
@@ -486,7 +486,7 @@ def _routine_schema(
         schema[vol.Optional(CONF_VOLUME, default="")] = volume_selector
     else:
         schema[vol.Optional(CONF_VOLUME, default=str(defaults["volume"]))] = volume_selector
-    selected_mode = mode or defaults["play_type"]
+    selected_mode = _normalise_play_type(mode or defaults["play_type"])
     if selected_mode == "manual":
         schema[vol.Required(CONF_ASSET, default=defaults["asset"])] = selector.SelectSelector(
             selector.SelectSelectorConfig(options=_asset_options(assets, include_empty=True))
@@ -499,15 +499,25 @@ def _routine_schema(
                     multiple=True,
                 )
             )
-        # This must be Required so selecting None is submitted as an explicit
-        # value. Optional fields can be omitted by HA, which would preserve a
-        # previously selected hour (for example, Vespers) while editing.
-        schema[vol.Required(CONF_CANONICAL_HOUR, default=defaults["canonical_hour"])] = selector.SelectSelector(
-            selector.SelectSelectorConfig(options=CANONICAL_HOUR_OPTIONS)
-        )
+        else:
+            # This is only an Automatic-mode preference. Category mode is
+            # intentionally limited to its category selector.
+            schema[vol.Required(CONF_CANONICAL_HOUR, default=defaults["canonical_hour"])] = selector.SelectSelector(
+                selector.SelectSelectorConfig(options=CANONICAL_HOUR_OPTIONS)
+            )
     _add_optional_time(schema, CONF_NOT_BEFORE, defaults["not_before"])
     _add_optional_time(schema, CONF_NOT_AFTER, defaults["not_after"])
     return vol.Schema(schema)
+
+
+def _normalise_play_type(value: Any) -> str:
+    """Normalize selector values and labels to the internal mode IDs."""
+    text = str(value or "").strip().casefold()
+    if text.startswith("manual"):
+        return "manual"
+    if text.startswith("category"):
+        return "category"
+    return "automatic"
 
 
 def _add_optional_time(schema: dict[Any, Any], field: str, value: str | None):
@@ -627,9 +637,10 @@ def _routine_from_input(user_input: dict[str, Any], *, routine_id: str | None = 
         }
         if play_type == "category":
             action["categoryIds"] = list(user_input.get(CONF_CATEGORY_IDS, []))
-        canonical_hour = str(user_input.get(CONF_CANONICAL_HOUR, "None")).strip()
-        if canonical_hour and canonical_hour.casefold() != "none":
-            action["canonicalHours"] = [canonical_hour]
+        if play_type == "automatic":
+            canonical_hour = str(user_input.get(CONF_CANONICAL_HOUR, "None")).strip()
+            if canonical_hour and canonical_hour.casefold() != "none":
+                action["canonicalHours"] = [canonical_hour]
         default_name = "Hymn from category" if play_type == "category" else "Automatic hymn"
     else:
         action = {
