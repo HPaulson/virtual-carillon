@@ -26,12 +26,12 @@
         "title": "Virtual Carillon schedules",
         "description": "Turn on Westminster once, then add exact, category-based, or automatic schedules. Category schedules choose a hymn from one or more categories; automatic schedules let LitCal choose the hymn. Each schedule can contain multiple times, selected days, a daily time window, and Home Assistant media players.",
         "menu_options": {
-          "global": "Global settings",
-          "westminster": "Westminster",
-          "add_routine": "Add a manual or automatic schedule...",
-          "edit_routine": "Edit a schedule",
-          "remove_routine": "Remove a schedule",
-          "finish": "Save schedules"
+          "global": "Settings",
+          "westminster": "Westminster Chimes",
+          "add_routine": "Schedule: Add",
+          "edit_routine": "Schedule: Edit",
+          "remove_routine": "Schedule: Remove",
+          "finish": "Save All"
         }
       },
       "global": {
@@ -207,18 +207,42 @@
       "name": "Select and play a hymn",
       "description": "Select a hymn using LitCal and optional filters, then play it through the selected media players.",
       "fields": {
-        "strategy": {"name": "Selection strategy", "description": "Fixed, random, or sequential selection."},
-        "fixed_asset_id": {"name": "Fixed asset ID", "description": "Exact hymn asset ID for fixed selection."},
-        "category_ids": {"name": "Category IDs", "description": "Category IDs to use as a selection filter."},
-        "feast_ids": {"name": "Feast IDs", "description": "Feast IDs to use as a LitCal condition and selection filter."},
-        "offices": {"name": "Office IDs", "description": "Office IDs to use as a selection filter."},
-        "seasons": {"name": "Season IDs", "description": "Season IDs to use as a LitCal condition and selection filter."},
-        "rank": {"name": "Liturgical rank", "description": "Liturgical rank condition."},
-        "canonical_hours": {"name": "Canonical hours", "description": "Canonical hour IDs to use as a selection filter."},
-        "tags": {"name": "Tags", "description": "Asset tags to use as a selection filter."},
-        "seed": {"name": "Seed", "description": "Optional deterministic selection seed."},
-        "recent_exclusion": {"name": "Recent exclusion", "description": "Number of recently selected assets to avoid."},
-        "date": {"name": "Liturgical date", "description": "Liturgical date to evaluate."}
+        "strategy": {
+          "name": "Selection strategy",
+          "description": "Fixed, random, or sequential selection."
+        },
+        "fixed_asset_id": {
+          "name": "Fixed asset ID",
+          "description": "Exact hymn asset ID for fixed selection."
+        },
+        "category_ids": {
+          "name": "Category IDs",
+          "description": "Category IDs to use as a selection filter."
+        },
+        "feast_ids": {
+          "name": "Feast IDs",
+          "description": "Feast IDs to use as a LitCal condition and selection filter."
+        },
+        "offices": {
+          "name": "Office IDs",
+          "description": "Office IDs to use as a selection filter."
+        },
+        "seasons": {
+          "name": "Season IDs",
+          "description": "Season IDs to use as a LitCal condition and selection filter."
+        },
+        "rank": { "name": "Liturgical rank", "description": "Liturgical rank condition." },
+        "canonical_hours": {
+          "name": "Canonical hours",
+          "description": "Canonical hour IDs to use as a selection filter."
+        },
+        "tags": { "name": "Tags", "description": "Asset tags to use as a selection filter." },
+        "seed": { "name": "Seed", "description": "Optional deterministic selection seed." },
+        "recent_exclusion": {
+          "name": "Recent exclusion",
+          "description": "Number of recently selected assets to avoid."
+        },
+        "date": { "name": "Liturgical date", "description": "Liturgical date to evaluate." }
       }
     }
   }

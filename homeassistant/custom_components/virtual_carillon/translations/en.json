@@ -26,12 +26,12 @@
         "title": "Virtual Carillon schedules",
         "description": "Turn on Westminster once, then add manual or automatic schedules. Manual schedules play a selected asset or hymn; automatic schedules let LitCal choose the hymn. Each schedule can contain multiple times, selected days, a daily time window, and Home Assistant media players.",
         "menu_options": {
-          "global": "Global settings",
-          "westminster": "Westminster",
-          "add_routine": "Add a manual or automatic schedule...",
-          "edit_routine": "Edit a schedule",
-          "remove_routine": "Remove a schedule",
-          "finish": "Save schedules"
+          "global": "Settings",
+          "westminster": "Westminster Chimes",
+          "add_routine": "Schedule: Add",
+          "edit_routine": "Schedule: Edit",
+          "remove_routine": "Schedule: Remove",
+          "finish": "Save All"
         }
       },
       "global": {
