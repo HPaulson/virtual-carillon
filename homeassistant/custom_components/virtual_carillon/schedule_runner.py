@@ -10,6 +10,7 @@ from homeassistant.helpers.event import async_track_time_change
 from .coordinator import CarillonCoordinator
 
 _LOGGER = logging.getLogger(__name__)
+ACTION_GAP_SECONDS = 1.0
 
 
 class ScheduleRunner:
@@ -45,7 +46,8 @@ class ScheduleRunner:
                 return
             slot_key = claim["slotKey"]
             queued_players: set[str] = set()
-            for action in claim.get("actions", []):
+            actions = claim.get("actions", [])
+            for action_index, action in enumerate(actions):
                 wait_before = float(action.get("waitBeforeSeconds", 0))
                 if wait_before > 0:
                     await asyncio.sleep(wait_before)
@@ -58,18 +60,23 @@ class ScheduleRunner:
                     media_players,
                 )
                 if new_players:
-                    await self.coordinator.async_play(action["asset"], new_players, refresh=False)
+                    await self.coordinator.async_play(
+                        action["asset"], new_players, refresh=False, volume=action.get("volume", 100)
+                    )
                 if existing_players:
                     await self.coordinator.async_play(
                         action["asset"],
                         existing_players,
                         refresh=False,
                         enqueue="add",
+                        volume=action.get("volume", 100),
                     )
                 queued_players.update(media_players)
                 wait_after = float(action.get("waitAfterSeconds", 0))
                 if wait_after > 0:
                     await asyncio.sleep(wait_after)
+                elif action_index < len(actions) - 1:
+                    await asyncio.sleep(ACTION_GAP_SECONDS)
             await self.coordinator.async_complete_schedule(slot_key, "completed")
         except asyncio.CancelledError:
             raise

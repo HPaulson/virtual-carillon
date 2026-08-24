@@ -143,6 +143,7 @@ describe('server-owned schedule API', () => {
         weekdays: ['mon', 'wed'],
         notBefore: '08:00',
         notAfter: '20:00',
+        volume: 62,
         mediaPlayers: [],
         outputs: ['default'],
       }],
@@ -247,14 +248,14 @@ describe('server-owned schedule API', () => {
         outputs: [],
       },
       routines: [{
-        id: 'afternoon-prayer',
+          id: 'afternoon-prayer',
         name: 'Afternoon prayer',
         enabled: true,
         trigger: { frequency: 'exact', time: '15:00', weekdays: ['mon'], excludedTimes: [], notBefore: '14:00', notAfter: '16:00' },
         actions: [
-          { type: 'play', asset: 'westminster-hour-3', mediaPlayers: ['media_player.kitchen'], outputs: [] },
+          { type: 'play', asset: 'westminster-hour-3', volume: 35, mediaPlayers: ['media_player.kitchen'], outputs: [] },
           { type: 'delay', seconds: 2 },
-          { type: 'select_hymn', strategy: 'random', recentExclusion: 3, mediaPlayers: ['media_player.kitchen'], outputs: [] },
+          { type: 'select_hymn', strategy: 'random', recentExclusion: 3, volume: 48, mediaPlayers: ['media_player.kitchen'], outputs: [] },
         ],
       }],
       litcal: { enabled: true, calendar: 'general' },
@@ -275,6 +276,7 @@ describe('server-owned schedule API', () => {
         weekdays: ['mon'],
         notBefore: '14:00',
         notAfter: '16:00',
+        volume: 35,
         mediaPlayers: ['media_player.kitchen'],
         outputs: [],
       }],
@@ -285,6 +287,7 @@ describe('server-owned schedule API', () => {
     expect(first.json().actions.map((action: { asset: string }) => action.asset)).toEqual(['westminster-hour-3', 'hymn-to-joy']);
     expect(first.json().actions[0].waitAfterSeconds).toBe(2);
     expect(first.json().actions[1].mediaPlayers).toEqual(['media_player.kitchen']);
+    expect(first.json().actions.map((action: { volume: number }) => action.volume)).toEqual([35, 48]);
 
     const second = await app.inject({ method: 'POST', url: '/api/schedule/claim', payload: { at: '2026-08-24T15:00:00-04:00' } });
     expect(second.json().claimed).toBe(false);

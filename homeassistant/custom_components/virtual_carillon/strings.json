@@ -67,7 +67,8 @@
           "weekdays": "Days",
           "not_before": "Never before",
           "not_after": "Never after",
-          "media_players": "Media players"
+          "media_players": "Media players",
+          "volume": "Volume (%)"
         }
       },
       "edit_routine": {
@@ -89,7 +90,8 @@
           "weekdays": "Days",
           "not_before": "Never before",
           "not_after": "Never after",
-          "media_players": "Media players"
+          "media_players": "Media players",
+          "volume": "Volume (%)"
         }
       },
       "remove_routine": {

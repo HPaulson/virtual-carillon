@@ -55,6 +55,7 @@ Season, rank, and feast fields are LitCal conditions. When a condition does not 
       "asset": "angelus",
       "times": ["12:00", "18:00"],
       "weekdays": ["mon", "wed"],
+      "volume": 100,
       "mediaPlayers": [],
       "outputs": []
     },
@@ -76,7 +77,7 @@ Season, rank, and feast fields are LitCal conditions. When a condition does not 
 }
 ```
 
-`westminster.cadence` is `every_15`, `every_30`, or `hourly`; the server chooses the correct quarter asset and actual 1–12 hour-strike asset. A routine's `type` is `asset` or `liturgical_hymn`; use `asset: "angelus"` for the Angelus. `times` accepts any number of exact `HH:MM` values. `weekdays`, `notBefore`, and `notAfter` apply to every listed time, including overnight windows such as 22:00–06:00. A Liturgical Hymn can optionally include `canonicalHour` when the selection should prefer a particular Office hour. `mediaPlayers` are Home Assistant entity IDs; `outputs` are native device IDs or names from `/api/devices`.
+`westminster.cadence` is `every_15`, `every_30`, or `hourly`; the server chooses the correct quarter asset and actual 1–12 hour-strike asset. A routine's `type` is `asset` or `liturgical_hymn`; use `asset: "angelus"` for the Angelus. `times` accepts any number of exact `HH:MM` values. `volume` is the routine's Home Assistant media-player volume percentage from 0 to 100 and defaults to 100. `weekdays`, `notBefore`, and `notAfter` apply to every listed time, including overnight windows such as 22:00–06:00. A Liturgical Hymn can optionally include `canonicalHour` when the selection should prefer a particular Office hour. `mediaPlayers` are Home Assistant entity IDs; `outputs` are native device IDs or names from `/api/devices`.
 - `POST /api/schedule/claim` accepts `{ "at": "<ISO timestamp>" }`, evaluates all routines due at that local date/time, and atomically claims the resulting playback sequence for the current schedule revision.
 - `POST /api/schedule/complete` accepts `{ "slotKey": "...", "status": "completed|failed" }` so the HA runner can record the result.
 - `POST /api/schedule/run` accepts `{ "at": "<ISO timestamp>", "output": "optional native output id or name" }`, evaluates the same schedule, and immediately renders/plays due events through native device output. If `output` is omitted, each routine's `outputs` are used; with no native targets, the platform default is used. This is also the API-only smoke-test/trigger path and does not require Home Assistant.

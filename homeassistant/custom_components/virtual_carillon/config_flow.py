@@ -28,6 +28,7 @@ from .const import (
     CONF_STRATEGY,
     CONF_TIMES,
     CONF_TOKEN,
+    CONF_VOLUME,
     CONF_WESTMINSTER_CADENCE,
     CONF_WESTMINSTER_DAYS,
     CONF_WESTMINSTER_ENABLED,
@@ -380,6 +381,9 @@ def _routine_schema(assets: list[dict[str, Any]], routine: dict[str, Any] | None
         vol.Required(CONF_MEDIA_PLAYERS, default=defaults["media_players"]): selector.EntitySelector(
             selector.EntitySelectorConfig(domain="media_player", multiple=True)
         ),
+        vol.Required(CONF_VOLUME, default=defaults["volume"]): selector.NumberSelector(
+            selector.NumberSelectorConfig(min=0, max=100, step=1, mode="slider")
+        ),
     }
     _add_optional_time(schema, CONF_NOT_BEFORE, defaults["not_before"])
     _add_optional_time(schema, CONF_NOT_AFTER, defaults["not_after"])
@@ -417,6 +421,7 @@ def _routine_defaults(routine: dict[str, Any] | None):
             "times": "12:00",
             "weekdays": list(WEEKDAYS),
             "media_players": [],
+            "volume": 100,
             "not_before": None,
             "not_after": None,
         }
@@ -427,6 +432,7 @@ def _routine_defaults(routine: dict[str, Any] | None):
             "type": "select_hymn" if routine.get("type") == "liturgical_hymn" else "play",
             "asset": "angelus" if routine.get("type") == "angelus" else routine.get("asset", ""),
             "mediaPlayers": routine.get("mediaPlayers", []),
+            "volume": routine.get("volume", 100),
         }
         trigger = {
             "times": routine.get("times", ["12:00"]),
@@ -444,6 +450,7 @@ def _routine_defaults(routine: dict[str, Any] | None):
         "times": ", ".join(trigger.get("times", [trigger.get("time", "12:00")])),
         "weekdays": trigger.get("weekdays", list(WEEKDAYS)),
         "media_players": action.get("mediaPlayers", []),
+        "volume": action.get("volume", 100),
         "not_before": trigger.get("notBefore"),
         "not_after": trigger.get("notAfter"),
     }
@@ -471,6 +478,7 @@ def _routine_from_input(user_input: dict[str, Any], *, routine_id: str | None = 
             "type": "select_hymn",
             "strategy": "random",
             "mediaPlayers": _entities(user_input.get(CONF_MEDIA_PLAYERS, [])),
+            "volume": int(user_input.get(CONF_VOLUME, 100)),
         }
         canonical_hour = str(user_input.get(CONF_CANONICAL_HOUR, "")).strip()
         if canonical_hour:
@@ -481,6 +489,7 @@ def _routine_from_input(user_input: dict[str, Any], *, routine_id: str | None = 
             "type": "play",
             "asset": str(user_input.get(CONF_ASSET, "")).strip(),
             "mediaPlayers": _entities(user_input.get(CONF_MEDIA_PLAYERS, [])),
+            "volume": int(user_input.get(CONF_VOLUME, 100)),
         }
         default_name = action["asset"] or "Asset"
 
@@ -529,6 +538,7 @@ def _normalise_routine(routine: dict[str, Any], index: int):
         "type": "select_hymn" if is_hymn else "play",
         "mediaPlayers": list(routine.get("mediaPlayers", [])),
         "outputs": list(routine.get("outputs", [])),
+        "volume": routine.get("volume", 100),
     }
     if is_hymn:
         action["strategy"] = routine.get("strategy", "random")
@@ -568,6 +578,7 @@ def _simple_schedule(schedule: dict[str, Any]):
             "weekdays": trigger.get("weekdays", list(WEEKDAYS)),
             "mediaPlayers": action.get("mediaPlayers", []),
             "outputs": action.get("outputs", []),
+            "volume": action.get("volume", 100),
         }
         if is_hymn:
             if action.get("canonicalHours"):

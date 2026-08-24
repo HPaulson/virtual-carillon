@@ -345,6 +345,7 @@ async function scheduledPlaybacks(
   if (westminster && targetMatches(config.westminster.mediaPlayers, config.westminster.outputs, runner)) {
     playbacks.push({
       asset: westminster,
+      volume: 100,
       mediaPlayers: config.westminster.mediaPlayers,
       outputs: config.westminster.outputs,
       routineId: 'westminster',
@@ -366,6 +367,7 @@ async function scheduledPlaybacks(
       if (!asset) continue;
       playbacks.push({
         asset,
+        volume: action.volume,
         mediaPlayers: action.mediaPlayers,
         outputs: action.outputs,
         routineId: routine.id,
