@@ -61,7 +61,7 @@ class ScheduleRunner:
                 )
                 if new_players:
                     await self.coordinator.async_play(
-                        action["asset"], new_players, refresh=False, volume=action.get("volume", 100)
+                        action["asset"], new_players, refresh=False, volume=action.get("volume")
                     )
                 if existing_players:
                     await self.coordinator.async_play(
@@ -69,7 +69,7 @@ class ScheduleRunner:
                         existing_players,
                         refresh=False,
                         enqueue="add",
-                        volume=action.get("volume", 100),
+                        volume=action.get("volume"),
                     )
                 queued_players.update(media_players)
                 wait_after = float(action.get("waitAfterSeconds", 0))

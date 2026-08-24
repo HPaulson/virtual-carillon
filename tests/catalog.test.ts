@@ -101,7 +101,7 @@ describe('feast-aware hymn catalog', () => {
     expect(catalog.selectForDay(day, { seed: 1 }).asset?.id).toBe('ordinary');
   });
 
-  it('prefers the requested office, then falls back through the normal tiers', () => {
+  it('uses the requested office within the LitCal match tier', () => {
     const officeDay = assumptionDay;
     const categoryOffice = hymn('marian-lauds', {
       categories: ['marian'], canonicalHours: ['lauds'], seasons: ['general'],
@@ -111,7 +111,7 @@ describe('feast-aware hymn catalog', () => {
     });
     const catalog = new HymnCatalog([exactNoOffice, categoryOffice]);
     expect(catalog.selectForDay(officeDay, { preferredCanonicalHours: ['lauds'], seed: 1 }).asset?.id)
-      .toBe('marian-lauds');
+      .toBe('assumption-no-office');
 
     const noOffice = new HymnCatalog([exactNoOffice]);
     expect(noOffice.selectForDay(officeDay, { preferredCanonicalHours: ['lauds'], seed: 1 }).asset?.id)

@@ -1,4 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
 import { createServer } from '../src/api/server.js';
 import { routineMatches, westminsterAsset } from '../src/scheduling/schedule.js';
 
@@ -106,6 +109,40 @@ describe('selection API', () => {
     expect(response.statusCode).toBe(200);
     expect(response.json().day.source).toBe('home-assistant-disabled');
     expect(response.json().selection.asset.id).toBe('hymn-to-joy');
+  });
+});
+
+describe('audio delivery API', () => {
+  it('advertises duration-friendly headers and serves byte ranges', async () => {
+    const directory = await mkdtemp(path.join(tmpdir(), 'virtual-carillon-api-'));
+    const filePath = path.join(directory, 'hymn.wav');
+    const audio = Buffer.from('RIFF test audio payload');
+    await writeFile(filePath, audio);
+    const app = await createServer({
+      engine: { defaultDistanceProfile: 'half-mile' },
+      library: { list: () => [], resolveAndRender: async () => filePath },
+      database: { recentEvents: () => [] },
+    } as never);
+
+    try {
+      const full = await app.inject({ method: 'GET', url: '/api/assets/hymn/audio' });
+      expect(full.statusCode).toBe(200);
+      expect(full.headers['accept-ranges']).toBe('bytes');
+      expect(full.headers['content-length']).toBe(String(audio.length));
+      expect(full.rawPayload).toEqual(audio);
+
+      const partial = await app.inject({
+        method: 'GET',
+        url: '/api/assets/hymn/audio',
+        headers: { range: 'bytes=5-9' },
+      });
+      expect(partial.statusCode).toBe(206);
+      expect(partial.headers['content-range']).toBe(`bytes 5-9/${audio.length}`);
+      expect(partial.rawPayload).toEqual(audio.subarray(5, 10));
+    } finally {
+      await app.close();
+      await rm(directory, { recursive: true, force: true });
+    }
   });
 });
 

@@ -68,12 +68,12 @@ ASSET_TYPE_OPTIONS = [
     {"value": "automatic", "label": "Automatic — select by LitCal"},
 ]
 CANONICAL_HOUR_OPTIONS = [
-    {"value": "", "label": "Default — let LitCal choose"},
-    {"value": "matins", "label": "Matins"},
-    {"value": "lauds", "label": "Lauds / Morning Prayer"},
-    {"value": "daytime", "label": "Daytime Office"},
-    {"value": "vespers", "label": "Vespers / Evening Prayer"},
-    {"value": "compline", "label": "Compline / Night Prayer"},
+    {"value": "", "label": "Default"},
+    {"value": "matins", "label": "Matins (Office of Readings)"},
+    {"value": "lauds", "label": "Lauds (Morning)"},
+    {"value": "daytime", "label": "Terce/Sext/None (Daytime)"},
+    {"value": "vespers", "label": "Vespers (Evening)"},
+    {"value": "compline", "label": "Compline (Night)"},
 ]
 WESTMINSTER_CADENCE_OPTIONS = [
     {"value": "every_15", "label": "Every 15 minutes"},
@@ -199,20 +199,28 @@ class VirtualCarillonOptionsFlow(config_entries.OptionsFlow):
         )
 
     async def async_step_add_routine(self, user_input: dict[str, Any] | None = None):
+        if user_input is not None:
+            self._routine_mode = user_input[CONF_PLAY_TYPE]
+            return await self.async_step_add_routine_details()
+        return self.async_show_form(step_id="add_routine", data_schema=_routine_mode_schema("automatic"))
+
+    async def async_step_add_routine_details(self, user_input: dict[str, Any] | None = None):
         errors = {}
         if user_input is not None:
-            if user_input.get(CONF_PLAY_TYPE) == "manual" and not str(user_input.get(CONF_ASSET, "")).strip():
+            if self._routine_mode == "manual" and not str(user_input.get(CONF_ASSET, "")).strip():
                 errors["base"] = "asset_required"
             elif not _valid_times(user_input.get(CONF_TIMES, "")):
                 errors["base"] = "invalid_times"
             elif not _entities(user_input.get(CONF_MEDIA_PLAYERS, [])):
                 errors["base"] = "media_players_required"
             else:
-                self._schedule["routines"].append(_routine_from_input(user_input))
+                self._schedule["routines"].append(
+                    _routine_from_input({**user_input, CONF_PLAY_TYPE: self._routine_mode})
+                )
                 return await self.async_step_init()
         return self.async_show_form(
-            step_id="add_routine",
-            data_schema=_routine_schema(self._assets),
+            step_id=f"add_routine_{self._routine_mode}",
+            data_schema=_routine_schema(self._assets, mode=self._routine_mode),
             errors=errors,
         )
 
@@ -221,7 +229,8 @@ class VirtualCarillonOptionsFlow(config_entries.OptionsFlow):
         if user_input is not None:
             routine = next(routine for routine in routines if routine["id"] == user_input[CONF_ROUTINE_ID])
             self._editing_routine_id = routine["id"]
-            return await self.async_step_edit_routine_details()
+            self._routine_mode = _routine_defaults(routine)["play_type"]
+            return await self.async_step_edit_routine_mode()
         return self.async_show_form(
             step_id="edit_routine",
             data_schema=vol.Schema({
@@ -229,11 +238,20 @@ class VirtualCarillonOptionsFlow(config_entries.OptionsFlow):
             }),
         )
 
+    async def async_step_edit_routine_mode(self, user_input: dict[str, Any] | None = None):
+        if user_input is not None:
+            self._routine_mode = user_input[CONF_PLAY_TYPE]
+            return await self.async_step_edit_routine_details()
+        return self.async_show_form(
+            step_id="edit_routine_mode",
+            data_schema=_routine_mode_schema(self._routine_mode),
+        )
+
     async def async_step_edit_routine_details(self, user_input: dict[str, Any] | None = None):
         routine = next(routine for routine in self._schedule["routines"] if routine["id"] == self._editing_routine_id)
         errors = {}
         if user_input is not None:
-            if user_input.get(CONF_PLAY_TYPE) == "manual" and not str(user_input.get(CONF_ASSET, "")).strip():
+            if self._routine_mode == "manual" and not str(user_input.get(CONF_ASSET, "")).strip():
                 errors["base"] = "asset_required"
             elif not _valid_times(user_input.get(CONF_TIMES, "")):
                 errors["base"] = "invalid_times"
@@ -241,11 +259,13 @@ class VirtualCarillonOptionsFlow(config_entries.OptionsFlow):
                 errors["base"] = "media_players_required"
             else:
                 index = self._schedule["routines"].index(routine)
-                self._schedule["routines"][index] = _routine_from_input(user_input, routine_id=routine["id"])
+                self._schedule["routines"][index] = _routine_from_input(
+                    {**user_input, CONF_PLAY_TYPE: self._routine_mode}, routine_id=routine["id"]
+                )
                 return await self.async_step_init()
         return self.async_show_form(
-            step_id="edit_routine_details",
-            data_schema=_routine_schema(self._assets, routine),
+            step_id=f"edit_routine_{self._routine_mode}",
+            data_schema=_routine_schema(self._assets, routine, mode=self._routine_mode),
             errors=errors,
         )
 
@@ -360,20 +380,24 @@ def _westminster_schema(westminster: dict[str, Any]):
     return vol.Schema(schema)
 
 
-def _routine_schema(assets: list[dict[str, Any]], routine: dict[str, Any] | None = None):
+def _routine_mode_schema(default: str):
+    return vol.Schema({
+        vol.Required(CONF_PLAY_TYPE, default=default): selector.SelectSelector(
+            selector.SelectSelectorConfig(options=ASSET_TYPE_OPTIONS)
+        ),
+    })
+
+
+def _routine_schema(
+    assets: list[dict[str, Any]],
+    routine: dict[str, Any] | None = None,
+    *,
+    mode: str | None = None,
+):
     defaults = _routine_defaults(routine)
     schema = {
         vol.Optional(CONF_ROUTINE_NAME, default=defaults["name"]): str,
         vol.Required(CONF_ROUTINE_ENABLED, default=defaults["enabled"]): selector.BooleanSelector(),
-        vol.Required(CONF_PLAY_TYPE, default=defaults["play_type"]): selector.SelectSelector(
-            selector.SelectSelectorConfig(options=ASSET_TYPE_OPTIONS)
-        ),
-        vol.Required(CONF_ASSET, default=defaults["asset"]): selector.SelectSelector(
-            selector.SelectSelectorConfig(options=_asset_options(assets, include_empty=True))
-        ),
-        vol.Optional(CONF_CANONICAL_HOUR, default=defaults["canonical_hour"]): selector.SelectSelector(
-            selector.SelectSelectorConfig(options=CANONICAL_HOUR_OPTIONS)
-        ),
         vol.Required(CONF_TIMES, default=defaults["times"]): str,
         vol.Required("weekdays", default=defaults["weekdays"]): selector.SelectSelector(
             selector.SelectSelectorConfig(options=WEEKDAY_OPTIONS, multiple=True)
@@ -381,10 +405,19 @@ def _routine_schema(assets: list[dict[str, Any]], routine: dict[str, Any] | None
         vol.Required(CONF_MEDIA_PLAYERS, default=defaults["media_players"]): selector.EntitySelector(
             selector.EntitySelectorConfig(domain="media_player", multiple=True)
         ),
-        vol.Required(CONF_VOLUME, default=defaults["volume"]): selector.NumberSelector(
+        vol.Optional(CONF_VOLUME, default=defaults["volume"]): selector.NumberSelector(
             selector.NumberSelectorConfig(min=0, max=100, step=1, mode="slider")
         ),
     }
+    selected_mode = mode or defaults["play_type"]
+    if selected_mode == "manual":
+        schema[vol.Required(CONF_ASSET, default=defaults["asset"])] = selector.SelectSelector(
+            selector.SelectSelectorConfig(options=_asset_options(assets, include_empty=True))
+        )
+    else:
+        schema[vol.Optional(CONF_CANONICAL_HOUR, default=defaults["canonical_hour"])] = selector.SelectSelector(
+            selector.SelectSelectorConfig(options=CANONICAL_HOUR_OPTIONS)
+        )
     _add_optional_time(schema, CONF_NOT_BEFORE, defaults["not_before"])
     _add_optional_time(schema, CONF_NOT_AFTER, defaults["not_after"])
     return vol.Schema(schema)
@@ -421,7 +454,7 @@ def _routine_defaults(routine: dict[str, Any] | None):
             "times": "12:00",
             "weekdays": list(WEEKDAYS),
             "media_players": [],
-            "volume": 100,
+            "volume": None,
             "not_before": None,
             "not_after": None,
         }
@@ -432,7 +465,7 @@ def _routine_defaults(routine: dict[str, Any] | None):
             "type": "select_hymn" if routine.get("type") == "liturgical_hymn" else "play",
             "asset": "angelus" if routine.get("type") == "angelus" else routine.get("asset", ""),
             "mediaPlayers": routine.get("mediaPlayers", []),
-            "volume": routine.get("volume", 100),
+            "volume": routine.get("volume"),
         }
         trigger = {
             "times": routine.get("times", ["12:00"]),
@@ -450,7 +483,7 @@ def _routine_defaults(routine: dict[str, Any] | None):
         "times": ", ".join(trigger.get("times", [trigger.get("time", "12:00")])),
         "weekdays": trigger.get("weekdays", list(WEEKDAYS)),
         "media_players": action.get("mediaPlayers", []),
-        "volume": action.get("volume", 100),
+        "volume": action.get("volume"),
         "not_before": trigger.get("notBefore"),
         "not_after": trigger.get("notAfter"),
     }
@@ -478,7 +511,6 @@ def _routine_from_input(user_input: dict[str, Any], *, routine_id: str | None = 
             "type": "select_hymn",
             "strategy": "random",
             "mediaPlayers": _entities(user_input.get(CONF_MEDIA_PLAYERS, [])),
-            "volume": int(user_input.get(CONF_VOLUME, 100)),
         }
         canonical_hour = str(user_input.get(CONF_CANONICAL_HOUR, "")).strip()
         if canonical_hour:
@@ -489,10 +521,12 @@ def _routine_from_input(user_input: dict[str, Any], *, routine_id: str | None = 
             "type": "play",
             "asset": str(user_input.get(CONF_ASSET, "")).strip(),
             "mediaPlayers": _entities(user_input.get(CONF_MEDIA_PLAYERS, [])),
-            "volume": int(user_input.get(CONF_VOLUME, 100)),
         }
         default_name = action["asset"] or "Asset"
 
+    volume = user_input.get(CONF_VOLUME)
+    if volume is not None:
+        action["volume"] = int(volume)
     name = str(user_input.get(CONF_ROUTINE_NAME, "")).strip() or default_name
     return {
         "id": routine_id or f"routine-{uuid4().hex[:12]}",
@@ -538,8 +572,9 @@ def _normalise_routine(routine: dict[str, Any], index: int):
         "type": "select_hymn" if is_hymn else "play",
         "mediaPlayers": list(routine.get("mediaPlayers", [])),
         "outputs": list(routine.get("outputs", [])),
-        "volume": routine.get("volume", 100),
     }
+    if routine.get("volume") is not None:
+        action["volume"] = routine["volume"]
     if is_hymn:
         action["strategy"] = routine.get("strategy", "random")
         if routine.get("canonicalHour"):
@@ -578,8 +613,9 @@ def _simple_schedule(schedule: dict[str, Any]):
             "weekdays": trigger.get("weekdays", list(WEEKDAYS)),
             "mediaPlayers": action.get("mediaPlayers", []),
             "outputs": action.get("outputs", []),
-            "volume": action.get("volume", 100),
         }
+        if action.get("volume") is not None:
+            simple["volume"] = action["volume"]
         if is_hymn:
             if action.get("canonicalHours"):
                 simple["canonicalHour"] = action["canonicalHours"][0]

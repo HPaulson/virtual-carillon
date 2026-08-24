@@ -41,20 +41,27 @@ class VirtualCarillonAudioView(HomeAssistantView):
 
         upstream_url = f"{coordinator.url}/api/assets/{quote(asset, safe='')}/audio"
         try:
+            headers = dict(coordinator.headers)
+            if request.headers.get("Range"):
+                headers["Range"] = request.headers["Range"]
             async with async_get_clientsession(self.hass).get(
                 upstream_url,
-                headers=coordinator.headers,
+                headers=headers,
                 timeout=60,
             ) as upstream:
-                if upstream.status != 200:
+                if upstream.status not in (200, 206):
                     return web.Response(status=upstream.status, text=await upstream.text())
 
+                response_headers = {
+                    "Content-Type": upstream.headers.get("Content-Type", "audio/wav"),
+                    "Cache-Control": "public, max-age=3600",
+                }
+                for header in ("Content-Length", "Content-Range", "Accept-Ranges"):
+                    if upstream.headers.get(header):
+                        response_headers[header] = upstream.headers[header]
                 response = web.StreamResponse(
-                    status=200,
-                    headers={
-                        "Content-Type": upstream.headers.get("Content-Type", "audio/wav"),
-                        "Cache-Control": "public, max-age=3600",
-                    },
+                    status=upstream.status,
+                    headers=response_headers,
                 )
                 await response.prepare(request)
                 async for chunk in upstream.content.iter_chunked(64 * 1024):
@@ -98,7 +105,36 @@ class VirtualCarillonMediaSource(MediaSource):
         if identifier == "assets":
             assets = (coordinator.data or {}).get("assets", [])
         elif identifier == "hymns":
+            return self._hymn_root((coordinator.data or {}).get("hymns", []))
+        elif identifier == "hymns/all":
             assets = (coordinator.data or {}).get("hymns", [])
+        elif identifier == "hymns/season":
+            seasons = sorted({season for hymn in (coordinator.data or {}).get("hymns", []) for season in self._asset_seasons(hymn)})
+            return BrowseMediaSource(
+                domain=DOMAIN,
+                identifier=identifier,
+                media_class=MediaClass.DIRECTORY,
+                media_content_type="",
+                title="By season",
+                can_play=False,
+                can_expand=True,
+                children_media_class=MediaClass.DIRECTORY,
+                children=[
+                    self._directory(
+                        f"hymns/season/{quote(season, safe='')}",
+                        self._season_title(season),
+                        children_media_class=MediaClass.MUSIC,
+                    )
+                    for season in seasons
+                ],
+            )
+        elif identifier.startswith("hymns/season/"):
+            season = unquote(identifier.removeprefix("hymns/season/"))
+            assets = [
+                asset
+                for asset in (coordinator.data or {}).get("hymns", [])
+                if self._asset_seasons(asset) and season in self._asset_seasons(asset)
+            ]
         else:
             raise BrowseError(f"Unknown Virtual Carillon media path: {identifier}")
 
@@ -114,6 +150,31 @@ class VirtualCarillonMediaSource(MediaSource):
             children_media_class=MediaClass.MUSIC,
             children=children,
         )
+
+    def _hymn_root(self, hymns: list[dict]) -> BrowseMediaSource:
+        children = [self._directory("hymns/all", "All hymns")]
+        children.append(self._directory("hymns/season", "By season", children_media_class=MediaClass.DIRECTORY))
+        return BrowseMediaSource(
+            domain=DOMAIN,
+            identifier="hymns",
+            media_class=MediaClass.DIRECTORY,
+            media_content_type="",
+            title="Hymns",
+            can_play=False,
+            can_expand=True,
+            children_media_class=MediaClass.DIRECTORY,
+            children=children,
+        )
+
+    @staticmethod
+    def _asset_seasons(asset: dict) -> set[str]:
+        tags = asset.get("liturgicalTags") or {}
+        seasons = tags.get("seasons") or asset.get("liturgicalSeasons") or []
+        return {str(season).strip().lower().replace(" ", "-") for season in seasons if str(season).strip()}
+
+    @staticmethod
+    def _season_title(season: str) -> str:
+        return season.replace("-", " ").title()
 
     async def async_resolve_media(self, item: MediaSourceItem) -> PlayMedia:
         coordinator = _coordinator(self.hass)
@@ -132,7 +193,12 @@ class VirtualCarillonMediaSource(MediaSource):
         return PlayMedia(AUDIO_URL.format(asset=quote(asset_id, safe="")), "audio/wav")
 
     @staticmethod
-    def _directory(identifier: str, title: str) -> BrowseMediaSource:
+    def _directory(
+        identifier: str,
+        title: str,
+        *,
+        children_media_class: MediaClass = MediaClass.MUSIC,
+    ) -> BrowseMediaSource:
         return BrowseMediaSource(
             domain=DOMAIN,
             identifier=identifier,

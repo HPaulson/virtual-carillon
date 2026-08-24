@@ -222,7 +222,35 @@ export async function createServer(services: ServerServices): Promise<FastifyIns
   app.get<{ Params: { asset: string } }>('/api/assets/:asset/audio', async (request, reply) => {
     try {
       const filePath = await services.library.resolveAndRender(request.params.asset);
-      return reply.type(mimeType(filePath)).send(await fs.readFile(filePath));
+      const audio = await fs.readFile(filePath);
+      const range = request.headers.range;
+      if (!range) {
+        return reply
+          .type(mimeType(filePath))
+          .headers({ 'Accept-Ranges': 'bytes', 'Content-Length': String(audio.byteLength) })
+          .send(audio);
+      }
+
+      const match = /^bytes=(\d*)-(\d*)$/.exec(range);
+      if (!match || (!match[1] && !match[2])) {
+        return reply.code(416).header('Content-Range', `bytes */${audio.byteLength}`).send();
+      }
+      const start = match[1] ? Number(match[1]) : Math.max(0, audio.byteLength - Number(match[2]));
+      const end = match[2] ? Number(match[2]) : audio.byteLength - 1;
+      if (!Number.isSafeInteger(start) || !Number.isSafeInteger(end) || start < 0 || start > end || start >= audio.byteLength) {
+        return reply.code(416).header('Content-Range', `bytes */${audio.byteLength}`).send();
+      }
+      const boundedEnd = Math.min(end, audio.byteLength - 1);
+      const body = audio.subarray(start, boundedEnd + 1);
+      return reply
+        .code(206)
+        .type(mimeType(filePath))
+        .headers({
+          'Accept-Ranges': 'bytes',
+          'Content-Length': String(body.byteLength),
+          'Content-Range': `bytes ${start}-${boundedEnd}/${audio.byteLength}`,
+        })
+        .send(body);
     } catch (error) {
       return reply
         .code(404)
@@ -345,7 +373,6 @@ async function scheduledPlaybacks(
   if (westminster && targetMatches(config.westminster.mediaPlayers, config.westminster.outputs, runner)) {
     playbacks.push({
       asset: westminster,
-      volume: 100,
       mediaPlayers: config.westminster.mediaPlayers,
       outputs: config.westminster.outputs,
       routineId: 'westminster',
@@ -367,7 +394,7 @@ async function scheduledPlaybacks(
       if (!asset) continue;
       playbacks.push({
         asset,
-        volume: action.volume,
+        ...(action.volume === undefined ? {} : { volume: action.volume }),
         mediaPlayers: action.mediaPlayers,
         outputs: action.outputs,
         routineId: routine.id,

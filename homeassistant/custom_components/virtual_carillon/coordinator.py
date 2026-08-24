@@ -50,29 +50,30 @@ class CarillonCoordinator(DataUpdateCoordinator):
         *,
         refresh: bool = True,
         enqueue: str | None = None,
-        volume: float = 100,
+        volume: float | None = None,
     ):
         media_id = f"{MEDIA_SOURCE_PREFIX}{quote(asset, safe='')}"
         _LOGGER.info(
-            "Playing asset=%s on %s (volume=%s%%, enqueue=%s)",
+            "Playing asset=%s on %s (volume=%s, enqueue=%s)",
             asset,
             media_players,
             volume,
             enqueue,
         )
-        await self.hass.services.async_call(
-            "media_player",
-            "volume_set",
-            {
-                "entity_id": media_players,
-                "volume_level": max(0, min(100, float(volume))) / 100,
-            },
-            blocking=True,
-        )
+        if volume is not None:
+            await self.hass.services.async_call(
+                "media_player",
+                "volume_set",
+                {
+                    "entity_id": media_players,
+                    "volume_level": max(0, min(100, float(volume))) / 100,
+                },
+                blocking=True,
+            )
         data = {
             "entity_id": media_players,
             "media_content_id": media_id,
-            "media_content_type": "music",
+            "media_content_type": "audio/wav",
         }
         if enqueue is not None:
             data["enqueue"] = enqueue

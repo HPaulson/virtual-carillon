@@ -2,6 +2,16 @@
 
 ## Docker deployment
 
+### Publish changes and update Home Assistant
+
+From the repository root, run the publish helper with an optional commit message:
+
+```bash
+./scripts/push-live.sh "Describe the change"
+```
+
+It typechecks the project, commits and pushes the current branch to GitHub, copies the complete Home Assistant custom integration to `your-ssh-host`, restarts Home Assistant, and waits for it to become healthy. The remote host, HA component path, and HA container name can be overridden with `REMOTE_HOST`, `HA_COMPONENT_PARENT`, and `HA_CONTAINER`.
+
 Docker is the recommended Home Assistant deployment. The single Compose file runs the API, SQLite database, and rendered-audio cache. Home Assistant can configure routines and select media players; for API-only native playback, configure `outputs` (or no targets for the platform default) and the Node service evaluates and plays the schedule itself:
 
 ```bash

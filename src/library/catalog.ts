@@ -86,22 +86,31 @@ export class HymnCatalog {
       { level: 'category', ids: categoryTargets, field: 'categories' },
       { level: 'season', ids: seasonTargets, field: 'seasons' },
     ];
+    const candidatesForTier = (tier: (typeof tiers)[number], officeOnly: boolean): AssetDefinition[] => {
+      return available.filter((asset) => {
+        const tags = assetTags(asset);
+        return (
+          intersects(tags[tier.field] as string[], tier.ids) &&
+          (!officeOnly || intersects(tags.canonicalHours, preferredHours))
+        );
+      });
+    };
     const selectTier = (officeOnly: boolean): HymnSelection | undefined => {
       for (const tier of tiers) {
-        const candidates = available.filter((asset) => {
-          const tags = assetTags(asset);
-          return (
-            intersects(tags[tier.field] as string[], tier.ids) &&
-            (!officeOnly || intersects(tags.canonicalHours, preferredHours))
-          );
-        });
+        const candidates = candidatesForTier(tier, officeOnly);
         if (candidates.length) return this.choose(candidates, tier.level, day, query, celebration);
       }
       return undefined;
     };
     if (preferredHours.length) {
-      const officeSelection = selectTier(true);
-      if (officeSelection) return officeSelection;
+      // LitCal establishes the match tier first. The selected hour only
+      // narrows that tier when an hour-tagged hymn exists.
+      for (const tier of tiers) {
+        const candidates = candidatesForTier(tier, false);
+        if (!candidates.length) continue;
+        const officeCandidates = candidatesForTier(tier, true);
+        return this.choose(officeCandidates.length ? officeCandidates : candidates, tier.level, day, query, celebration);
+      }
     }
 
     const ordinarySelection = selectTier(false);
@@ -147,8 +156,9 @@ export class HymnCatalog {
 
     // Seeded selection is intentionally stateless: the same day/query/seed is
     // reproducible in tests and in a dry-run API call.
+    const dailyKey = day.date;
     if (query.seed === undefined && recentExclusion > 0 && candidates.length > recentExclusion) {
-      const previous = new Set(this.recent.get(key) ?? []);
+      const previous = new Set(this.recent.get(dailyKey) ?? []);
       const withoutRecent = candidates.filter((candidate) => !previous.has(candidate.id));
       if (withoutRecent.length) pool = withoutRecent;
     }
@@ -158,7 +168,7 @@ export class HymnCatalog {
         : stableHash(`${query.seed}|${day.date}|${key}`) % pool.length;
     const asset = pool[index];
     if (query.seed === undefined && recentExclusion > 0) {
-      this.recent.set(key, [asset.id, ...(this.recent.get(key) ?? [])].slice(0, recentExclusion));
+      this.recent.set(dailyKey, [asset.id, ...(this.recent.get(dailyKey) ?? [])].slice(0, recentExclusion));
     }
     return { asset, candidates, matchedBy: level, celebration };
   }

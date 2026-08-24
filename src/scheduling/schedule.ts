@@ -6,7 +6,7 @@ const WeekdaySchema = z.enum(['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat']);
 const WeekdaysSchema = z.array(WeekdaySchema).min(1);
 const OptionalMediaPlayersSchema = z.array(z.string().regex(/^media_player\.[a-z0-9_]+$/i));
 const NativeOutputsSchema = z.array(z.string().min(1));
-const VolumeSchema = z.number().finite().min(0).max(100).default(100);
+const VolumeSchema = z.number().finite().min(0).max(100).optional();
 
 const TriggerSchema = z.object({
   frequency: z.enum(['exact', 'hourly', 'every_15', 'every_30']),
@@ -105,7 +105,7 @@ export interface LocalScheduleTime {
 
 export interface SchedulePlayback {
   asset: string;
-  volume: number;
+  volume?: number;
   mediaPlayers: string[];
   outputs: string[];
   routineId: string;
@@ -205,7 +205,9 @@ export function toSimpleSchedule(config: ScheduleConfig) {
         enabled: routine.enabled,
         type: isHymn ? 'liturgical_hymn' : 'asset',
         ...(isHymn ? { fallbackAsset: action.fallbackAsset } : { asset: action?.type === 'play' ? action.asset : undefined }),
-        volume: action?.type === 'play' || action?.type === 'select_hymn' ? action.volume : 100,
+        ...(action?.type === 'play' || action?.type === 'select_hymn'
+          ? (action.volume === undefined ? {} : { volume: action.volume })
+          : {}),
         ...(isHymn && action.canonicalHours?.length ? { canonicalHour: action.canonicalHours[0] } : {}),
         times: routine.trigger.times ?? [routine.trigger.time],
         weekdays: routine.trigger.weekdays,
