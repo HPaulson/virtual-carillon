@@ -119,12 +119,21 @@ describe('audio delivery API', () => {
     await writeFile(filePath, audio);
     const app = await createServer({
       engine: { defaultDistanceProfile: 'half-mile' },
-      library: { list: () => [], resolveAndRender: async (_asset: string, options: Record<string, unknown>) => { renderOptions = options; return filePath; } },
+      library: {
+        list: () => [],
+        resolveAndRender: async (_asset: string, options: Record<string, unknown>) => {
+          renderOptions = options;
+          return filePath;
+        },
+      },
       database: { recentEvents: () => [] },
     } as never);
 
     try {
-      const full = await app.inject({ method: 'GET', url: '/api/assets/hymn/audio?distance=one-mile' });
+      const full = await app.inject({
+        method: 'GET',
+        url: '/api/assets/hymn/audio?distance=one-mile',
+      });
       expect(full.statusCode).toBe(200);
       expect(full.headers['accept-ranges']).toBe('bytes');
       expect(full.headers['content-length']).toBe(String(audio.length));
@@ -171,27 +180,33 @@ describe('server-owned schedule API', () => {
         mediaPlayers: [],
         outputs: ['default'],
       },
-      routines: [{
-        id: 'angelus',
-        name: 'Angelus',
-        enabled: true,
-        type: 'asset',
-        asset: 'angelus',
-        times: ['12:00', '18:00'],
-        weekdays: ['mon', 'wed'],
-        notBefore: '08:00',
-        notAfter: '20:00',
-        volume: 62,
-        mediaPlayers: [],
-        outputs: ['default'],
-      }],
+      routines: [
+        {
+          id: 'angelus',
+          name: 'Angelus',
+          enabled: true,
+          type: 'asset',
+          asset: 'angelus',
+          times: ['12:00', '18:00'],
+          weekdays: ['mon', 'wed'],
+          notBefore: '08:00',
+          notAfter: '20:00',
+          volume: 62,
+          mediaPlayers: [],
+          outputs: ['default'],
+        },
+      ],
       litcal: { enabled: true, calendar: 'general' },
     };
     const saved = await app.inject({ method: 'PUT', url: '/api/schedule', payload: schedule });
     expect(saved.statusCode).toBe(200);
     expect(saved.json().config).toEqual(schedule);
-    expect((await app.inject({ method: 'GET', url: '/api/schedule' })).json().config).toEqual(schedule);
-    expect((await app.inject({ method: 'GET', url: '/api/schedule/simple' })).json().config).toEqual(schedule);
+    expect((await app.inject({ method: 'GET', url: '/api/schedule' })).json().config).toEqual(
+      schedule,
+    );
+    expect(
+      (await app.inject({ method: 'GET', url: '/api/schedule/simple' })).json().config,
+    ).toEqual(schedule);
     await app.close();
   });
 
@@ -229,11 +244,26 @@ describe('server-owned schedule API', () => {
       url: '/api/schedule',
       payload: {
         enabled: true,
-        westminster: { enabled: false, cadence: 'hourly', weekdays: ['mon'], mediaPlayers: [], outputs: [] },
-        routines: [{
-          id: 'angelus', name: 'Angelus', enabled: true, type: 'asset', asset: 'angelus',
-          times: ['12:00'], weekdays: ['mon'], mediaPlayers: [], outputs: [],
-        }],
+        westminster: {
+          enabled: false,
+          cadence: 'hourly',
+          weekdays: ['mon'],
+          mediaPlayers: [],
+          outputs: [],
+        },
+        routines: [
+          {
+            id: 'angelus',
+            name: 'Angelus',
+            enabled: true,
+            type: 'asset',
+            asset: 'angelus',
+            times: ['12:00'],
+            weekdays: ['mon'],
+            mediaPlayers: [],
+            outputs: [],
+          },
+        ],
         litcal: { enabled: true, calendar: 'general' },
       },
     });
@@ -270,7 +300,15 @@ describe('server-owned schedule API', () => {
         },
         completeScheduleRun: () => undefined,
       },
-      liturgicalCalendar: { getDay: async () => ({ date: '2026-08-24', season: 'Ordinary Time', seasonIds: ['ordinary-time'], celebrations: [], source: 'test' }) },
+      liturgicalCalendar: {
+        getDay: async () => ({
+          date: '2026-08-24',
+          season: 'Ordinary Time',
+          seasonIds: ['ordinary-time'],
+          celebrations: [],
+          source: 'test',
+        }),
+      },
       hymnCatalog: {
         selectForDay: () => ({ asset: { id: 'hymn-to-joy' }, candidates: [], matchedBy: 'season' }),
       },
@@ -288,17 +326,39 @@ describe('server-owned schedule API', () => {
         mediaPlayers: ['media_player.kitchen'],
         outputs: [],
       },
-      routines: [{
+      routines: [
+        {
           id: 'afternoon-prayer',
-        name: 'Afternoon prayer',
-        enabled: true,
-        trigger: { frequency: 'exact', time: '15:00', weekdays: ['mon'], excludedTimes: [], notBefore: '14:00', notAfter: '16:00' },
-        actions: [
-          { type: 'play', asset: 'westminster-hour-3', volume: 35, mediaPlayers: ['media_player.kitchen'], outputs: [] },
-          { type: 'delay', seconds: 2 },
-          { type: 'select_hymn', strategy: 'random', recentExclusion: 3, volume: 48, mediaPlayers: ['media_player.kitchen'], outputs: [] },
-        ],
-      }],
+          name: 'Afternoon prayer',
+          enabled: true,
+          trigger: {
+            frequency: 'exact',
+            time: '15:00',
+            weekdays: ['mon'],
+            excludedTimes: [],
+            notBefore: '14:00',
+            notAfter: '16:00',
+          },
+          actions: [
+            {
+              type: 'play',
+              asset: 'westminster-hour-3',
+              volume: 35,
+              mediaPlayers: ['media_player.kitchen'],
+              outputs: [],
+            },
+            { type: 'delay', seconds: 2 },
+            {
+              type: 'select_hymn',
+              strategy: 'random',
+              recentExclusion: 3,
+              volume: 48,
+              mediaPlayers: ['media_player.kitchen'],
+              outputs: [],
+            },
+          ],
+        },
+      ],
       litcal: { enabled: true, calendar: 'general' },
     };
     const saved = await app.inject({ method: 'PUT', url: '/api/schedule', payload: schedule });
@@ -307,33 +367,53 @@ describe('server-owned schedule API', () => {
       enabled: true,
       westminster: schedule.westminster,
       litcal: schedule.litcal,
-      routines: [{
-        id: 'afternoon-prayer',
-        name: 'Afternoon prayer',
-        enabled: true,
-        type: 'asset',
-        asset: 'westminster-hour-3',
-        times: ['15:00'],
-        weekdays: ['mon'],
-        notBefore: '14:00',
-        notAfter: '16:00',
-        volume: 35,
-        mediaPlayers: ['media_player.kitchen'],
-        outputs: [],
-      }],
+      routines: [
+        {
+          id: 'afternoon-prayer',
+          name: 'Afternoon prayer',
+          enabled: true,
+          type: 'asset',
+          asset: 'westminster-hour-3',
+          times: ['15:00'],
+          weekdays: ['mon'],
+          notBefore: '14:00',
+          notAfter: '16:00',
+          volume: 35,
+          mediaPlayers: ['media_player.kitchen'],
+          outputs: [],
+        },
+      ],
     });
 
-    const first = await app.inject({ method: 'POST', url: '/api/schedule/claim', payload: { at: '2026-08-24T15:00:00-04:00' } });
+    const first = await app.inject({
+      method: 'POST',
+      url: '/api/schedule/claim',
+      payload: { at: '2026-08-24T15:00:00-04:00' },
+    });
     expect(first.statusCode).toBe(200);
-    expect(first.json().actions.map((action: { asset: string }) => action.asset)).toEqual(['westminster-hour-3', 'westminster-hour-3', 'hymn-to-joy']);
+    expect(first.json().actions.map((action: { asset: string }) => action.asset)).toEqual([
+      'westminster-hour-3',
+      'westminster-hour-3',
+      'hymn-to-joy',
+    ]);
     expect(first.json().actions[1].waitAfterSeconds).toBe(2);
     expect(first.json().actions[2].mediaPlayers).toEqual(['media_player.kitchen']);
-    expect(first.json().actions.map((action: { volume: number }) => action.volume)).toEqual([27, 35, 48]);
+    expect(first.json().actions.map((action: { volume: number }) => action.volume)).toEqual([
+      27, 35, 48,
+    ]);
 
-    const second = await app.inject({ method: 'POST', url: '/api/schedule/claim', payload: { at: '2026-08-24T15:00:00-04:00' } });
+    const second = await app.inject({
+      method: 'POST',
+      url: '/api/schedule/claim',
+      payload: { at: '2026-08-24T15:00:00-04:00' },
+    });
     expect(second.json().claimed).toBe(false);
     expect(second.json().actions).toEqual([]);
-    const outsideWindow = await app.inject({ method: 'POST', url: '/api/schedule/claim', payload: { at: '2026-08-24T17:00:00-04:00' } });
+    const outsideWindow = await app.inject({
+      method: 'POST',
+      url: '/api/schedule/claim',
+      payload: { at: '2026-08-24T17:00:00-04:00' },
+    });
     expect(outsideWindow.json()).toEqual({ due: false, actions: [] });
     await app.close();
   });
@@ -353,9 +433,15 @@ describe('server-owned schedule API', () => {
       },
       actions: [{ type: 'delay' as const, seconds: 1 }],
     };
-    expect(routineMatches(routine, { date: '2026-08-24', hour: 23, minute: 0, weekday: 1 })).toBe(true);
-    expect(routineMatches(routine, { date: '2026-08-25', hour: 5, minute: 0, weekday: 2 })).toBe(true);
-    expect(routineMatches(routine, { date: '2026-08-25', hour: 12, minute: 0, weekday: 2 })).toBe(false);
+    expect(routineMatches(routine, { date: '2026-08-24', hour: 23, minute: 0, weekday: 1 })).toBe(
+      true,
+    );
+    expect(routineMatches(routine, { date: '2026-08-25', hour: 5, minute: 0, weekday: 2 })).toBe(
+      true,
+    );
+    expect(routineMatches(routine, { date: '2026-08-25', hour: 12, minute: 0, weekday: 2 })).toBe(
+      false,
+    );
   });
 
   it('uses the actual hour for Westminster strikes', () => {
@@ -365,7 +451,11 @@ describe('server-owned schedule API', () => {
       weekdays: ['mon' as const],
       mediaPlayers: ['media_player.kitchen'],
     };
-    expect(westminsterAsset(schedule, { date: '2026-08-24', hour: 13, minute: 0, weekday: 1 })).toBe('westminster-hour-1');
-    expect(westminsterAsset(schedule, { date: '2026-08-24', hour: 13, minute: 15, weekday: 1 })).toBe('westminster-quarter');
+    expect(
+      westminsterAsset(schedule, { date: '2026-08-24', hour: 13, minute: 0, weekday: 1 }),
+    ).toBe('westminster-hour-1');
+    expect(
+      westminsterAsset(schedule, { date: '2026-08-24', hour: 13, minute: 15, weekday: 1 }),
+    ).toBe('westminster-quarter');
   });
 });

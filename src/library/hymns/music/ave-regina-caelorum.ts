@@ -7,7 +7,8 @@ export const aveReginaCaelorum = defineHymn({
   source: 'Antiphonale Monasticum, Solesmes 1934, p. 175, Gregorian chant Mode VI',
   sourceUrl:
     'https://www.gregorianum.org/wiki/Ave_Regina_Coelorum_%28Tonus_Solemnis_-_Monasticum%29',
-  license: 'Public-domain chant; project transcription from cited source; source edition not bundled',
+  license:
+    'Public-domain chant; project transcription from cited source; source edition not bundled',
   liturgical: {
     categories: ['marian'],
     seasons: ['Ordinary Time', 'Lent'],

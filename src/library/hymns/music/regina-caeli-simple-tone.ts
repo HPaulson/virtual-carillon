@@ -7,7 +7,8 @@ export const reginaCaeliSimpleTone = defineHymn({
   source:
     'The Liber Usualis, Solesmes 1961, p. 278, Gregorian chant Mode VI; sung from Easter through Pentecost',
   sourceUrl: 'https://www.gregorianum.org/wiki/Regina_Caeli_%28Tono_Simplex%29',
-  license: 'Public-domain chant; project transcription from cited source; source edition not bundled',
+  license:
+    'Public-domain chant; project transcription from cited source; source edition not bundled',
   liturgical: {
     categories: ['marian', 'resurrection'],
     seasons: ['Easter'],

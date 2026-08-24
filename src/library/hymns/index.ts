@@ -26,7 +26,6 @@ import { christeRedemptorOmnium } from './music/christe-redemptor-omnium.js';
 import { exsultetCaelumLaudibus } from './music/exsultet-caelum-laudibus.js';
 import { firstNoel } from './music/first-noel.js';
 import { exsultetOrbisGaudiis } from './music/exsultet-orbis-gaudiis.js';
-import { forAllTheSaints } from './music/for-all-the-saints.js';
 import { gabrielsMessage } from './music/gabriels-message.js';
 import { gloriaInExcelsisDeo } from './music/gloria-in-excelsis-deo.js';
 import { godRestYeMerryGentlemen } from './music/god-rest-ye-merry-gentlemen.js';
@@ -91,7 +90,6 @@ export { christeRedemptorOmnium } from './music/christe-redemptor-omnium.js';
 export { exsultetCaelumLaudibus } from './music/exsultet-caelum-laudibus.js';
 export { firstNoel } from './music/first-noel.js';
 export { exsultetOrbisGaudiis } from './music/exsultet-orbis-gaudiis.js';
-export { forAllTheSaints } from './music/for-all-the-saints.js';
 export { gabrielsMessage } from './music/gabriels-message.js';
 export { gloriaInExcelsisDeo } from './music/gloria-in-excelsis-deo.js';
 export { godRestYeMerryGentlemen } from './music/god-rest-ye-merry-gentlemen.js';
@@ -155,7 +153,6 @@ export const BUILTIN_HYMNS: HymnAsset[] = [
   exsultetCaelumLaudibus,
   firstNoel,
   exsultetOrbisGaudiis,
-  forAllTheSaints,
   gabrielsMessage,
   gloriaInExcelsisDeo,
   godRestYeMerryGentlemen,

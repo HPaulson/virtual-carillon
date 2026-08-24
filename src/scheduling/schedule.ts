@@ -136,7 +136,8 @@ export const DEFAULT_SCHEDULE_CONFIG: ScheduleConfig = {
 };
 
 export function normalizeSchedule(input: unknown): ScheduleConfig {
-  const value = (input && typeof input === 'object' ? input : {}) as Partial<ScheduleConfig> & Record<string, unknown>;
+  const value = (input && typeof input === 'object' ? input : {}) as Partial<ScheduleConfig> &
+    Record<string, unknown>;
   return ScheduleConfigSchema.parse({
     ...DEFAULT_SCHEDULE_CONFIG,
     ...value,
@@ -156,31 +157,33 @@ function normalizeRoutine(value: unknown, index: number): unknown {
   const isHymn = routine.type === 'liturgical_hymn' || routine.type === 'hymn_category';
   const type = isHymn ? 'liturgical_hymn' : 'play';
   const times = Array.isArray(routine.times) && routine.times.length ? routine.times : ['12:00'];
-  const canonicalHour = typeof routine.canonicalHour === 'string'
-    ? routine.canonicalHour
-    : Array.isArray(routine.canonicalHours) && typeof routine.canonicalHours[0] === 'string'
-      ? routine.canonicalHours[0]
-      : undefined;
-  const action = type === 'liturgical_hymn'
-    ? {
-      type: 'select_hymn',
-      strategy: routine.strategy ?? 'random',
-      volume: routine.volume,
-      categoryIds: Array.isArray(routine.categoryIds) ? routine.categoryIds : undefined,
-      canonicalHours: canonicalHour ? [canonicalHour] : undefined,
-      mediaPlayers: routine.mediaPlayers ?? [],
-      outputs: routine.outputs ?? [],
-    }
-    : {
-      type: 'play',
-      asset: routine.type === 'angelus' ? 'angelus' : routine.asset,
-      volume: routine.volume,
-      mediaPlayers: routine.mediaPlayers ?? [],
-      outputs: routine.outputs ?? [],
-    };
+  const canonicalHour =
+    typeof routine.canonicalHour === 'string'
+      ? routine.canonicalHour
+      : Array.isArray(routine.canonicalHours) && typeof routine.canonicalHours[0] === 'string'
+        ? routine.canonicalHours[0]
+        : undefined;
+  const action =
+    type === 'liturgical_hymn'
+      ? {
+          type: 'select_hymn',
+          strategy: routine.strategy ?? 'random',
+          volume: routine.volume,
+          categoryIds: Array.isArray(routine.categoryIds) ? routine.categoryIds : undefined,
+          canonicalHours: canonicalHour ? [canonicalHour] : undefined,
+          mediaPlayers: routine.mediaPlayers ?? [],
+          outputs: routine.outputs ?? [],
+        }
+      : {
+          type: 'play',
+          asset: routine.type === 'angelus' ? 'angelus' : routine.asset,
+          volume: routine.volume,
+          mediaPlayers: routine.mediaPlayers ?? [],
+          outputs: routine.outputs ?? [],
+        };
   return {
     id: routine.id ?? `routine-${index + 1}`,
-    name: routine.name ?? (isHymn ? 'Liturgical hymn' : routine.asset ?? 'Scheduled asset'),
+    name: routine.name ?? (isHymn ? 'Liturgical hymn' : (routine.asset ?? 'Scheduled asset')),
     enabled: routine.enabled ?? true,
     trigger: {
       frequency: 'exact',
@@ -210,9 +213,13 @@ export function toSimpleSchedule(config: ScheduleConfig) {
         type: isHymn ? (action.categoryIds?.length ? 'hymn_category' : 'liturgical_hymn') : 'asset',
         ...(isHymn ? {} : { asset: action?.type === 'play' ? action.asset : undefined }),
         ...(action?.type === 'play' || action?.type === 'select_hymn'
-          ? (action.volume === undefined ? {} : { volume: action.volume })
+          ? action.volume === undefined
+            ? {}
+            : { volume: action.volume }
           : {}),
-        ...(isHymn && action.canonicalHours?.length ? { canonicalHour: action.canonicalHours[0] } : {}),
+        ...(isHymn && action.canonicalHours?.length
+          ? { canonicalHour: action.canonicalHours[0] }
+          : {}),
         ...(isHymn && action.categoryIds?.length ? { categoryIds: action.categoryIds } : {}),
         times: routine.trigger.times ?? [routine.trigger.time],
         weekdays: routine.trigger.weekdays,
@@ -246,7 +253,11 @@ export function localScheduleTime(value: Date | string): LocalScheduleTime {
   };
 }
 
-export function scheduleSlotKey(time: LocalScheduleTime, updatedAt: string, runner = 'default'): string {
+export function scheduleSlotKey(
+  time: LocalScheduleTime,
+  updatedAt: string,
+  runner = 'default',
+): string {
   return `${time.date}T${String(time.hour).padStart(2, '0')}:${String(time.minute).padStart(2, '0')}|${updatedAt}|${runner}`;
 }
 
@@ -268,7 +279,10 @@ export function routineMatches(routine: ScheduleRoutine, time: LocalScheduleTime
   }
 }
 
-export function westminsterMatches(schedule: WestminsterSchedule, time: LocalScheduleTime): boolean {
+export function westminsterMatches(
+  schedule: WestminsterSchedule,
+  time: LocalScheduleTime,
+): boolean {
   if (!schedule.enabled) return false;
   const current = formatTime(time.hour, time.minute);
   const trigger = {
@@ -276,13 +290,20 @@ export function westminsterMatches(schedule: WestminsterSchedule, time: LocalSch
     notBefore: schedule.notBefore,
     notAfter: schedule.notAfter,
   };
-  if (!withinConfiguredWeekdays(trigger, time, current) || !withinTimeWindow(current, schedule.notBefore, schedule.notAfter)) return false;
+  if (
+    !withinConfiguredWeekdays(trigger, time, current) ||
+    !withinTimeWindow(current, schedule.notBefore, schedule.notAfter)
+  )
+    return false;
   if (time.minute === 0) return true;
   if (schedule.cadence === 'every_15') return [15, 30, 45].includes(time.minute);
   return schedule.cadence === 'every_30' && time.minute === 30;
 }
 
-export function westminsterAsset(schedule: WestminsterSchedule, time: LocalScheduleTime): string | undefined {
+export function westminsterAsset(
+  schedule: WestminsterSchedule,
+  time: LocalScheduleTime,
+): string | undefined {
   if (!westminsterMatches(schedule, time)) return undefined;
   if (time.minute === 0) return `westminster-hour-${time.hour % 12 || 12}`;
   if (time.minute === 15) return 'westminster-quarter';
@@ -329,7 +350,9 @@ function formatTime(hour: number, minute: number): string {
 }
 
 export function weekdayName(value: number): ScheduleRoutine['trigger']['weekdays'][number] {
-  return ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][value] as ScheduleRoutine['trigger']['weekdays'][number];
+  return ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][
+    value
+  ] as ScheduleRoutine['trigger']['weekdays'][number];
 }
 
 function weekdayForDate(value: string): number {

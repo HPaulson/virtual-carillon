@@ -1,5 +1,4 @@
 import Fastify, { FastifyInstance } from 'fastify';
-import cors from '@fastify/cors';
 import { timingSafeEqual } from 'node:crypto';
 import fs from 'node:fs/promises';
 import { z } from 'zod';
@@ -43,9 +42,11 @@ const PlaySchema = z.object({
     .optional(),
   customDistance: DistanceOverrides.optional(),
 });
-const AudioQuerySchema = z.object({
-  distance: PlaySchema.shape.distance,
-}).strict();
+const AudioQuerySchema = z
+  .object({
+    distance: PlaySchema.shape.distance,
+  })
+  .strict();
 const LiturgicalSelectionSchema = z.object({
   seasons: z.array(z.string()).optional(),
   rank: z.string().optional(),
@@ -87,7 +88,12 @@ const ScheduleRunSchema = z.object({
   at: z.string().min(1).optional(),
   output: z.string().min(1).optional(),
 });
-const HymnDaySchema = z.object({ date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional() });
+const HymnDaySchema = z.object({
+  date: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
+});
 type ScheduleRunner = 'home_assistant' | 'native';
 const ImportSchema = z.object({
   name: z.string().min(1),
@@ -115,24 +121,29 @@ export async function createServer(services: ServerServices): Promise<FastifyIns
   const app = Fastify({ logger: false });
   const hymnCatalog = services.hymnCatalog ?? new HymnCatalog(services.library);
   const nativeScheduleTimer = setInterval(() => {
-    void runNativeSchedule(new Date(), undefined, services).then((result) => {
-      if ('error' in result) app.log.error(`Native schedule playback failed: ${result.error}`);
-    }).catch((error) => {
-      app.log.error(`Native schedule evaluation failed: ${error instanceof Error ? error.message : String(error)}`);
-    });
+    void runNativeSchedule(new Date(), undefined, services)
+      .then((result) => {
+        if ('error' in result) app.log.error(`Native schedule playback failed: ${result.error}`);
+      })
+      .catch((error) => {
+        app.log.error(
+          `Native schedule evaluation failed: ${error instanceof Error ? error.message : String(error)}`,
+        );
+      });
   }, 5000);
   nativeScheduleTimer.unref();
   app.addHook('onClose', async () => clearInterval(nativeScheduleTimer));
-  await app.register(cors, { origin: true });
   app.addHook('onRequest', async (request, reply) => {
-    if (request.method === 'OPTIONS' || !services.apiToken || (!request.url.startsWith('/api/') && request.url !== '/api')) return;
+    if (
+      request.method === 'OPTIONS' ||
+      !services.apiToken ||
+      (!request.url.startsWith('/api/') && request.url !== '/api')
+    )
+      return;
     const authorization = request.headers.authorization;
     const providedToken = authorization?.match(/^Bearer\s+(.+)$/i)?.[1];
     if (!providedToken || !tokensMatch(services.apiToken, providedToken)) {
-      return reply
-        .code(401)
-        .header('WWW-Authenticate', 'Bearer')
-        .send({ error: 'Unauthorized' });
+      return reply.code(401).header('WWW-Authenticate', 'Bearer').send({ error: 'Unauthorized' });
     }
   });
   app.get('/health', async () => ({ ok: true, service: 'virtual-carillon', ...platformSummary() }));
@@ -170,30 +181,48 @@ export async function createServer(services: ServerServices): Promise<FastifyIns
     try {
       const stored = currentStoredSchedule(services);
       const time = localScheduleTime(parsed.data.at);
-      const actions = await scheduledPlaybacks(time, stored.config, services, hymnCatalog, 'home_assistant');
+      const actions = await scheduledPlaybacks(
+        time,
+        stored.config,
+        services,
+        hymnCatalog,
+        'home_assistant',
+      );
       if (!actions.length) return { due: false, actions: [] };
       const slotKey = scheduleSlotKey(time, stored.updatedAt, 'home_assistant');
       const claimed = services.database.claimScheduleRun(slotKey, JSON.stringify(actions));
       if (claimed) logSelectionAudits(actions);
       return { due: true, claimed, slotKey, actions: claimed ? actions : [] };
     } catch (error) {
-      return reply.code(400).send({ error: error instanceof Error ? error.message : String(error) });
+      return reply
+        .code(400)
+        .send({ error: error instanceof Error ? error.message : String(error) });
     }
   });
   app.post('/api/schedule/complete', async (request, reply) => {
     const parsed = ScheduleCompleteSchema.safeParse(request.body);
     if (!parsed.success) return reply.code(400).send({ error: parsed.error.flatten() });
-    services.database.completeScheduleRun(parsed.data.slotKey, parsed.data.status, parsed.data.message ?? undefined);
+    services.database.completeScheduleRun(
+      parsed.data.slotKey,
+      parsed.data.status,
+      parsed.data.message ?? undefined,
+    );
     return { ok: true };
   });
   app.post('/api/schedule/run', async (request, reply) => {
     const parsed = ScheduleRunSchema.safeParse(request.body ?? {});
     if (!parsed.success) return reply.code(400).send({ error: parsed.error.flatten() });
     try {
-      const result = await runNativeSchedule(parsed.data.at ?? new Date(), parsed.data.output, services);
+      const result = await runNativeSchedule(
+        parsed.data.at ?? new Date(),
+        parsed.data.output,
+        services,
+      );
       return 'error' in result ? reply.code(503).send(result) : result;
     } catch (error) {
-      return reply.code(400).send({ error: error instanceof Error ? error.message : String(error) });
+      return reply
+        .code(400)
+        .send({ error: error instanceof Error ? error.message : String(error) });
     }
   });
   app.get('/api/devices', async () => ({
@@ -216,7 +245,10 @@ export async function createServer(services: ServerServices): Promise<FastifyIns
     try {
       const parsedQuery = AudioQuerySchema.safeParse(request.query);
       if (!parsedQuery.success) return reply.code(400).send({ error: parsedQuery.error.flatten() });
-      const filePath = await services.library.resolveAndRender(request.params.asset, parsedQuery.data);
+      const filePath = await services.library.resolveAndRender(
+        request.params.asset,
+        parsedQuery.data,
+      );
       const audio = await fs.readFile(filePath);
       const range = request.headers.range;
       if (!range) {
@@ -232,7 +264,13 @@ export async function createServer(services: ServerServices): Promise<FastifyIns
       }
       const start = match[1] ? Number(match[1]) : Math.max(0, audio.byteLength - Number(match[2]));
       const end = match[2] ? Number(match[2]) : audio.byteLength - 1;
-      if (!Number.isSafeInteger(start) || !Number.isSafeInteger(end) || start < 0 || start > end || start >= audio.byteLength) {
+      if (
+        !Number.isSafeInteger(start) ||
+        !Number.isSafeInteger(end) ||
+        start < 0 ||
+        start > end ||
+        start >= audio.byteLength
+      ) {
         return reply.code(416).header('Content-Range', `bytes */${audio.byteLength}`).send();
       }
       const boundedEnd = Math.min(end, audio.byteLength - 1);
@@ -273,23 +311,37 @@ export async function createServer(services: ServerServices): Promise<FastifyIns
         .send({ error: error instanceof Error ? error.message : String(error) });
     }
   });
-  app.get<{ Params: { date: string }; Querystring: { calendar?: string } }>('/api/liturgical/:date', async (request, reply) => {
-    const parsedCalendar = CalendarSchema.safeParse(request.query.calendar ?? 'general');
-    if (!parsedCalendar.success) return reply.code(400).send({ error: parsedCalendar.error.flatten() });
-    const day = await services.liturgicalCalendar?.getDay(request.params.date, parsedCalendar.data);
-    return { calendar: parsedCalendar.data, day };
-  });
-  app.get<{ Params: { date: string }; Querystring: { calendar?: string } }>('/api/liturgical/:date/hymn', async (request, reply) => {
-    const parsedCalendar = CalendarSchema.safeParse(request.query.calendar ?? 'general');
-    if (!parsedCalendar.success) return reply.code(400).send({ error: parsedCalendar.error.flatten() });
-    const day = (await services.liturgicalCalendar?.getDay(request.params.date, parsedCalendar.data))
-      ?? neutralLiturgicalDay(request.params.date);
-    return {
-      calendar: parsedCalendar.data,
-      day,
-      selection: hymnCatalog.selectForDay(day, { alreadyPlayed: services.database.completedScheduleAssets?.(request.params.date) ?? [] }),
-    };
-  });
+  app.get<{ Params: { date: string }; Querystring: { calendar?: string } }>(
+    '/api/liturgical/:date',
+    async (request, reply) => {
+      const parsedCalendar = CalendarSchema.safeParse(request.query.calendar ?? 'general');
+      if (!parsedCalendar.success)
+        return reply.code(400).send({ error: parsedCalendar.error.flatten() });
+      const day = await services.liturgicalCalendar?.getDay(
+        request.params.date,
+        parsedCalendar.data,
+      );
+      return { calendar: parsedCalendar.data, day };
+    },
+  );
+  app.get<{ Params: { date: string }; Querystring: { calendar?: string } }>(
+    '/api/liturgical/:date/hymn',
+    async (request, reply) => {
+      const parsedCalendar = CalendarSchema.safeParse(request.query.calendar ?? 'general');
+      if (!parsedCalendar.success)
+        return reply.code(400).send({ error: parsedCalendar.error.flatten() });
+      const day =
+        (await services.liturgicalCalendar?.getDay(request.params.date, parsedCalendar.data)) ??
+        neutralLiturgicalDay(request.params.date);
+      return {
+        calendar: parsedCalendar.data,
+        day,
+        selection: hymnCatalog.selectForDay(day, {
+          alreadyPlayed: services.database.completedScheduleAssets?.(request.params.date) ?? [],
+        }),
+      };
+    },
+  );
   app.post('/api/hymns/reset-day', async (request, reply) => {
     const parsed = HymnDaySchema.safeParse(request.body ?? {});
     if (!parsed.success) return reply.code(400).send({ error: parsed.error.flatten() });
@@ -304,7 +356,8 @@ export async function createServer(services: ServerServices): Promise<FastifyIns
     const { date, useLitCal = true, calendar = 'general', ...input } = parsed.data;
     const selectedDate = date ?? localDate(new Date());
     const day = useLitCal
-      ? (await services.liturgicalCalendar?.getDay(selectedDate, calendar)) ?? neutralLiturgicalDay(selectedDate)
+      ? ((await services.liturgicalCalendar?.getDay(selectedDate, calendar)) ??
+        neutralLiturgicalDay(selectedDate))
       : neutralLiturgicalDay(selectedDate);
     const condition: LiturgicalCondition = input;
     if (!conditionMatches(day, condition)) {
@@ -370,10 +423,14 @@ async function scheduledPlaybacks(
   const playbacks: SchedulePlayback[] = [];
   let pendingDelay = 0;
   const westminster = westminsterAsset(config.westminster, time);
-  if (westminster && targetMatches(config.westminster.mediaPlayers, config.westminster.outputs, runner)) {
+  if (
+    westminster &&
+    targetMatches(config.westminster.mediaPlayers, config.westminster.outputs, runner)
+  ) {
     playbacks.push({
       asset: westminster,
-      durationSeconds: services.library.list().find((candidate) => candidate.id === westminster)?.duration,
+      durationSeconds: services.library.list().find((candidate) => candidate.id === westminster)
+        ?.duration,
       ...(config.westminster.volume === undefined ? {} : { volume: config.westminster.volume }),
       mediaPlayers: config.westminster.mediaPlayers,
       outputs: config.westminster.outputs,
@@ -396,7 +453,9 @@ async function scheduledPlaybacks(
       if (!resolved) continue;
       playbacks.push({
         asset: resolved.asset,
-        durationSeconds: services.library.list().find((candidate) => candidate.id === resolved.asset)?.duration,
+        durationSeconds: services.library
+          .list()
+          .find((candidate) => candidate.id === resolved.asset)?.duration,
         ...(action.volume === undefined ? {} : { volume: action.volume }),
         mediaPlayers: action.mediaPlayers,
         outputs: action.outputs,
@@ -419,7 +478,11 @@ function targetMatches(mediaPlayers: string[], outputs: string[], runner: Schedu
   return outputs.length > 0 || mediaPlayers.length === 0;
 }
 
-async function runNativeSchedule(at: Date | string, outputOverride: string | undefined, services: ServerServices) {
+async function runNativeSchedule(
+  at: Date | string,
+  outputOverride: string | undefined,
+  services: ServerServices,
+) {
   const hymnCatalog = services.hymnCatalog ?? new HymnCatalog(services.library);
   const stored = currentStoredSchedule(services);
   const time = localScheduleTime(at);
@@ -427,29 +490,55 @@ async function runNativeSchedule(at: Date | string, outputOverride: string | und
   if (!actions.length) return { due: false as const, actions: [] as SchedulePlayback[] };
   const slotKey = scheduleSlotKey(time, stored.updatedAt, 'native');
   const claimed = services.database.claimScheduleRun(slotKey, JSON.stringify(actions));
-  if (!claimed) return { due: true as const, claimed: false as const, slotKey, actions: [] as SchedulePlayback[] };
+  if (!claimed)
+    return {
+      due: true as const,
+      claimed: false as const,
+      slotKey,
+      actions: [] as SchedulePlayback[],
+    };
   logSelectionAudits(actions);
   try {
     await playScheduledNatively(actions, outputOverride, services);
     services.database.completeScheduleRun(slotKey, 'completed');
-    return { due: true as const, claimed: true as const, completed: true as const, slotKey, actions };
+    return {
+      due: true as const,
+      claimed: true as const,
+      completed: true as const,
+      slotKey,
+      actions,
+    };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     services.database.completeScheduleRun(slotKey, 'failed', message);
-    return { due: true as const, claimed: true as const, completed: false as const, slotKey, error: message };
+    return {
+      due: true as const,
+      claimed: true as const,
+      completed: false as const,
+      slotKey,
+      error: message,
+    };
   }
 }
 
-async function playScheduledNatively(actions: SchedulePlayback[], outputOverride: string | undefined, services: ServerServices) {
+async function playScheduledNatively(
+  actions: SchedulePlayback[],
+  outputOverride: string | undefined,
+  services: ServerServices,
+) {
   const available = await discoverOutputs();
   for (const action of actions) {
     if (action.waitBeforeSeconds > 0) await sleepSeconds(action.waitBeforeSeconds);
     const requestedOutputs = outputOverride ? [outputOverride] : action.outputs;
     const targets = requestedOutputs.length
-      ? requestedOutputs.map((requested) => available.find((item) => item.id === requested || item.name === requested))
+      ? requestedOutputs.map((requested) =>
+          available.find((item) => item.id === requested || item.name === requested),
+        )
       : [undefined];
     if (targets.some((target, index) => requestedOutputs[index] !== undefined && !target)) {
-      throw new Error(`Unknown native output: ${requestedOutputs.find((requested) => !available.some((item) => item.id === requested || item.name === requested))}`);
+      throw new Error(
+        `Unknown native output: ${requestedOutputs.find((requested) => !available.some((item) => item.id === requested || item.name === requested))}`,
+      );
     }
     if (!action.selectionAudit) console.info(`Playing: ${playbackLabel(action)}`);
     for (const target of targets) {
@@ -479,7 +568,8 @@ async function resolveScheduleAsset(
   if (action.type === 'play') return { asset: action.asset };
 
   const day = config.litcal.enabled
-    ? (await services.liturgicalCalendar?.getDay(date, config.litcal.calendar)) ?? neutralLiturgicalDay(date)
+    ? ((await services.liturgicalCalendar?.getDay(date, config.litcal.calendar)) ??
+      neutralLiturgicalDay(date))
     : neutralLiturgicalDay(date);
   if (!day || !conditionMatches(day, action)) return undefined;
   const query = toHymnQuery(action);
@@ -508,7 +598,9 @@ function logSelectionAudits(actions: SchedulePlayback[]) {
 function tokensMatch(expected: string, provided: string): boolean {
   const expectedBytes = Buffer.from(expected);
   const providedBytes = Buffer.from(provided);
-  return expectedBytes.length === providedBytes.length && timingSafeEqual(expectedBytes, providedBytes);
+  return (
+    expectedBytes.length === providedBytes.length && timingSafeEqual(expectedBytes, providedBytes)
+  );
 }
 
 function mimeType(filePath: string): string {
@@ -550,7 +642,13 @@ function queryFromRequest(value: unknown): Record<string, unknown> {
 const CalendarSchema = z.enum(['general', 'US', 'IT', 'NL', 'VA', 'CA']);
 
 function neutralLiturgicalDay(date: string): LiturgicalDay {
-  return { date, season: 'General', seasonIds: ['general'], celebrations: [], source: 'home-assistant-disabled' };
+  return {
+    date,
+    season: 'General',
+    seasonIds: ['general'],
+    celebrations: [],
+    source: 'home-assistant-disabled',
+  };
 }
 
 function stringQuery(value: unknown): string | undefined {

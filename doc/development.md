@@ -45,13 +45,13 @@ node dist/cli/index.js import --name "My Church Angelus" --file /path/to/angelus
 
 ## Configuration variables
 
-| Variable | Default | Notes |
-| --- | --- | --- |
-| `VIRTUAL_CARILLON_DATA_DIR` | `.data` | SQLite file and render cache |
-| `VIRTUAL_CARILLON_HOST` | `127.0.0.1` | Set to `0.0.0.0` in Docker |
-| `VIRTUAL_CARILLON_PORT` | `9876` | HTTP port |
-| `VIRTUAL_CARILLON_API_TOKEN` | unset | Bearer token for `/api/*`; set a long random value for remote deployments |
-| `VIRTUAL_CARILLON_SAMPLE_RATE` | `44100` | Only 44100 and 48000 are accepted |
+| Variable                       | Default     | Notes                                                                     |
+| ------------------------------ | ----------- | ------------------------------------------------------------------------- |
+| `VIRTUAL_CARILLON_DATA_DIR`    | `.data`     | SQLite file and render cache                                              |
+| `VIRTUAL_CARILLON_HOST`        | `127.0.0.1` | Set to `0.0.0.0` in Docker                                                |
+| `VIRTUAL_CARILLON_PORT`        | `9876`      | HTTP port                                                                 |
+| `VIRTUAL_CARILLON_API_TOKEN`   | unset       | Bearer token for `/api/*`; set a long random value for remote deployments |
+| `VIRTUAL_CARILLON_SAMPLE_RATE` | `44100`     | Only 44100 and 48000 are accepted                                         |
 
 ## Editing rules
 

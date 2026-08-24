@@ -6,7 +6,8 @@ export const veniCreatorSpiritus = defineHymn({
   name: 'Veni Creator Spiritus',
   source: 'Graduale Romanum / Liber Usualis / Chants of the Church, Gregorian chant Mode VIII',
   sourceUrl: 'https://en.gregorianum.org/index.php?title=Veni_Creator_Spiritus',
-  license: 'Public-domain chant; project transcription from cited source; source edition not bundled',
+  license:
+    'Public-domain chant; project transcription from cited source; source edition not bundled',
   liturgical: {
     categories: ['holy-spirit'],
     seasons: ['Easter'],

@@ -1,5 +1,4 @@
-# Production image. The engine is intentionally containerized; PipeWire remains
-# on the host and is exposed through the runtime socket in compose.yaml.
+# Production image for Home Assistant-managed playback.
 FROM node:22-bookworm-slim AS build
 WORKDIR /app
 RUN corepack enable
@@ -14,12 +13,10 @@ FROM node:22-bookworm-slim AS runtime
 ENV NODE_ENV=production \
     VIRTUAL_CARILLON_HOST=0.0.0.0 \
     VIRTUAL_CARILLON_PORT=9876 \
-    VIRTUAL_CARILLON_DATA_DIR=/app/.data \
-    XDG_RUNTIME_DIR=/run/user/1000 \
-    PIPEWIRE_REMOTE=pipewire-0
+    VIRTUAL_CARILLON_DATA_DIR=/app/.data
 WORKDIR /app
 RUN apt-get update \
-    && apt-get install --no-install-recommends -y ca-certificates ffmpeg pipewire-bin libpipewire-0.3-0 \
+    && apt-get install --no-install-recommends -y ca-certificates ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 RUN corepack enable
 COPY package.json pnpm-lock.yaml ./

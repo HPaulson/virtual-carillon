@@ -36,29 +36,35 @@ describe('authentic content model', () => {
         expect(hours, `${hymn.id}: ${hour}`).toContain(hour);
       expect(hymn.liturgicalTags.solemnities, `${hymn.id}: hymn rank tags`).toEqual([]);
     }
-    expect(BUILTIN_HYMNS.filter((hymn) => hymn.liturgicalTags.canonicalHours.length).map((hymn) => hymn.id).sort()).toEqual([
-      'alma-redemptoris-mater',
-      'alma-redemptoris-mater-solemn',
-      'aeterna-christi-munera',
-      'ave-maris-stella',
-      'ave-regina-caelorum',
-      'ave-regina-caelorum-solemn',
-      'regina-caeli',
-      'regina-caeli-solemn',
-      'rector-potens-verax-deus',
-      'salve-regina',
-      'salve-regina-solemn',
-      'te-lucis-ante-terminum',
-      'veni-creator-spiritus',
-      'vexilla-regis',
-      'christ-is-made-the-sure-foundation',
-      'christe-redemptor-omnium',
-      'creator-alme-siderum',
-      'exsultet-caelum-laudibus',
-      'exsultet-orbis-gaudiis',
-      'o-fathers-of-our-ancient-faith',
-      'sub-tuum-praesidium',
-    ].sort());
+    expect(
+      BUILTIN_HYMNS.filter((hymn) => hymn.liturgicalTags.canonicalHours.length)
+        .map((hymn) => hymn.id)
+        .sort(),
+    ).toEqual(
+      [
+        'alma-redemptoris-mater',
+        'alma-redemptoris-mater-solemn',
+        'aeterna-christi-munera',
+        'ave-maris-stella',
+        'ave-regina-caelorum',
+        'ave-regina-caelorum-solemn',
+        'regina-caeli',
+        'regina-caeli-solemn',
+        'rector-potens-verax-deus',
+        'salve-regina',
+        'salve-regina-solemn',
+        'te-lucis-ante-terminum',
+        'veni-creator-spiritus',
+        'vexilla-regis',
+        'christ-is-made-the-sure-foundation',
+        'christe-redemptor-omnium',
+        'creator-alme-siderum',
+        'exsultet-caelum-laudibus',
+        'exsultet-orbis-gaudiis',
+        'o-fathers-of-our-ancient-faith',
+        'sub-tuum-praesidium',
+      ].sort(),
+    );
   });
 
   it('registers the sourced seasonal hymn additions', () => {
@@ -108,7 +114,11 @@ describe('authentic content model', () => {
 
   it('encodes all Westminster quarter phrases and separates the hour bell', () => {
     expect(WESTMINSTER_PHRASES.Q1).toEqual(['G#4', 'F#4', 'E4', 'B3']);
-    expect(BUILTIN_ASSETS.find((asset) => asset.id === 'westminster-quarter')?.events?.every((event) => event.distance === undefined && event.customDistance === undefined)).toBe(true);
+    expect(
+      BUILTIN_ASSETS.find((asset) => asset.id === 'westminster-quarter')?.events?.every(
+        (event) => event.distance === undefined && event.customDistance === undefined,
+      ),
+    ).toBe(true);
     expect(BUILTIN_ASSETS.find((asset) => asset.id === 'westminster-quarter')?.events).toHaveLength(
       4,
     );
@@ -126,7 +136,11 @@ describe('authentic content model', () => {
     expect(
       hour?.events?.slice(-12).every((event) => event.frequency === WESTMINSTER_HOUR_FREQUENCY),
     ).toBe(true);
-    expect(hour?.events?.every((event) => event.distance === undefined && event.customDistance === undefined)).toBe(true);
+    expect(
+      hour?.events?.every(
+        (event) => event.distance === undefined && event.customDistance === undefined,
+      ),
+    ).toBe(true);
     expect(WESTMINSTER_HOUR_FREQUENCY).toBeGreaterThan(130.81);
   });
 

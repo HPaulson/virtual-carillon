@@ -5,28 +5,61 @@ import type { AssetDefinition } from '../src/library/library.js';
 import type { LiturgicalDay } from '../src/liturgical/litcal.js';
 
 const hymn = (id: string, tags: Parameters<typeof createLiturgicalTags>[0]): AssetDefinition => ({
-  id, name: id, type: 'hymn', source: 'bundled', liturgicalTags: createLiturgicalTags(tags),
+  id,
+  name: id,
+  type: 'hymn',
+  source: 'bundled',
+  liturgicalTags: createLiturgicalTags(tags),
 });
 
 const assumptionDay: LiturgicalDay = {
-  date: '2026-08-15', season: 'Ordinary Time', seasonIds: ['ordinary-time'], source: 'test',
-  celebrations: [{
-    key: 'Assumption', name: 'Assumption of the Blessed Virgin Mary', rank: 'SOLEMNITY', rankId: 'solemnity', grade: 6,
-    liturgicalTags: createLiturgicalTags({ feasts: ['assumption-of-mary'], categories: ['marian'], seasons: ['general'] }),
-  }],
+  date: '2026-08-15',
+  season: 'Ordinary Time',
+  seasonIds: ['ordinary-time'],
+  source: 'test',
+  celebrations: [
+    {
+      key: 'Assumption',
+      name: 'Assumption of the Blessed Virgin Mary',
+      rank: 'SOLEMNITY',
+      rankId: 'solemnity',
+      grade: 6,
+      liturgicalTags: createLiturgicalTags({
+        feasts: ['assumption-of-mary'],
+        categories: ['marian'],
+        seasons: ['general'],
+      }),
+    },
+  ],
 };
 
-const generalDay: LiturgicalDay = { date: '2026-08-16', season: undefined, seasonIds: [], celebrations: [], source: 'test' };
+const generalDay: LiturgicalDay = {
+  date: '2026-08-16',
+  season: undefined,
+  seasonIds: [],
+  celebrations: [],
+  source: 'test',
+};
 
 const saintDay: LiturgicalDay = {
-  date: '2026-10-15', season: 'Ordinary Time', seasonIds: ['ordinary-time'], source: 'test',
-  celebrations: [{
-    key: 'StTeresaOfJesus', name: 'Saint Teresa of Jesus, virgin and doctor of the Church',
-    rank: 'MEMORIAL', rankId: 'memorial', grade: 3,
-    liturgicalTags: createLiturgicalTags({
-      saints: ['st-teresa-of-jesus'], categories: ['saints', 'virgins', 'doctors'], seasons: ['ordinary-time'],
-    }),
-  }],
+  date: '2026-10-15',
+  season: 'Ordinary Time',
+  seasonIds: ['ordinary-time'],
+  source: 'test',
+  celebrations: [
+    {
+      key: 'StTeresaOfJesus',
+      name: 'Saint Teresa of Jesus, virgin and doctor of the Church',
+      rank: 'MEMORIAL',
+      rankId: 'memorial',
+      grade: 3,
+      liturgicalTags: createLiturgicalTags({
+        saints: ['st-teresa-of-jesus'],
+        categories: ['saints', 'virgins', 'doctors'],
+        seasons: ['ordinary-time'],
+      }),
+    },
+  ],
 };
 
 describe('feast-aware hymn catalog', () => {
@@ -35,7 +68,11 @@ describe('feast-aware hymn catalog', () => {
       hymn('general', { seasons: ['general'], categories: ['general'] }),
       hymn('seasonal', { seasons: ['ordinary-time'], categories: ['general'] }),
       hymn('marian', { seasons: ['general'], categories: ['marian'] }),
-      hymn('assumption', { seasons: ['general'], feasts: ['assumption-of-mary'], categories: ['marian'] }),
+      hymn('assumption', {
+        seasons: ['general'],
+        feasts: ['assumption-of-mary'],
+        categories: ['marian'],
+      }),
     ]);
     expect(catalog.selectForDay(assumptionDay, { seed: 1 }).asset?.id).toBe('assumption');
 
@@ -61,11 +98,14 @@ describe('feast-aware hymn catalog', () => {
       hymn('third', { seasons: ['general'] }),
     ];
     const catalog = new HymnCatalog(assets);
-    expect(catalog.selectForDay(generalDay, { strategy: 'fixed', fixedAssetId: 'second' }).asset?.id).toBe('second');
+    expect(
+      catalog.selectForDay(generalDay, { strategy: 'fixed', fixedAssetId: 'second' }).asset?.id,
+    ).toBe('second');
     expect(catalog.selectForDay(generalDay, { strategy: 'sequential' }).asset?.id).toBe('first');
     expect(catalog.selectForDay(generalDay, { strategy: 'sequential' }).asset?.id).toBe('second');
-    expect(catalog.selectForDay(generalDay, { strategy: 'random', seed: 'test-seed' }).asset?.id)
-      .toBe(catalog.selectForDay(generalDay, { strategy: 'random', seed: 'test-seed' }).asset?.id);
+    expect(
+      catalog.selectForDay(generalDay, { strategy: 'random', seed: 'test-seed' }).asset?.id,
+    ).toBe(catalog.selectForDay(generalDay, { strategy: 'random', seed: 'test-seed' }).asset?.id);
   });
 
   it('uses saint identity before saint type, then Ordinary Time', () => {
@@ -92,11 +132,17 @@ describe('feast-aware hymn catalog', () => {
       hymn('ordinary', { seasons: ['ordinary-time'] }),
     ]);
     const day: LiturgicalDay = {
-      date: '2026-08-17', season: 'Ordinary Time', seasonIds: ['ordinary-time'],
-      celebrations: [{
-        name: 'A celebration without a recognized theme', grade: 3,
-        liturgicalTags: createLiturgicalTags({ categories: ['general'] }),
-      }], source: 'test',
+      date: '2026-08-17',
+      season: 'Ordinary Time',
+      seasonIds: ['ordinary-time'],
+      celebrations: [
+        {
+          name: 'A celebration without a recognized theme',
+          grade: 3,
+          liturgicalTags: createLiturgicalTags({ categories: ['general'] }),
+        },
+      ],
+      source: 'test',
     };
     expect(catalog.selectForDay(day, { seed: 1 }).asset?.id).toBe('ordinary');
   });
@@ -104,30 +150,41 @@ describe('feast-aware hymn catalog', () => {
   it('uses the requested office within the LitCal match tier', () => {
     const officeDay = assumptionDay;
     const categoryOffice = hymn('marian-lauds', {
-      categories: ['marian'], canonicalHours: ['lauds'], seasons: ['general'],
+      categories: ['marian'],
+      canonicalHours: ['lauds'],
+      seasons: ['general'],
     });
     const exactNoOffice = hymn('assumption-no-office', {
-      feasts: ['assumption-of-mary'], categories: ['marian'], seasons: ['general'],
+      feasts: ['assumption-of-mary'],
+      categories: ['marian'],
+      seasons: ['general'],
     });
     const catalog = new HymnCatalog([exactNoOffice, categoryOffice]);
-    expect(catalog.selectForDay(officeDay, { preferredCanonicalHours: ['lauds'], seed: 1 }).asset?.id)
-      .toBe('assumption-no-office');
+    expect(
+      catalog.selectForDay(officeDay, { preferredCanonicalHours: ['lauds'], seed: 1 }).asset?.id,
+    ).toBe('assumption-no-office');
 
     const noOffice = new HymnCatalog([exactNoOffice]);
-    expect(noOffice.selectForDay(officeDay, { preferredCanonicalHours: ['lauds'], seed: 1 }).asset?.id)
-      .toBe('assumption-no-office');
+    expect(
+      noOffice.selectForDay(officeDay, { preferredCanonicalHours: ['lauds'], seed: 1 }).asset?.id,
+    ).toBe('assumption-no-office');
   });
 
   it('uses a canonical-hour theme when no hymn is tagged for that hour', () => {
     const laudsDay: LiturgicalDay = {
-      date: '2026-08-18', season: undefined, seasonIds: [], celebrations: [], source: 'test',
+      date: '2026-08-18',
+      season: undefined,
+      seasonIds: [],
+      celebrations: [],
+      source: 'test',
     };
     const catalog = new HymnCatalog([
       hymn('ordinary', { categories: ['christological'] }),
       hymn('praise', { categories: ['praise'] }),
     ]);
     const selection = catalog.selectForDay(laudsDay, {
-      preferredCanonicalHours: ['lauds'], seed: 1,
+      preferredCanonicalHours: ['lauds'],
+      seed: 1,
     });
     expect(selection.asset?.id).toBe('praise');
     expect(selection.scoring?.find((candidate) => candidate.id === 'praise')?.score).toBe(85);
@@ -136,14 +193,25 @@ describe('feast-aware hymn catalog', () => {
 
   it('matches hyphenated season IDs in scored automatic selection', () => {
     const day: LiturgicalDay = {
-      date: '2026-08-24', season: 'Ordinary Time', seasonIds: ['ordinary-time'], source: 'test',
-      celebrations: [{
-        name: 'Saint Bartholomew, Apostle', rank: 'FEAST', rankId: 'feast', grade: 4,
-        liturgicalTags: createLiturgicalTags({ categories: ['saints', 'apostles'] }),
-      }],
+      date: '2026-08-24',
+      season: 'Ordinary Time',
+      seasonIds: ['ordinary-time'],
+      source: 'test',
+      celebrations: [
+        {
+          name: 'Saint Bartholomew, Apostle',
+          rank: 'FEAST',
+          rankId: 'feast',
+          grade: 4,
+          liturgicalTags: createLiturgicalTags({ categories: ['saints', 'apostles'] }),
+        },
+      ],
     };
     const selection = new HymnCatalog([
-      hymn('apostle', { categories: ['apostles', 'saints'], seasons: ['general', 'ordinary-time'] }),
+      hymn('apostle', {
+        categories: ['apostles', 'saints'],
+        seasons: ['general', 'ordinary-time'],
+      }),
       hymn('ordinary', { seasons: ['ordinary-time'] }),
     ]).selectForDay(day, { seed: 1 });
 
@@ -158,11 +226,19 @@ describe('feast-aware hymn catalog', () => {
 
   it('prefers an unused seasonal hymn over repeating a played feast-category hymn', () => {
     const day: LiturgicalDay = {
-      date: '2026-08-24', season: 'Ordinary Time', seasonIds: ['ordinary-time'], source: 'test',
-      celebrations: [{
-        name: 'Saint Bartholomew, Apostle', rank: 'FEAST', rankId: 'feast', grade: 4,
-        liturgicalTags: createLiturgicalTags({ categories: ['saints', 'apostles'] }),
-      }],
+      date: '2026-08-24',
+      season: 'Ordinary Time',
+      seasonIds: ['ordinary-time'],
+      source: 'test',
+      celebrations: [
+        {
+          name: 'Saint Bartholomew, Apostle',
+          rank: 'FEAST',
+          rankId: 'feast',
+          grade: 4,
+          liturgicalTags: createLiturgicalTags({ categories: ['saints', 'apostles'] }),
+        },
+      ],
     };
     const selection = new HymnCatalog([
       hymn('apostle', { categories: ['apostles', 'saints'], seasons: ['ordinary-time'] }),
@@ -173,12 +249,71 @@ describe('feast-aware hymn catalog', () => {
     expect(selection.reusedPlayedAsset).toBe(false);
   });
 
+  it('normalizes played asset IDs before applying the repeat penalty', () => {
+    const day: LiturgicalDay = {
+      date: '2026-08-24',
+      season: 'Ordinary Time',
+      seasonIds: ['ordinary-time'],
+      source: 'test',
+      celebrations: [
+        {
+          name: 'Saint Bartholomew, Apostle',
+          rank: 'FEAST',
+          rankId: 'feast',
+          grade: 4,
+          liturgicalTags: createLiturgicalTags({ categories: ['saints', 'apostles'] }),
+        },
+      ],
+    };
+    const selection = new HymnCatalog([
+      hymn('aeterna-christi-munera', { categories: ['apostles'], seasons: ['ordinary-time'] }),
+      hymn('other-apostle', { categories: ['apostles'], seasons: ['ordinary-time'] }),
+    ]).selectForDay(day, { alreadyPlayed: ['aeterna-christi-munera'] });
+
+    expect(selection.asset?.id).toBe('other-apostle');
+    expect(
+      selection.scoring?.find((candidate) => candidate.id === 'aeterna-christi-munera'),
+    ).toMatchObject({
+      alreadyPlayed: true,
+      score: -920,
+    });
+  });
+
+  it('avoids a played hymn in an explicit category selection', () => {
+    const day: LiturgicalDay = {
+      date: '2026-08-24',
+      season: 'Ordinary Time',
+      seasonIds: ['ordinary-time'],
+      source: 'test',
+      celebrations: [],
+    };
+    const selection = new HymnCatalog([
+      hymn('first-apostle', { categories: ['apostles'], seasons: ['ordinary-time'] }),
+      hymn('second-apostle', { categories: ['apostles'], seasons: ['ordinary-time'] }),
+    ]).selectForDay(day, {
+      categoryIds: ['apostles'],
+      alreadyPlayed: ['first-apostle'],
+      strategy: 'random',
+    });
+
+    expect(selection.asset?.id).toBe('second-apostle');
+  });
+
   it('keeps feast and official-hour matches ahead of thematic matches', () => {
     const day: LiturgicalDay = {
-      date: '2026-08-19', season: undefined, seasonIds: [], celebrations: [{
-        name: 'Assumption', rank: 'SOLEMNITY', rankId: 'solemnity', grade: 6,
-        liturgicalTags: createLiturgicalTags({ feasts: ['assumption-of-mary'] }),
-      }], source: 'test',
+      date: '2026-08-19',
+      season: undefined,
+      seasonIds: [],
+      celebrations: [
+        {
+          name: 'Assumption',
+          rank: 'SOLEMNITY',
+          rankId: 'solemnity',
+          grade: 6,
+          liturgicalTags: createLiturgicalTags({ feasts: ['assumption-of-mary'] }),
+        },
+      ],
+      source: 'test',
     };
     const catalog = new HymnCatalog([
       hymn('theme', { categories: ['praise'] }),
@@ -193,14 +328,22 @@ describe('feast-aware hymn catalog', () => {
 
   it('supports the other canonical-hour themes without creating hour tags', () => {
     const day: LiturgicalDay = {
-      date: '2026-08-20', season: undefined, seasonIds: [], celebrations: [], source: 'test',
+      date: '2026-08-20',
+      season: undefined,
+      seasonIds: [],
+      celebrations: [],
+      source: 'test',
     };
     for (const [hour, category] of [
-      ['matins', 'contemplative'], ['daytime', 'passion'], ['vespers', 'thanksgiving'],
+      ['matins', 'contemplative'],
+      ['daytime', 'passion'],
+      ['vespers', 'thanksgiving'],
       ['compline', 'confidence'],
     ] as const) {
-      const selection = new HymnCatalog([hymn(category, { categories: [category] })])
-        .selectForDay(day, { preferredCanonicalHours: [hour], seed: 1 });
+      const selection = new HymnCatalog([hymn(category, { categories: [category] })]).selectForDay(
+        day,
+        { preferredCanonicalHours: [hour], seed: 1 },
+      );
       expect(selection.asset?.id).toBe(category);
       expect(selection.asset?.liturgicalTags?.canonicalHours).toEqual([]);
     }

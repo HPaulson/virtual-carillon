@@ -52,7 +52,8 @@ export function analyzeAudio(samples: Float32Array, sampleRate: number): AudioMe
 function rms(samples: Float32Array, startFrame: number, endFrame: number): number {
   let sum = 0;
   const count = Math.max(1, endFrame - startFrame);
-  for (let frame = startFrame; frame < endFrame; frame++) sum += (samples[frame * 2] ** 2 + samples[frame * 2 + 1] ** 2) / 2;
+  for (let frame = startFrame; frame < endFrame; frame++)
+    sum += (samples[frame * 2] ** 2 + samples[frame * 2 + 1] ** 2) / 2;
   return Math.sqrt(sum / count);
 }
 
@@ -62,11 +63,11 @@ function spectralCentroid(samples: Float32Array, sampleRate: number): number {
   let weighted = 0;
   let total = 0;
   for (let bin = 1; bin < bins; bin++) {
-    const frequency = bin * sampleRate / (bins * 2);
+    const frequency = (bin * sampleRate) / (bins * 2);
     let real = 0;
     let imaginary = 0;
     for (let frame = 0; frame < frameCount; frame += Math.max(1, Math.floor(frameCount / 1024))) {
-      const phase = 2 * Math.PI * bin * frame / frameCount;
+      const phase = (2 * Math.PI * bin * frame) / frameCount;
       const sample = (samples[frame * 2] + samples[frame * 2 + 1]) / 2;
       real += sample * Math.cos(phase);
       imaginary -= sample * Math.sin(phase);
@@ -93,4 +94,3 @@ function highBandRatio(samples: Float32Array, sampleRate: number, tailFrames: nu
   }
   return all ? Math.min(1, (high / all) * (threshold / sampleRate)) : 0;
 }
-

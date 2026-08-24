@@ -4,7 +4,15 @@ dist/
 .data/
 data/
 *.env
+!.env.example
+!dev.env.example
 *.log
 coverage/
 __pycache__/
 *.py[cod]
+.DS_Store
+.idea/
+.vscode/
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal

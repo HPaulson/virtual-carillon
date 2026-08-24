@@ -9,7 +9,8 @@ import {
 import type { AssetDefinition, AssetLibrary } from './library.js';
 
 export type SelectionStrategy = 'random' | 'sequential' | 'fixed';
-export type HymnMatchLevel = 'exact-feast' | 'saint' | 'category' | 'season' | 'general' | 'fixed' | 'none';
+export type HymnMatchLevel =
+  'exact-feast' | 'saint' | 'category' | 'season' | 'general' | 'fixed' | 'none';
 
 /**
  * Broad devotional themes for an hour. These are scoring hints only: they do
@@ -61,7 +62,12 @@ export interface HymnSelection {
   candidates: AssetDefinition[];
   matchedBy: HymnMatchLevel;
   celebration?: LiturgicalCelebration;
-  scoring?: Array<{ id: string; score: number; alreadyPlayed: boolean; breakdown: Array<{ label: string; score: number }> }>;
+  scoring?: Array<{
+    id: string;
+    score: number;
+    alreadyPlayed: boolean;
+    breakdown: Array<{ label: string; score: number }>;
+  }>;
   selectedScore?: number;
   selectedRank?: number;
   selectedScoreBreakdown?: Array<{ label: string; score: number }>;
@@ -116,7 +122,7 @@ export class HymnCatalog {
         : [];
     const seasonTargets = explicitSeason.length
       ? explicitSeason
-        : values([...day.seasonIds, seasonId(day.season)]);
+      : values([...day.seasonIds, seasonId(day.season)]);
     const preferredHours = values(query.preferredCanonicalHours ?? query.canonicalHours);
 
     if (automatic) {
@@ -135,7 +141,10 @@ export class HymnCatalog {
       { level: 'category', ids: categoryTargets, field: 'categories' },
       { level: 'season', ids: seasonTargets, field: 'seasons' },
     ];
-    const candidatesForTier = (tier: (typeof tiers)[number], officeOnly: boolean): AssetDefinition[] => {
+    const candidatesForTier = (
+      tier: (typeof tiers)[number],
+      officeOnly: boolean,
+    ): AssetDefinition[] => {
       return available.filter((asset) => {
         const tags = assetTags(asset);
         return (
@@ -158,7 +167,13 @@ export class HymnCatalog {
         const candidates = candidatesForTier(tier, false);
         if (!candidates.length) continue;
         const officeCandidates = candidatesForTier(tier, true);
-        return this.choose(officeCandidates.length ? officeCandidates : candidates, tier.level, day, query, celebration);
+        return this.choose(
+          officeCandidates.length ? officeCandidates : candidates,
+          tier.level,
+          day,
+          query,
+          celebration,
+        );
       }
     }
 
@@ -182,12 +197,20 @@ export class HymnCatalog {
     day: LiturgicalDay,
     query: HymnQuery,
     celebration: LiturgicalCelebration | undefined,
-    targets: { feastTargets: string[]; saintTargets: string[]; categoryTargets: string[]; seasonTargets: string[]; preferredHours: string[] },
+    targets: {
+      feastTargets: string[];
+      saintTargets: string[];
+      categoryTargets: string[];
+      seasonTargets: string[];
+      preferredHours: string[];
+    },
   ): HymnSelection {
     if (!candidates.length) return { candidates: [], matchedBy: 'none', celebration };
-    const alreadyPlayed = new Set(values(
-      query.alreadyPlayed ?? (query.seed === undefined ? this.recent.get(day.date) : undefined),
-    ));
+    const alreadyPlayed = new Set(
+      values(
+        query.alreadyPlayed ?? (query.seed === undefined ? this.recent.get(day.date) : undefined),
+      ),
+    );
     const scored = candidates.map((asset) => {
       const tags = asset.liturgicalTags ?? assetTags(asset);
       let score = 0;
@@ -210,7 +233,9 @@ export class HymnCatalog {
       addMatch(tags.categories, targets.categoryTargets, SCORE.category);
       addMatch(tags.seasons, targets.seasonTargets, SCORE.season);
       addMatch(tags.canonicalHours, targets.preferredHours, SCORE.canonicalHour);
-      const themes = targets.preferredHours.flatMap((hour) => CANONICAL_HOUR_THEMES[hour as LiturgicalOfficeId] ?? []);
+      const themes = targets.preferredHours.flatMap(
+        (hour) => CANONICAL_HOUR_THEMES[hour as LiturgicalOfficeId] ?? [],
+      );
       addMatch(tags.categories, themes, SCORE.canonicalHourTheme);
       addMatch(tags.offices, targets.preferredHours, 25);
       // `general` is deliberately neutral: it is a fallback/any-season tag,
@@ -226,7 +251,7 @@ export class HymnCatalog {
         score -= 45;
         breakdown.push({ label: 'out of season', score: -45 });
       }
-      if (alreadyPlayed.has(asset.id)) {
+      if (alreadyPlayed.has(normalise(asset.id))) {
         score -= 1000;
         breakdown.push({ label: 'Played', score: -1000 });
       }
@@ -235,23 +260,30 @@ export class HymnCatalog {
 
     // Prefer an unused hymn with a real liturgical fit. If the only unused
     // choices are out of season, the least-bad previously played hymn may win.
-    const unused = scored.filter(({ asset }) => !alreadyPlayed.has(asset.id));
+    const unused = scored.filter(({ asset }) => !alreadyPlayed.has(normalise(asset.id)));
     const bestUnused = Math.max(...unused.map(({ score }) => score), Number.NEGATIVE_INFINITY);
     const pool = bestUnused > 0 ? unused : scored;
     const bestScore = Math.max(...pool.map(({ score }) => score));
     const tied = pool.filter(({ score }) => score === bestScore).map(({ asset }) => asset);
     const asset = this.chooseTie(tied, day, query, 'weighted');
     if (query.alreadyPlayed === undefined) {
-      this.recent.set(day.date, [asset.id, ...(this.recent.get(day.date) ?? [])].slice(0, Math.max(1, query.recentExclusion ?? 3)));
+      this.recent.set(
+        day.date,
+        [asset.id, ...(this.recent.get(day.date) ?? [])].slice(
+          0,
+          Math.max(1, query.recentExclusion ?? 3),
+        ),
+      );
     }
     const tags = assetTags(asset);
     const selectedScore = scored.find(({ asset: candidate }) => candidate.id === asset.id)?.score;
-    const selectedRank = selectedScore === undefined
-      ? undefined
-      : 1 + scored.filter(({ score }) => score > selectedScore).length;
+    const selectedRank =
+      selectedScore === undefined
+        ? undefined
+        : 1 + scored.filter(({ score }) => score > selectedScore).length;
     const selectedScoreBreakdown = scored
-      .find(({ asset: candidate }) => candidate.id === asset.id)?.breakdown
-      ?.sort((left, right) => right.score - left.score);
+      .find(({ asset: candidate }) => candidate.id === asset.id)
+      ?.breakdown?.sort((left, right) => right.score - left.score);
     const matchedBy: HymnMatchLevel = directIntersects(tags.feasts, targets.feastTargets)
       ? 'exact-feast'
       : directIntersects(tags.saints, targets.saintTargets)
@@ -269,17 +301,22 @@ export class HymnCatalog {
       scoring: scored.map(({ asset: candidate, score, breakdown }) => ({
         id: candidate.id,
         score,
-        alreadyPlayed: alreadyPlayed.has(candidate.id),
+        alreadyPlayed: alreadyPlayed.has(normalise(candidate.id)),
         breakdown: [...breakdown].sort((left, right) => right.score - left.score),
       })),
       selectedScore,
       selectedRank,
       selectedScoreBreakdown,
-      reusedPlayedAsset: alreadyPlayed.has(asset.id),
+      reusedPlayedAsset: alreadyPlayed.has(normalise(asset.id)),
     };
   }
 
-  private chooseTie(candidates: AssetDefinition[], day: LiturgicalDay, query: HymnQuery, key: string): AssetDefinition {
+  private chooseTie(
+    candidates: AssetDefinition[],
+    day: LiturgicalDay,
+    query: HymnQuery,
+    key: string,
+  ): AssetDefinition {
     if (query.strategy === 'sequential') {
       const cursorKey = `${key}|${candidates.map((asset) => asset.id).join(',')}`;
       const cursor = this.cursors.get(cursorKey) ?? 0;
@@ -302,7 +339,15 @@ export class HymnCatalog {
   ): HymnSelection {
     const strategy = query.strategy ?? 'random';
     const key = `${level}|${candidates.map((asset) => asset.id).join(',')}|${contextKey(query)}`;
-    let pool = candidates;
+    const alreadyPlayed = new Set(values(query.alreadyPlayed));
+    // Explicit category/season selections use this path instead of scored
+    // automatic selection. Keep the daily repeat protection consistent: use
+    // an unplayed candidate whenever the selected tier has one available.
+    // If every candidate was played, retain the full tier as a safe fallback.
+    let pool = alreadyPlayed.size
+      ? candidates.filter((candidate) => !alreadyPlayed.has(normalise(candidate.id)))
+      : candidates;
+    if (!pool.length) pool = candidates;
     const recentExclusion = Math.max(0, Math.floor(query.recentExclusion ?? 1));
 
     if (strategy === 'fixed') {
@@ -333,7 +378,10 @@ export class HymnCatalog {
         : stableHash(`${query.seed}|${day.date}|${key}`) % pool.length;
     const asset = pool[index];
     if (query.seed === undefined && recentExclusion > 0) {
-      this.recent.set(dailyKey, [asset.id, ...(this.recent.get(dailyKey) ?? [])].slice(0, recentExclusion));
+      this.recent.set(
+        dailyKey,
+        [asset.id, ...(this.recent.get(dailyKey) ?? [])].slice(0, recentExclusion),
+      );
     }
     return { asset, candidates, matchedBy: level, celebration };
   }

@@ -15,7 +15,7 @@ blueprint:
     run_time:
       name: Exact time
       description: Used when the frequency is Exact time. Seconds are ignored.
-      default: "12:00:00"
+      default: '12:00:00'
       selector:
         time: {}
     frequency:
@@ -91,7 +91,7 @@ variables:
 
 triggers:
   - trigger: time_pattern
-    minutes: "/1"
+    minutes: '/1'
 
 conditions:
   - condition: time

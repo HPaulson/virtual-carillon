@@ -10,7 +10,7 @@ Copy the component directory into:
 /config/custom_components/virtual_carillon/
 ```
 
-Start the engine, then add **Virtual Carillon** through Settings → Devices & services. In the HA-first Docker deployment, use `http://virtual-carillon:9876`; Home Assistant must be attached to the same Docker network as the engine. The Compose service is not published on a host or LAN port. Enter the same API token configured as `VIRTUAL_CARILLON_API_TOKEN` on the server; leave it blank only when API authentication is intentionally disabled.
+Start the engine, then add **Virtual Carillon** through Settings → Devices & services. In the HA-first Docker deployment, use `http://virtual-carillon:9876`; Home Assistant must be attached to the same Docker network as the engine. The Compose service is not published on a host or LAN port. Enter the same API token configured as `VIRTUAL_CARILLON_API_TOKEN` on the server. Docker Compose requires this token.
 
 The config flow verifies the token against `/api/status` and stores it in the Home Assistant config entry. All integration requests send it as `Authorization: Bearer …`; the token is not part of the URL.
 

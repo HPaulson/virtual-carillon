@@ -6,12 +6,20 @@ services:
     image: virtual-carillon:latest
     restart: unless-stopped
     expose:
-      - "9876"
+      - '9876'
     env_file: .env
+    environment:
+      VIRTUAL_CARILLON_API_TOKEN: ${VIRTUAL_CARILLON_API_TOKEN:?Set VIRTUAL_CARILLON_API_TOKEN in .env}
     volumes:
       - virtual-carillon-data:/app/.data
     healthcheck:
-      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:9876/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:9876/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))",
+        ]
       interval: 30s
       timeout: 5s
       retries: 3

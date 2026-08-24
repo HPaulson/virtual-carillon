@@ -249,8 +249,8 @@ describe('large carillon audio layer', () => {
     }
 
     const goodHymn = BUILTIN_HYMNS.find((asset) => asset.id === 'hymn-to-joy')!;
-    const goodBass = arrangeForCarillon(scoreFromMelody(goodHymn.melody)).events
-      .filter((event) => event.voice === 'bass')
+    const goodBass = arrangeForCarillon(scoreFromMelody(goodHymn.melody))
+      .events.filter((event) => event.voice === 'bass')
       .sort((left, right) => left.startSeconds - right.startSeconds)
       .map((event) => event.pitch);
     expect(goodBass).toEqual(['C#2', 'D2', 'C#2', 'B1', 'C#2', 'B1', 'B1', 'B1']);
@@ -382,9 +382,15 @@ describe('large carillon audio layer', () => {
       expect(melody.map((event) => pitchToMidi(event.pitch))).toEqual(sourceMidi);
       expect(Math.max(...supportMidi)).toBeLessThanOrEqual(Math.min(...melodyMidi) + 8);
       expect(Math.min(...supportMidi)).toBeLessThan(Math.min(...melodyMidi) - 12);
-      expect(pitchToMidi(arrangement.events.find((event) => event.voice === 'chant-drone')!.pitch) % 12).toBe(finalPc);
-      expect(pitchToMidi(arrangement.events.find((event) => event.voice === 'chant-final')!.pitch) % 12).toBe(finalPc);
-      expect(accompaniment.filter((event) => event.voice === 'chant-octave').length).toBeLessThanOrEqual(1);
+      expect(
+        pitchToMidi(arrangement.events.find((event) => event.voice === 'chant-drone')!.pitch) % 12,
+      ).toBe(finalPc);
+      expect(
+        pitchToMidi(arrangement.events.find((event) => event.voice === 'chant-final')!.pitch) % 12,
+      ).toBe(finalPc);
+      expect(
+        accompaniment.filter((event) => event.voice === 'chant-octave').length,
+      ).toBeLessThanOrEqual(1);
       expect(regularSupport.length).toBeLessThan(14);
     }
   });

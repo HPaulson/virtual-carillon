@@ -7,7 +7,8 @@ export const salveRegina = defineHymn({
   source: 'Liber Usualis, Solesmes 1961, p. 276, Gregorian chant Mode I',
   sourceUrl:
     'https://www.gregorianum.org/index.php?mobileaction=toggle_view_desktop&title=Salve_Regina_%28Tonus_Solemnis%29',
-  license: 'Public-domain chant; project transcription from cited source; source edition not bundled',
+  license:
+    'Public-domain chant; project transcription from cited source; source edition not bundled',
   liturgical: {
     categories: ['marian'],
     seasons: ['General', 'Ordinary Time'],

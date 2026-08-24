@@ -17,10 +17,14 @@ describe('hymn cycle', () => {
 
   it('plays a finite shuffled cycle and reshuffles after each pass', async () => {
     const played: string[] = [];
-    await cycleHymns(hymns, async (hymn) => {
-      played.push(hymn.id);
-      return 0;
-    }, { count: 5, random: () => 0, wait: async () => {} });
+    await cycleHymns(
+      hymns,
+      async (hymn) => {
+        played.push(hymn.id);
+        return 0;
+      },
+      { count: 5, random: () => 0, wait: async () => {} },
+    );
 
     expect(played).toHaveLength(5);
     expect(new Set(played.slice(0, 3)).size).toBe(3);
@@ -30,11 +34,15 @@ describe('hymn cycle', () => {
   it('stops when aborted between hymns', async () => {
     const controller = new AbortController();
     const played: string[] = [];
-    await cycleHymns(hymns, async (hymn) => {
-      played.push(hymn.id);
-      controller.abort();
-      return 0;
-    }, { signal: controller.signal, wait: async () => {} });
+    await cycleHymns(
+      hymns,
+      async (hymn) => {
+        played.push(hymn.id);
+        controller.abort();
+        return 0;
+      },
+      { signal: controller.signal, wait: async () => {} },
+    );
 
     expect(played).toHaveLength(1);
   });

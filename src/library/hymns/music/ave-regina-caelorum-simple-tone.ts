@@ -7,7 +7,8 @@ export const aveReginaCaelorumSimpleTone = defineHymn({
   source: 'The Liber Usualis, Solesmes 1961, p. 278, Gregorian chant Mode VI',
   sourceUrl:
     'https://www.gregorianum.org/index.php?mobileaction=toggle_view_mobile&title=Ave_Regina_Coelorum_%28Tono_simplex%29',
-  license: 'Public-domain chant; project transcription from cited source; source edition not bundled',
+  license:
+    'Public-domain chant; project transcription from cited source; source edition not bundled',
   liturgical: {
     categories: ['marian'],
     seasons: ['Ordinary Time', 'Lent'],

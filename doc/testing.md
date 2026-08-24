@@ -29,7 +29,7 @@ Confirm that the cache contains WAV files. Native CLI playback can be tested sep
 Start `node dist/cli/index.js server`, then query:
 
 ```bash
-# Add this header to every /api/* request when VIRTUAL_CARILLON_API_TOKEN is set.
+# Add this header to every /api/* request. Docker Compose requires VIRTUAL_CARILLON_API_TOKEN.
 curl http://127.0.0.1:9876/health
 curl -H 'Authorization: Bearer YOUR_TOKEN' http://127.0.0.1:9876/api/status
 curl -H 'Authorization: Bearer YOUR_TOKEN' http://127.0.0.1:9876/api/devices

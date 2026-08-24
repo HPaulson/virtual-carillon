@@ -17,7 +17,7 @@ export const LITURGICAL_CATEGORIES = {
   christological: 'Christological',
   eucharistic: 'Eucharistic',
   'holy-spirit': 'Holy Spirit',
-  'passion': 'Passion',
+  passion: 'Passion',
   resurrection: 'Resurrection',
   angels: 'Angels',
   apostles: 'Apostles',

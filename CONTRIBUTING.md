@@ -6,7 +6,7 @@ and safe to redistribute.
 
 ## Before you start
 
-- Read [the development guide](doc/development.md), [the architecture notes](doc/architecture.md), and [the content policy](doc/content.md).
+- Read [the development guide](doc/development.md), [the architecture notes](doc/architecture.md), and [the music-rights policy](MUSIC_RIGHTS.md).
 - Open an issue for a substantial behavior or API change before implementing it.
 - Do not add recordings, scans, copied GABC/ABC files, hymn texts, or other
   third-party material unless redistribution rights and attribution are
@@ -26,10 +26,10 @@ pnpm test
 pnpm lint
 ```
 
-For a new hymn, use structured `melody()` notation, provide a stable ID,
-source URL, provenance, license statement, and liturgical tags, then add or
-update tests. A source URL is attribution/provenance; it is not automatically
-permission to redistribute the source page's edition or recording.
+For a new melody, use structured notation, provide a stable ID, a provenance
+link, creator/editor/arranger information, death dates where applicable, a
+rights classification in `MUSIC_RIGHTS.md`, and liturgical tags. A source URL
+is not by itself permission to redistribute a source edition or recording.
 
 ## Pull requests
 

@@ -11,7 +11,6 @@ import type { HymnAsset, HymnDefinition } from './types.js';
 
 const DEFAULT_LICENSE = 'Public-domain melody; source transcription credited in this asset';
 
-
 export function defineHymn(definition: HymnDefinition): HymnAsset {
   const abc = notationToAbc(definition.notation, { id: definition.id, title: definition.name });
   const imported = parseAbc(abc, definition.id);

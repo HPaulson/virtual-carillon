@@ -6,7 +6,8 @@ export const atTheCrossHerStationKeeping = defineHymn({
   name: 'At the Cross Her Station Keeping (Stabat Mater)',
   source: 'Stabat Mater sequence, Graduale Romanum 1908, p. 404, Gregorian chant Mode II',
   sourceUrl: 'https://www.gregorianum.org/wiki/Stabat_Mater',
-  license: 'Public-domain chant; project transcription from cited source; source edition not bundled',
+  license:
+    'Public-domain chant; project transcription from cited source; source edition not bundled',
   liturgical: {
     categories: ['passion', 'marian'],
     seasons: ['Lent'],

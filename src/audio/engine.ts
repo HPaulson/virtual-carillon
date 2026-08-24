@@ -27,34 +27,72 @@ export interface SequenceEvent {
   customDistance?: Partial<DistanceSettings>;
 }
 
-export interface RenderOptions { distance?: DistanceProfile; customDistance?: Partial<DistanceSettings>; }
+export interface RenderOptions {
+  distance?: DistanceProfile;
+  customDistance?: Partial<DistanceSettings>;
+}
 
 export class AudioEngine {
   private active = new Set<number>();
-  constructor(private readonly cacheDir: string, private readonly sampleRate = 44100, private readonly defaultDistance: DistanceProfile = 'half-mile') {}
+  constructor(
+    private readonly cacheDir: string,
+    private readonly sampleRate = 44100,
+    private readonly defaultDistance: DistanceProfile = 'half-mile',
+  ) {}
 
-  get defaultDistanceProfile(): DistanceProfile { return this.defaultDistance; }
+  get defaultDistanceProfile(): DistanceProfile {
+    return this.defaultDistance;
+  }
 
   async renderBell(key: string, options: BellRenderOptions = {}): Promise<string> {
     const safeKey = key.replace(/[^a-z0-9_-]/gi, '-');
     const distance = options.distance ?? options.distanceProfile ?? this.defaultDistance;
-    const filePath = path.join(this.cacheDir, `${safeKey}-${distanceCacheKey(distance, options.customDistance)}.wav`);
-    try { await fs.access(filePath); return filePath; } catch { /* render below */ }
-    await writeWav(filePath, synthesizeBell({ ...options, distance, sampleRate: this.sampleRate }), this.sampleRate);
+    const filePath = path.join(
+      this.cacheDir,
+      `${safeKey}-${distanceCacheKey(distance, options.customDistance)}.wav`,
+    );
+    try {
+      await fs.access(filePath);
+      return filePath;
+    } catch {
+      /* render below */
+    }
+    await writeWav(
+      filePath,
+      synthesizeBell({ ...options, distance, sampleRate: this.sampleRate }),
+      this.sampleRate,
+    );
     return filePath;
   }
 
-  async playBell(key: string, options: BellRenderOptions = {}, output?: AudioOutput): Promise<{ filePath: string; command: string }> {
+  async playBell(
+    key: string,
+    options: BellRenderOptions = {},
+    output?: AudioOutput,
+  ): Promise<{ filePath: string; command: string }> {
     const filePath = await this.renderBell(key, options);
     const result = await playWav(filePath, output);
     this.track(result);
     return { filePath, command: result.command };
   }
 
-  async renderSequence(key: string, events: SequenceEvent[], duration?: number, options: RenderOptions = {}): Promise<string> {
+  async renderSequence(
+    key: string,
+    events: SequenceEvent[],
+    duration?: number,
+    options: RenderOptions = {},
+  ): Promise<string> {
     const distance = options.distance ?? this.defaultDistance;
-    const filePath = path.join(this.cacheDir, `${key.replace(/[^a-z0-9_-]/gi, '-')}-${distanceCacheKey(distance, options.customDistance)}.wav`);
-    try { await fs.access(filePath); return filePath; } catch { /* render below */ }
+    const filePath = path.join(
+      this.cacheDir,
+      `${key.replace(/[^a-z0-9_-]/gi, '-')}-${distanceCacheKey(distance, options.customDistance)}.wav`,
+    );
+    try {
+      await fs.access(filePath);
+      return filePath;
+    } catch {
+      /* render below */
+    }
     if (!events.length) throw new Error(`Cannot render empty sequence: ${key}`);
 
     const waveformCache = new Map<string, Float32Array>();
@@ -63,54 +101,84 @@ export class AudioEngine {
       const gain = event.gain ?? event.velocity ?? 1;
       const eventDistance = event.distance ?? distance;
       const eventCustomDistance = event.customDistance ?? options.customDistance;
-      const waveformKey = JSON.stringify([event.pitch, event.bellId, event.preset, event.frequency, eventDistance, eventCustomDistance]);
+      const waveformKey = JSON.stringify([
+        event.pitch,
+        event.bellId,
+        event.preset,
+        event.frequency,
+        eventDistance,
+        eventCustomDistance,
+      ]);
       let samples = waveformCache.get(waveformKey);
       if (!samples) {
         samples = synthesizeBell({
-        pitch: event.pitch,
-        bellId: event.bellId,
-        preset: event.preset,
-        frequency: event.frequency ?? (event.pitch ? pitchFrequency(event.pitch) : undefined),
-        velocity: 1,
-        distance: eventDistance,
-        customDistance: eventCustomDistance,
-        sampleRate: this.sampleRate,
+          pitch: event.pitch,
+          bellId: event.bellId,
+          preset: event.preset,
+          frequency: event.frequency ?? (event.pitch ? pitchFrequency(event.pitch) : undefined),
+          velocity: 1,
+          distance: eventDistance,
+          customDistance: eventCustomDistance,
+          sampleRate: this.sampleRate,
         });
         waveformCache.set(waveformKey, samples);
       }
       return { event, start, samples, gain };
     });
-    const tailSeconds = rendered.map(({ start, samples }) => start + samples.length / this.sampleRate / 2);
+    const tailSeconds = rendered.map(
+      ({ start, samples }) => start + samples.length / this.sampleRate / 2,
+    );
     const eventEnd = rendered.map(({ event, start }) => start + (event.duration ?? 0));
     const totalSeconds = Math.max(duration ?? 0, ...tailSeconds, ...eventEnd);
     const mix = new Float32Array(Math.max(1, Math.ceil(totalSeconds * this.sampleRate)) * 2);
     for (const { start, samples, gain } of rendered) {
       const first = Math.floor(start * this.sampleRate) * 2;
-      for (let index = 0; index < samples.length && first + index < mix.length; index++) mix[first + index] += samples[index] * gain;
+      for (let index = 0; index < samples.length && first + index < mix.length; index++)
+        mix[first + index] += samples[index] * gain;
     }
     await writeWav(filePath, safetyMaster(mix), this.sampleRate);
     return filePath;
   }
 
-  async renderArrangement(key: string, arrangement: CarillonArrangement, options: RenderOptions = {}): Promise<string> {
-    return this.renderSequence(key, arrangement.events.map(toSequenceEvent), arrangement.durationSeconds, options);
+  async renderArrangement(
+    key: string,
+    arrangement: CarillonArrangement,
+    options: RenderOptions = {},
+  ): Promise<string> {
+    return this.renderSequence(
+      key,
+      arrangement.events.map(toSequenceEvent),
+      arrangement.durationSeconds,
+      options,
+    );
   }
 
   async renderScore(key: string, score: Score, options: RenderOptions = {}): Promise<string> {
     return this.renderArrangement(key, arrangeForCarillon(score), options);
   }
 
-  async renderMelody(key: string, melody: Melody, _preset = 'bright', options: RenderOptions = {}): Promise<string> {
+  async renderMelody(
+    key: string,
+    melody: Melody,
+    _preset = 'bright',
+    options: RenderOptions = {},
+  ): Promise<string> {
     return this.renderScore(key, scoreFromMelody(melody), options);
   }
 
-  async playFile(filePath: string, output?: AudioOutput): Promise<{ filePath: string; command: string }> {
+  async playFile(
+    filePath: string,
+    output?: AudioOutput,
+  ): Promise<{ filePath: string; command: string }> {
     const result = await playWav(filePath, output);
     this.track(result);
     return { filePath, command: result.command };
   }
 
-  async playFileAndWait(filePath: string, output?: AudioOutput): Promise<{ filePath: string; command: string }> {
+  async playFileAndWait(
+    filePath: string,
+    output?: AudioOutput,
+  ): Promise<{ filePath: string; command: string }> {
     const result = await playWav(filePath, output);
     this.track(result);
     await result.completion;
@@ -118,7 +186,12 @@ export class AudioEngine {
   }
 
   stop(): void {
-    for (const pid of this.active) try { process.kill(pid); } catch { /* already exited */ }
+    for (const pid of this.active)
+      try {
+        process.kill(pid);
+      } catch {
+        /* already exited */
+      }
     this.active.clear();
   }
 
@@ -133,7 +206,14 @@ export class AudioEngine {
 }
 
 function toSequenceEvent(event: CarillonEvent): SequenceEvent {
-  return { start: event.startSeconds, pitch: event.pitch, velocity: event.velocity, duration: event.durationSeconds, voice: event.voice, kind: 'note' };
+  return {
+    start: event.startSeconds,
+    pitch: event.pitch,
+    velocity: event.velocity,
+    duration: event.durationSeconds,
+    voice: event.voice,
+    kind: 'note',
+  };
 }
 
 export function safetyMaster(samples: Float32Array): Float32Array {
@@ -157,9 +237,15 @@ export function safetyMaster(samples: Float32Array): Float32Array {
   return output;
 }
 
-function clamp(value: number): number { return Math.max(-1, Math.min(1, value)); }
+function clamp(value: number): number {
+  return Math.max(-1, Math.min(1, value));
+}
 
 function distanceCacheKey(distance: DistanceProfile, custom?: Partial<DistanceSettings>): string {
   if (distance !== 'custom' || !custom) return distance;
-  return `custom-${JSON.stringify(custom).replace(/[^a-z0-9_-]/gi, '').slice(0, 48) || 'half-mile'}`;
+  return `custom-${
+    JSON.stringify(custom)
+      .replace(/[^a-z0-9_-]/gi, '')
+      .slice(0, 48) || 'half-mile'
+  }`;
 }

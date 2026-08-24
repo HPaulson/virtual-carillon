@@ -1,4 +1,3 @@
-import os from 'node:os';
 import path from 'node:path';
 import { z } from 'zod';
 
@@ -7,7 +6,11 @@ export const AppConfigSchema = z.object({
   host: z.string().default('127.0.0.1'),
   port: z.coerce.number().int().min(1).max(65535).default(9876),
   apiToken: z.string().trim().optional(),
-  sampleRate: z.coerce.number().int().refine((v) => [44100, 48000].includes(v), 'Use 44100 or 48000').default(44100),
+  sampleRate: z.coerce
+    .number()
+    .int()
+    .refine((v) => [44100, 48000].includes(v), 'Use 44100 or 48000')
+    .default(44100),
 });
 
 export type AppConfig = z.infer<typeof AppConfigSchema>;
@@ -27,5 +30,9 @@ export function defaultDatabasePath(config: AppConfig): string {
 }
 
 export function platformSummary() {
-  return { platform: process.platform, arch: process.arch, node: process.version, hostname: os.hostname() };
+  return {
+    platform: process.platform,
+    arch: process.arch,
+    node: process.version,
+  };
 }

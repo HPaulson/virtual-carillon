@@ -8,7 +8,7 @@ play:
     asset:
       required: true
       example: test-bell
-      selector: {text: {}}
+      selector: { text: {} }
 
 stop:
   name: Stop playback
@@ -33,7 +33,7 @@ select_hymn:
     fixed_asset_id:
       required: false
       description: Exact hymn asset ID for fixed selection.
-      selector: {text: {}}
+      selector: { text: {} }
     category_ids:
       required: false
       description: Category IDs to use as a selection filter.
@@ -62,7 +62,7 @@ select_hymn:
       required: false
       description: Liturgical rank condition such as solemnity, feast, or memorial.
       example: solemnity
-      selector: {text: {}}
+      selector: { text: {} }
     canonical_hours:
       required: false
       description: Canonical hour IDs to use as a selection filter.
@@ -78,7 +78,7 @@ select_hymn:
     seed:
       required: false
       description: Optional deterministic selection seed.
-      selector: {text: {}}
+      selector: { text: {} }
     recent_exclusion:
       required: false
       description: Number of recently selected assets to avoid for unseeded random selection.
@@ -90,4 +90,4 @@ select_hymn:
     date:
       required: false
       description: Liturgical date to evaluate instead of today.
-      selector: {date: {}}
+      selector: { date: {} }

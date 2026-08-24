@@ -15,9 +15,18 @@ describe('carillon database schedule state', () => {
       days TEXT NOT NULL, time TEXT NOT NULL, asset TEXT NOT NULL,
       output TEXT, liturgical TEXT
     )`);
-    legacy.prepare('INSERT INTO schedules VALUES (?, ?, ?, ?, ?, ?, ?, ?)').run(
-      'westminster-hour-12', 'Westminster', 1, '[0,1,2,3,4,5,6]', '12:00', 'westminster-hour-12', null, null,
-    );
+    legacy
+      .prepare('INSERT INTO schedules VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+      .run(
+        'westminster-hour-12',
+        'Westminster',
+        1,
+        '[0,1,2,3,4,5,6]',
+        '12:00',
+        'westminster-hour-12',
+        null,
+        null,
+      );
     legacy.close();
 
     const database = new CarillonDatabase(filePath);
@@ -25,7 +34,13 @@ describe('carillon database schedule state', () => {
       enabled: true,
       westminster: { enabled: true, cadence: 'every_15' },
     });
-    expect(database.db.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'schedules_legacy_v1'").get()).toBeTruthy();
+    expect(
+      database.db
+        .prepare(
+          "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'schedules_legacy_v1'",
+        )
+        .get(),
+    ).toBeTruthy();
     database.close();
     await rm(directory, { recursive: true, force: true });
   });
@@ -35,9 +50,20 @@ describe('carillon database schedule state', () => {
     const database = new CarillonDatabase(path.join(directory, 'carillon.sqlite'));
     const payload = JSON.stringify([{ asset: 'apostle-hymn' }]);
 
-    expect(database.claimScheduleRun('2026-08-24T12:00|schedule|ha', payload, '2026-08-24T16:00:00.000Z')).toBe(true);
+    expect(
+      database.claimScheduleRun(
+        '2026-08-24T12:00|schedule|ha',
+        payload,
+        '2026-08-24T16:00:00.000Z',
+      ),
+    ).toBe(true);
     expect(database.completedScheduleAssets('2026-08-24')).toContain('apostle-hymn');
-    database.completeScheduleRun('2026-08-24T12:00|schedule|ha', 'failed', 'player unavailable', '2026-08-24T16:01:00.000Z');
+    database.completeScheduleRun(
+      '2026-08-24T12:00|schedule|ha',
+      'failed',
+      'player unavailable',
+      '2026-08-24T16:01:00.000Z',
+    );
     expect(database.completedScheduleAssets('2026-08-24')).not.toContain('apostle-hymn');
 
     database.close();
@@ -48,8 +74,16 @@ describe('carillon database schedule state', () => {
     const directory = await mkdtemp(path.join(tmpdir(), 'virtual-carillon-db-'));
     const database = new CarillonDatabase(path.join(directory, 'carillon.sqlite'));
 
-    database.addEvent({ asset: 'aeterna-christi-munera', status: 'played', createdAt: '2026-08-24T23:30:00.000Z' });
-    database.addEvent({ asset: 'failed-hymn', status: 'failed', createdAt: '2026-08-24T23:31:00.000Z' });
+    database.addEvent({
+      asset: 'aeterna-christi-munera',
+      status: 'played',
+      createdAt: '2026-08-24T23:30:00.000Z',
+    });
+    database.addEvent({
+      asset: 'failed-hymn',
+      status: 'failed',
+      createdAt: '2026-08-24T23:31:00.000Z',
+    });
 
     expect(database.completedScheduleAssets('2026-08-24')).toContain('aeterna-christi-munera');
     expect(database.completedScheduleAssets('2026-08-24')).not.toContain('failed-hymn');

@@ -2,13 +2,37 @@
   "name": "virtual-carillon",
   "version": "0.1.0",
   "description": "A Linux-first virtual church carillon engine with Home Assistant integration.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/HPaulson/digital-carillon.git"
+  },
+  "bugs": {
+    "url": "https://github.com/HPaulson/digital-carillon/issues"
+  },
+  "homepage": "https://github.com/HPaulson/digital-carillon#readme",
+  "keywords": [
+    "audio",
+    "carillon",
+    "home-assistant",
+    "liturgical",
+    "nodejs"
+  ],
   "type": "module",
   "packageManager": "pnpm@10.29.2",
   "bin": {
     "virtual-carillon": "bin/virtual-carillon.mjs"
   },
-  "files": ["dist", "bin", "homeassistant", "README.md", "LICENSE"],
-  "engines": {"node": ">=22.5"},
+  "files": [
+    "dist",
+    "bin",
+    "homeassistant",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=22.5"
+  },
   "scripts": {
     "build": "node scripts/build.mjs",
     "dev": "tsx src/cli/index.ts server",
@@ -17,10 +41,11 @@
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "check": "pnpm format:check && pnpm typecheck && pnpm lint && pnpm test && pnpm build"
   },
   "dependencies": {
-    "@fastify/cors": "^10.0.1",
     "commander": "^13.1.0",
     "fastify": "^5.2.1",
     "zod": "^3.24.2"

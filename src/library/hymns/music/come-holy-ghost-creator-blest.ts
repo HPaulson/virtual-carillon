@@ -7,7 +7,8 @@ export const comeHolyGhostCreatorBlest = defineHymn({
   source:
     'Veni Creator Spiritus, traditional Gregorian hymn; English text commonly titled Come, Holy Ghost, Creator Blest',
   sourceUrl: 'https://en.gregorianum.org/index.php?title=Veni_Creator_Spiritus',
-  license: 'Public-domain chant; project transcription from cited source; source edition not bundled',
+  license:
+    'Public-domain chant; project transcription from cited source; source edition not bundled',
   liturgical: {
     categories: ['holy-spirit', 'christological'],
     seasons: ['Easter'],

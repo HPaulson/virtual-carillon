@@ -6,7 +6,8 @@ export const aveMarisStella = defineHymn({
   name: 'Ave maris stella',
   source: 'Antiphonale Monasticum, Solesmes 1934, p. 712, Gregorian chant Mode I',
   sourceUrl: 'https://gregobase.selapa.net/chant.php?id=9733',
-  license: 'Public-domain chant; project transcription from cited source; source edition not bundled',
+  license:
+    'Public-domain chant; project transcription from cited source; source edition not bundled',
   liturgical: {
     categories: ['marian'],
     seasons: ['General', 'Ordinary Time'],

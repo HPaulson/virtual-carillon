@@ -15,14 +15,39 @@ describe('bell synthesizer', () => {
     expect(samples.some((sample) => Math.abs(sample) > 0.01)).toBe(true);
     expect(wavDuration(samples, 8000)).toBe(1);
   });
-  it('provides distinct bell instruments', () => { expect(Object.keys(BELL_PRESETS)).toEqual(['small', 'medium', 'large', 'deep', 'bright', 'clock', 'clock-tower']); });
+  it('provides distinct bell instruments', () => {
+    expect(Object.keys(BELL_PRESETS)).toEqual([
+      'small',
+      'medium',
+      'large',
+      'deep',
+      'bright',
+      'clock',
+      'clock-tower',
+    ]);
+  });
   it('is deterministic and dry by default for the carillon test bell', () => {
-    const first = synthesizeBell({ preset: 'bright', sampleRate: 8000, duration: 1, reverb: 'dry' });
-    const second = synthesizeBell({ preset: 'bright', sampleRate: 8000, duration: 1, reverb: 'dry' });
+    const first = synthesizeBell({
+      preset: 'bright',
+      sampleRate: 8000,
+      duration: 1,
+      reverb: 'dry',
+    });
+    const second = synthesizeBell({
+      preset: 'bright',
+      sampleRate: 8000,
+      duration: 1,
+      reverb: 'dry',
+    });
     expect(Array.from(first)).toEqual(Array.from(second));
   });
   it('starts with a clean tonal attack rather than a broadband strike transient', () => {
-    const samples = synthesizeBell({ preset: 'bright', sampleRate: 8000, duration: 1, reverb: 'dry' });
+    const samples = synthesizeBell({
+      preset: 'bright',
+      sampleRate: 8000,
+      duration: 1,
+      reverb: 'dry',
+    });
     expect(samples[0]).toBe(0);
     expect(samples[1]).toBe(0);
     expect(Math.abs(samples[2])).toBeLessThan(0.02);

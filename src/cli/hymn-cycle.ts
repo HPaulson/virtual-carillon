@@ -27,7 +27,10 @@ export async function cycleHymns(
   if (options.count !== undefined && (!Number.isInteger(options.count) || options.count < 1)) {
     throw new Error('Hymn count must be a positive integer.');
   }
-  if (options.pauseSeconds !== undefined && (!Number.isFinite(options.pauseSeconds) || options.pauseSeconds < 0)) {
+  if (
+    options.pauseSeconds !== undefined &&
+    (!Number.isFinite(options.pauseSeconds) || options.pauseSeconds < 0)
+  ) {
     throw new Error('Pause must be a non-negative number of seconds.');
   }
 

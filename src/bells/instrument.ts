@@ -7,8 +7,16 @@ import { BellDefinition, BellInstrument, BellPartial } from './types.js';
  * The registry is deliberately note-addressable: a C4 event always resolves to
  * the C4 bell and never to a generic sample pitch-shifted over the whole range.
  */
-export const CARILLON_BELLS: BellDefinition[] = Array.from({ length: 77 }, (_, index) => createBell(24 + index));
-export const CARILLON_RANGE = { lowestMidi: 24, highestMidi: 100, lowest: 'C1', highest: 'E7', count: CARILLON_BELLS.length } as const;
+export const CARILLON_BELLS: BellDefinition[] = Array.from({ length: 77 }, (_, index) =>
+  createBell(24 + index),
+);
+export const CARILLON_RANGE = {
+  lowestMidi: 24,
+  highestMidi: 100,
+  lowest: 'C1',
+  highest: 'E7',
+  count: CARILLON_BELLS.length,
+} as const;
 
 const byPitch = new Map(CARILLON_BELLS.map((bell) => [bell.pitch, bell]));
 const byId = new Map(CARILLON_BELLS.map((bell) => [bell.id, bell]));
@@ -19,13 +27,20 @@ export function getCarillonBell(pitchOrId: string): BellDefinition | undefined {
 
 export function bellForPitch(pitch: string): BellDefinition {
   const bell = byPitch.get(pitch);
-  if (!bell) throw new Error(`Pitch ${pitch} is outside the ${CARILLON_RANGE.lowest}–${CARILLON_RANGE.highest} carillon range`);
+  if (!bell)
+    throw new Error(
+      `Pitch ${pitch} is outside the ${CARILLON_RANGE.lowest}–${CARILLON_RANGE.highest} carillon range`,
+    );
   return bell;
 }
 
 export function nearestCarillonBell(pitch: string): BellDefinition {
   const midi = pitchToMidi(pitch);
-  return CARILLON_BELLS.reduce((closest, bell) => Math.abs(pitchToMidi(bell.pitch) - midi) < Math.abs(pitchToMidi(closest.pitch) - midi) ? bell : closest);
+  return CARILLON_BELLS.reduce((closest, bell) =>
+    Math.abs(pitchToMidi(bell.pitch) - midi) < Math.abs(pitchToMidi(closest.pitch) - midi)
+      ? bell
+      : closest,
+  );
 }
 
 function createBell(midi: number): BellDefinition {
@@ -40,13 +55,33 @@ function createBell(midi: number): BellDefinition {
   const partials: BellPartial[] = [
     partial(0.48, 0.25 + size * 0.18, baseDecay * 0.92, variation),
     partial(1, 0.78 + size * 0.15, baseDecay, variation + 0.1),
-    partial(1.19 + (variation - 0.5) * 0.025, 0.32 + size * 0.18, baseDecay * 0.76, variation + 0.2),
+    partial(
+      1.19 + (variation - 0.5) * 0.025,
+      0.32 + size * 0.18,
+      baseDecay * 0.76,
+      variation + 0.2,
+    ),
     partial(1.49 + (variation - 0.5) * 0.032, 0.22 + size * 0.13, baseDecay * 0.6, variation + 0.3),
     partial(1.99 + (variation - 0.5) * 0.04, 0.16 + size * 0.1, baseDecay * 0.45, variation + 0.4),
     partial(2.69 + (variation - 0.5) * 0.07, 0.1 + size * 0.08, baseDecay * 0.29, variation + 0.5),
-    partial(4.03 + (variation - 0.5) * 0.11, 0.055 + size * 0.055, baseDecay * 0.17, variation + 0.6),
-    partial(5.38 + (variation - 0.5) * 0.14, 0.028 + size * 0.035, baseDecay * 0.11, variation + 0.7),
-    partial(7.18 + (variation - 0.5) * 0.18, 0.014 + size * 0.02, baseDecay * 0.07, variation + 0.8),
+    partial(
+      4.03 + (variation - 0.5) * 0.11,
+      0.055 + size * 0.055,
+      baseDecay * 0.17,
+      variation + 0.6,
+    ),
+    partial(
+      5.38 + (variation - 0.5) * 0.14,
+      0.028 + size * 0.035,
+      baseDecay * 0.11,
+      variation + 0.7,
+    ),
+    partial(
+      7.18 + (variation - 0.5) * 0.18,
+      0.014 + size * 0.02,
+      baseDecay * 0.07,
+      variation + 0.8,
+    ),
   ];
   return {
     id: `carillon-${pitch.toLowerCase().replace('#', 's')}`,
@@ -78,4 +113,6 @@ function seeded(value: number): number {
   return x - Math.floor(x);
 }
 
-function clamp(value: number, min: number, max: number): number { return Math.max(min, Math.min(max, value)); }
+function clamp(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value));
+}
