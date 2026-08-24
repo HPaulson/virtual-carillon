@@ -19,6 +19,7 @@ from .const import (
 )
 from .coordinator import CarillonCoordinator
 from .media_source import VirtualCarillonAudioView
+from .schedule_runner import ScheduleRunner
 
 PLATFORMS = ["sensor"]
 
@@ -102,6 +103,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     )
     await coordinator.async_config_entry_first_refresh()
     hass.data[DOMAIN][entry.entry_id] = coordinator
+    runner = ScheduleRunner(hass, coordinator)
+    await runner.async_setup()
+    hass.data.setdefault(f"{DOMAIN}_schedule_runners", {})[entry.entry_id] = runner
     entry.async_on_unload(entry.add_update_listener(_async_update_options))
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True
@@ -112,6 +116,9 @@ async def _async_update_options(hass: HomeAssistant, entry: ConfigEntry) -> None
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    runner = hass.data.get(f"{DOMAIN}_schedule_runners", {}).pop(entry.entry_id, None)
+    if runner:
+        await runner.async_unload()
     unloaded = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unloaded:
         hass.data[DOMAIN].pop(entry.entry_id, None)

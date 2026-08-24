@@ -45,7 +45,7 @@ class CarillonCoordinator(DataUpdateCoordinator):
         except Exception as err:
             raise UpdateFailed(f"Unable to reach Virtual Carillon: {err}") from err
 
-    async def async_play(self, asset: str, media_players: list[str]):
+    async def async_play(self, asset: str, media_players: list[str], *, refresh: bool = True):
         media_id = f"{MEDIA_SOURCE_PREFIX}{quote(asset, safe='')}"
         await self.hass.services.async_call(
             "media_player",
@@ -57,7 +57,43 @@ class CarillonCoordinator(DataUpdateCoordinator):
             },
             blocking=True,
         )
-        await self.async_request_refresh()
+        if refresh:
+            await self.async_request_refresh()
+
+    async def async_update_schedule(self, schedule: dict):
+        from homeassistant.helpers.aiohttp_client import async_get_clientsession
+        async with async_get_clientsession(self.hass).put(
+            f"{self.url}/api/schedule",
+            headers={**self.headers, "Content-Type": "application/json"},
+            json=schedule,
+            timeout=10,
+        ) as response:
+            if response.status >= 300:
+                raise RuntimeError(await response.text())
+            return await response.json()
+
+    async def async_claim_schedule(self, at):
+        from homeassistant.helpers.aiohttp_client import async_get_clientsession
+        async with async_get_clientsession(self.hass).post(
+            f"{self.url}/api/schedule/claim",
+            headers={**self.headers, "Content-Type": "application/json"},
+            json={"at": at.isoformat()},
+            timeout=10,
+        ) as response:
+            if response.status >= 300:
+                raise RuntimeError(await response.text())
+            return await response.json()
+
+    async def async_complete_schedule(self, slot_key: str, status: str, message: str | None = None):
+        from homeassistant.helpers.aiohttp_client import async_get_clientsession
+        async with async_get_clientsession(self.hass).post(
+            f"{self.url}/api/schedule/complete",
+            headers={**self.headers, "Content-Type": "application/json"},
+            json={"slotKey": slot_key, "status": status, "message": message},
+            timeout=10,
+        ) as response:
+            if response.status >= 300:
+                raise RuntimeError(await response.text())
 
     async def async_stop(self, media_players: list[str]):
         await self.hass.services.async_call(

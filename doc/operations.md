@@ -2,7 +2,7 @@
 
 ## Docker deployment
 
-Docker is the recommended deployment. The single Compose file runs the API, SQLite database, and rendered-audio cache. Home Assistant owns scheduling, media-player selection, and playback:
+Docker is the recommended deployment. The single Compose file runs the API, SQLite database, and rendered-audio cache. Home Assistant configures routines and selects media players; the Node service evaluates the persisted routine list and HA performs the final playback handoff:
 
 ```bash
 cp .env.example .env

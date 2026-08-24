@@ -2,23 +2,15 @@
 
 ## System boundary
 
-The Node service owns bell synthesis, asset rendering, audio serving, persistence of playback events, and diagnostics. Home Assistant is the frontend: it owns scheduling, LitCal settings, media-player targeting, and playback actions. Home Assistant does not contain audio/DSP logic.
+The Node service owns bell synthesis, asset rendering, audio serving, persistence of playback events, schedule persistence/evaluation, and diagnostics. Home Assistant is the frontend and output adapter: its integration options flow configures the schedule, while HA sends due events to selected media players. Home Assistant does not contain audio/DSP logic.
 
 ```text
-Home Assistant config flow, automations, media players
-                         │ HTTP / media source
-                         ▼
-                   Fastify API
-                         │
-              ┌──────────┼──────────┐
-              ▼          ▼          ▼
-           Library    Catalog    LitCal client
-              │          │          │
-              ▼          ▼          ▼
-           WAV cache  selection   cached years
-                         │
-                         ▼
-                 HA media_player targets
+HA config flow ── routine list ─────────► Fastify API + SQLite
+        │                                  │
+        └──── claim due event ◄────────────┘
+                    │
+                    ▼
+            HA media_player targets
 ```
 
 ## Source map
@@ -26,6 +18,7 @@ Home Assistant config flow, automations, media players
 - `src/cli/index.ts` — CLI entry point and process composition for development/special cases.
 - `src/configuration/config.ts` — deployment environment parsing with Zod.
 - `src/database/db.ts` — SQLite event history using `node:sqlite`.
+- `src/scheduling/schedule.ts` — persisted routine/action model and due-time rules.
 - `src/bells/` — inharmonic partials, distance profiles, and bell-family definitions.
 - `src/audio/` — synthesis, WAV writing, output discovery, and playback.
 - `src/library/library.ts` — built-in and imported asset definitions, rendering, and playback.
@@ -34,8 +27,8 @@ Home Assistant config flow, automations, media players
 - `src/liturgical/litcal.ts` — cached LitCal client; stale data is used when the network is unavailable.
 - `src/liturgical/resolver.ts` — LitCal condition matching and conversion to catalog queries.
 - `src/liturgical/taxonomy.ts` — stable seasons, feast/category IDs, tagging, and LitCal inference.
-- `homeassistant/custom_components/virtual_carillon/` — HA config flow/options, coordinator, media source, sensor, and target-based services.
-- `homeassistant/blueprints/` — an optional HA automation blueprint for reusable scheduled routines.
+- `homeassistant/custom_components/virtual_carillon/` — HA config flow/options, schedule runner, coordinator, media source, sensor, and target-based services.
+- `homeassistant/blueprints/` — optional advanced HA automation overrides; the normal routine list is integration-configured.
 
 ## Runtime data
 

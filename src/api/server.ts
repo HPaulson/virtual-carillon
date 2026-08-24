@@ -11,6 +11,17 @@ import { CarillonDatabase } from '../database/db.js';
 import { platformSummary } from '../configuration/config.js';
 import { LiturgicalCalendarClient, LiturgicalDay } from '../liturgical/litcal.js';
 import { conditionMatches, LiturgicalCondition, toHymnQuery } from '../liturgical/resolver.js';
+import {
+  DEFAULT_SCHEDULE_CONFIG,
+  ScheduleConfigSchema,
+  localScheduleTime,
+  normalizeSchedule,
+  routineMatches,
+  scheduleSlotKey,
+  type ScheduleConfig,
+  type ScheduleAction,
+  type SchedulePlayback,
+} from '../scheduling/schedule.js';
 
 const DistanceOverrides = z
   .object({
@@ -64,6 +75,12 @@ const HymnSelectSchema = LiturgicalSelectionSchema.extend({
   useLitCal: z.boolean().optional(),
   calendar: z.enum(['general', 'US', 'IT', 'NL', 'VA', 'CA']).optional(),
 });
+const ScheduleClaimSchema = z.object({ at: z.string().min(1) });
+const ScheduleCompleteSchema = z.object({
+  slotKey: z.string().min(1),
+  status: z.enum(['completed', 'failed']),
+  message: z.string().optional(),
+});
 const ImportSchema = z.object({
   name: z.string().min(1),
   sourcePath: z.string().min(1),
@@ -109,6 +126,36 @@ export async function createServer(services: ServerServices): Promise<FastifyIns
     bluetooth: await bluetoothStatus(),
     recentEvents: services.database.recentEvents(10),
   }));
+  app.get('/api/schedule', async () => services.database.getSchedule() ?? {
+    config: DEFAULT_SCHEDULE_CONFIG,
+    updatedAt: 'default',
+  });
+  app.put('/api/schedule', async (request, reply) => {
+    const parsed = ScheduleConfigSchema.safeParse(request.body);
+    if (!parsed.success) return reply.code(400).send({ error: parsed.error.flatten() });
+    return services.database.saveSchedule(normalizeSchedule(parsed.data));
+  });
+  app.post('/api/schedule/claim', async (request, reply) => {
+    const parsed = ScheduleClaimSchema.safeParse(request.body);
+    if (!parsed.success) return reply.code(400).send({ error: parsed.error.flatten() });
+    try {
+      const stored = services.database.getSchedule() ?? { config: DEFAULT_SCHEDULE_CONFIG, updatedAt: 'default' };
+      const time = localScheduleTime(parsed.data.at);
+      const actions = await scheduledPlaybacks(time, stored.config, services, hymnCatalog);
+      if (!actions.length) return { due: false, actions: [] };
+      const slotKey = scheduleSlotKey(time, stored.updatedAt);
+      const claimed = services.database.claimScheduleRun(slotKey, JSON.stringify(actions));
+      return { due: true, claimed, slotKey, actions: claimed ? actions : [] };
+    } catch (error) {
+      return reply.code(400).send({ error: error instanceof Error ? error.message : String(error) });
+    }
+  });
+  app.post('/api/schedule/complete', async (request, reply) => {
+    const parsed = ScheduleCompleteSchema.safeParse(request.body);
+    if (!parsed.success) return reply.code(400).send({ error: parsed.error.flatten() });
+    services.database.completeScheduleRun(parsed.data.slotKey, parsed.data.status, parsed.data.message);
+    return { ok: true };
+  });
   app.get('/api/devices', async () => ({
     outputs: await discoverOutputs(),
     bluetooth: await bluetoothStatus(),
@@ -218,6 +265,57 @@ export async function createServer(services: ServerServices): Promise<FastifyIns
     return { ok: true };
   });
   return app;
+}
+
+async function scheduledPlaybacks(
+  time: ReturnType<typeof localScheduleTime>,
+  config: ScheduleConfig,
+  services: ServerServices,
+  hymnCatalog: HymnCatalog,
+): Promise<SchedulePlayback[]> {
+  if (!config.enabled) return [];
+
+  const playbacks: SchedulePlayback[] = [];
+  let pendingDelay = 0;
+  for (const routine of config.routines) {
+    if (!routineMatches(routine, time)) continue;
+    for (const [actionIndex, action] of routine.actions.entries()) {
+      if (action.type === 'delay') {
+        if (playbacks.length) playbacks.at(-1)!.waitAfterSeconds += action.seconds;
+        else pendingDelay += action.seconds;
+        continue;
+      }
+      const asset = await resolveScheduleAsset(action, time.date, config, services, hymnCatalog);
+      if (!asset) continue;
+      playbacks.push({
+        asset,
+        mediaPlayers: action.mediaPlayers,
+        routineId: routine.id,
+        actionIndex,
+        waitBeforeSeconds: pendingDelay,
+        waitAfterSeconds: 0,
+      });
+      pendingDelay = 0;
+    }
+  }
+  return playbacks;
+}
+
+async function resolveScheduleAsset(
+  action: Exclude<ScheduleAction, { type: 'delay' }>,
+  date: string,
+  config: ScheduleConfig,
+  services: ServerServices,
+  hymnCatalog: HymnCatalog,
+): Promise<string | undefined> {
+  if (action.type === 'play') return action.asset;
+
+  const day = config.litcal.enabled
+    ? await services.liturgicalCalendar?.getDay(date, config.litcal.calendar)
+    : neutralLiturgicalDay(date);
+  if (!day || !conditionMatches(day, action)) return action.fallbackAsset;
+  const selection = hymnCatalog.selectForDay(day, toHymnQuery(action));
+  return selection.asset?.id ?? action.fallbackAsset;
 }
 
 function tokensMatch(expected: string, provided: string): boolean {

@@ -4,7 +4,7 @@ The server defaults to `http://127.0.0.1:9876`. CORS is enabled for local Home A
 
 If `VIRTUAL_CARILLON_API_TOKEN` is set, every `/api/*` endpoint requires an `Authorization: Bearer <token>` header. `GET /health` remains unauthenticated for Docker and reverse-proxy health checks.
 
-Home Assistant is the product frontend: it owns schedules, conditions, action order, delays, and media-player targets. The API is the rendering, metadata, and native playback surface used by the integration and by CLI/special-case clients.
+Home Assistant is the product frontend and media-player adapter. The integration stores a generic routine list through the schedule API; the Node service evaluates due routines and resolves hymn actions, while HA sends returned assets to the selected media players. The API is also the rendering, metadata, and native playback surface used by CLI/special-case clients.
 
 ## Health and devices
 
@@ -28,6 +28,15 @@ Home Assistant is the product frontend: it owns schedules, conditions, action or
 - `POST /api/hymns/select` accepts `date`, `useLitCal`, `calendar`, `seasons`, `rank`, `feastIds`, `categoryIds`, `offices`, `canonicalHours`, `tags`, `strategy` (`random`, `sequential`, or `fixed`), `fixedAssetId`, `seed`, and `recentExclusion`.
 
 Season, rank, and feast fields are LitCal conditions. When a condition does not match, the response contains no selected asset so Home Assistant can use the configured fallback action. When `useLitCal` is false, selection uses a neutral general day. Automatic selection uses the highest-priority celebration and exact-feast → category → season → General fallback. Seeded random selection is reproducible; unseeded random selection avoids the recent window when alternatives exist.
+
+## Server-owned routines
+
+- `GET /api/schedule` returns the persisted schedule configuration and its `updatedAt` value.
+- `PUT /api/schedule` stores a schedule with `enabled`, a `routines` array, and global `litcal` settings. Each routine has a trigger (`exact`, `hourly`, `every_15`, or `every_30`), weekdays, exclusions, optional `notBefore`/`notAfter` time bounds (including overnight windows), and ordered `play`, `select_hymn`, or `delay` actions. Playback actions carry Home Assistant `mediaPlayers` targets.
+- `POST /api/schedule/claim` accepts `{ "at": "<ISO timestamp>" }`, evaluates all routines due at that local date/time, and atomically claims the resulting playback sequence for the current schedule revision.
+- `POST /api/schedule/complete` accepts `{ "slotKey": "...", "status": "completed|failed" }` so the HA runner can record the result.
+
+The default schedule is disabled with no routines. No household-specific Westminster, Angelus, or hymn timetable is built into the default configuration.
 
 ## Native playback
 

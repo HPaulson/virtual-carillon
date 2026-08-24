@@ -61,67 +61,22 @@ The **Virtual Carillon** media source appears in Home Assistant's media browser.
 
 The status sensor's `hymns` attribute exposes each hymn's `liturgicalTags` fields for dashboards and selectors, including categories, feasts, seasons, offices, and canonical hours.
 
-## HA-native schedules
+## Schedule configuration
 
-Home Assistant owns every schedule: enabled state, timing, conditions, ordered actions, delays, and media-player targets. The Node service has no schedule database or schedule runner.
+The normal schedule is configured once inside the **Virtual Carillon** integration and stored by the Node service in SQLite. Home Assistant supplies the media-player targets and remains responsible for actual playback; it does not need one automation per bell event.
 
-Home Assistant's automation editor and Schedule helper are the schedule UI. The Schedule helper creates weekly time blocks that can trigger automations; ordinary automations can also use exact times, time patterns, calendar events, sun events, or any other Home Assistant trigger. See the [Schedule helper documentation](https://www.home-assistant.io/integrations/schedule/) and [automation trigger documentation](https://www.home-assistant.io/docs/automation/trigger/).
+Open **Settings → Devices & services → Virtual Carillon → Configure**. The schedule editor lets you:
 
-Copy the repository blueprint from `homeassistant/blueprints/automation/virtual_carillon/scheduled_routine.yaml` to `/config/blueprints/automation/virtual_carillon/`. Then go to Settings → Automations & scenes → Blueprints → **Virtual Carillon scheduled routine** → Create automation. The blueprint exposes exact time, hourly, every-15-minute, every-30-minute, weekdays, excluded times, and an ordered Home Assistant action sequence. The automation's enabled toggle controls whether the routine runs.
+- enable or disable the schedule and LitCal;
+- add any number of named routines;
+- run a routine at an exact time, hourly, every 15 minutes, or every 30 minutes;
+- select weekdays, excluded times, and an optional allowed-time window for each routine (for example, weekdays but never before 06:00 or after 22:00);
+- add ordered actions to each routine: play any asset, select a seasonal hymn, or wait for a configurable delay;
+- choose one or more Home Assistant `media_player` entities for every playback action;
+- edit or remove routines later without writing YAML automations.
 
-The action editor can configure every routine step:
+This supports Westminster, Angelus, hymns, Divine Office signals, user recordings, and arbitrary combinations without baking a particular household's schedule into the application. The configured list is saved through `/api/schedule` and survives container restarts. At each due minute the server evaluates all matching routines, resolves hymn selection, and returns one ordered sequence for the HA integration to play.
 
-- `virtual_carillon.play` selects a fixed asset and one or more media players.
-- `virtual_carillon.select_hymn` supports fixed, random, and sequential selection; fixed assets; dates; seasons; ranks; feasts; categories; offices; canonical hours; tags; deterministic seeds; recent-selection exclusion; and fallback assets.
-- Native `delay` actions and action sequence order are fully managed by Home Assistant.
-- Automation name, alias, ID, enabled state, conditions, run mode, and targets are all managed by Home Assistant.
-
-Example multi-step routine:
-
-```yaml
-alias: Noon hour and seasonal hymn
-mode: queued
-triggers:
-  - trigger: time
-    at: "12:00:00"
-conditions:
-  - condition: time
-    weekday: [sun, mon, tue, wed, thu, fri, sat]
-actions:
-  - action: virtual_carillon.play
-    target:
-      entity_id: media_player.kitchen
-    data:
-      asset: westminster-hour
-  - delay: "00:00:05"
-  - action: virtual_carillon.select_hymn
-    target:
-      entity_id:
-        - media_player.kitchen
-        - media_player.office
-    data:
-      strategy: random
-      fallback_asset: ave-maris-stella
-```
-
-An advanced LitCal-filtered step can be configured without editing the engine:
-
-```yaml
-action: virtual_carillon.select_hymn
-target:
-  entity_id: media_player.kitchen
-data:
-  strategy: random
-  fallback_asset: ave-maris-stella
-  seasons: [advent]
-  rank: solemnity
-  feast_ids: [assumption-of-mary]
-  category_ids: [marian]
-  offices: [vespers]
-  canonical_hours: [vespers]
-  recent_exclusion: 3
-```
-
-For an hourly routine that should skip noon, add `12:00` to the blueprint's **Excluded times**, or add a time condition/template condition to a normal automation. This is configured entirely in Home Assistant.
+For example, a user can create separate routines for quarter chimes, an hourly hour-strike asset, Angelus at 12:00, Angelus at 18:00, and a 15:00 seasonal hymn. Each can target a different media player or player group and can be limited to a daily time window. Overnight windows such as 22:00–06:00 are supported. The included blueprint remains available for advanced automations that need conditions beyond the editor.
 
 Virtual Carillon does not configure or control the user's speaker integrations. Any Wi-Fi, Bluetooth, Chromecast, Sonos, laptop, or other media player recognized by Home Assistant can be targeted through normal Home Assistant media-player actions.

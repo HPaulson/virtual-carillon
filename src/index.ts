@@ -13,3 +13,4 @@ export * from './melodies/arranger.js';
 export * from './liturgical/litcal.js';
 export * from './liturgical/resolver.js';
 export * from './liturgical/taxonomy.js';
+export * from './scheduling/schedule.js';

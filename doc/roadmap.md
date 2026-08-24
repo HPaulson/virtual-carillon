@@ -17,7 +17,7 @@ The current implementation is a usable MVP, not the complete long-term product d
 - Bluetooth reconnect and fallback-speaker policy are not fully implemented; playback errors are isolated but reconnection is host/manual.
 - User-uploaded MIDI/MusicXML files are parser-ready but are not yet exposed as a file-upload endpoint; recordings are imported through the CLI/API path.
 - No third-party recording is bundled until redistribution rights are verified; hardware-specific authenticity still benefits from user-imported local recordings.
-- Scheduling is HA-owned through automations, Schedule helpers, and the included scheduled-routine blueprint.
+- Any number of timed routines are integration-configured and server-owned; each routine can play assets, select hymns, add delays, and target HA media players. HA automations and the blueprint remain advanced override paths.
 - The generated bell timbres remain a procedural model rather than recordings of a particular foundry; user-imported licensed recordings can still provide hardware-specific authenticity.
 - Westminster absolute tuning varies by installation; the project uses the documented E–D–C–G phrase in a clock-bell family and keeps its source attribution explicit.
 - Linux PipeWire/Bluetooth behavior requires hardware/session validation; macOS tests use CoreAudio fallback.

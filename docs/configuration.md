@@ -11,4 +11,4 @@ The Node service is configured with environment variables for deployment concern
 | `VIRTUAL_CARILLON_SAMPLE_RATE` | `44100` | WAV sample rate; `44100` or `48000` |
 | `VIRTUAL_CARILLON_DISTANCE_PROFILE` | `half-mile` | Outdoor listener model |
 
-Configure LitCal in the Virtual Carillon integration's Options flow in Home Assistant. Choose whether LitCal is used and which supported calendar it supplies to hymn selection. Configure all recurring times, conditions, ordered actions, delays, and media-player targets in Home Assistant automations or the included blueprint.
+Configure LitCal and any number of recurring routines in the Virtual Carillon integration's Options flow in Home Assistant. Routines support exact/repeating frequencies, weekdays, exclusions, daily allowed-time windows, ordered actions, and media-player targets. The routine list is persisted by the Node service in SQLite; Home Assistant supplies media-player targets and performs the final playback handoff. The included blueprint remains available for advanced custom routines.

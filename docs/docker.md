@@ -23,7 +23,7 @@ The SQLite database and rendered audio cache live in the `virtual-carillon-data`
 2. Create a **Docker Compose** service, not a Docker Stack service.
 3. Select the repository and branch, then set **Compose Path** to `./compose.yaml`.
 4. Add the values from [`.env.example`](../.env.example) in Dokploy's Environment tab. Dokploy writes them to the `.env` file consumed by `env_file: .env`.
-5. Set `VIRTUAL_CARILLON_API_TOKEN` to a secret value. Home Assistant automations own scheduling and output selection.
+5. Set `VIRTUAL_CARILLON_API_TOKEN` to a secret value. Home Assistant owns media-player selection; the integration's routine editor owns the schedule configuration.
 6. Deploy and confirm the health check is green.
 
 Keep the default deployment HA-first: attach the Home Assistant container to the same Docker network as `virtual-carillon`, then configure the integration with `http://virtual-carillon:9876` and the same API token. Do not add a Dokploy domain or host port unless external access is intentionally required. Users who need that behavior can add a `ports` mapping or reverse proxy as a deployment-specific override.
@@ -34,7 +34,7 @@ The API token protects the engine API. The Home Assistant media proxy intentiona
 
 Install the custom component from `homeassistant/custom_components/virtual_carillon` into `/config/custom_components/virtual_carillon`, restart Home Assistant, and add **Virtual Carillon** from Settings → Devices & services. Enter the Dokploy URL and the same API token.
 
-The integration adds a **Virtual Carillon** media source to Home Assistant's media browser. Browse assets or hymns, choose an asset, and select any compatible Home Assistant media player. It also adds target-based actions and supports complete HA-owned schedules through automations or the included scheduled-routine blueprint:
+The integration adds a **Virtual Carillon** media source to Home Assistant's media browser. Browse assets or hymns, choose an asset, and select any compatible Home Assistant media player. It also adds target-based actions and an integration-owned routine list. Open the integration's **Configure** flow to add as many timed routines as needed, with asset playback, seasonal hymn selection, delays, weekdays, exclusions, allowed-time windows, and media-player targets.
 
 ```yaml
 service: virtual_carillon.play
@@ -57,7 +57,7 @@ data:
 
 Virtual Carillon does not configure the selected media player. Wi-Fi speakers, Bluetooth speakers, Chromecast, Sonos, laptop audio, or any other output are the responsibility of the corresponding Home Assistant integration.
 
-Copy `homeassistant/blueprints/automation/virtual_carillon/scheduled_routine.yaml` to `/config/blueprints/automation/virtual_carillon/` to configure exact-time, hourly, 15-minute, or 30-minute routines with weekdays, exclusions, ordered actions, delays, LitCal filters, and media-player targets in the Home Assistant UI. The automation enabled toggle is the schedule enabled toggle. The complete mapping is documented in [`doc/home-assistant.md`](../doc/home-assistant.md).
+Copy `homeassistant/blueprints/automation/virtual_carillon/scheduled_routine.yaml` to `/config/blueprints/automation/virtual_carillon/` only when an advanced custom automation is needed. The standard routine list does not require separate HA automations. The complete mapping is documented in [`doc/home-assistant.md`](../doc/home-assistant.md).
 
 ## Troubleshooting
 
