@@ -5,6 +5,41 @@ The rule is conservative: a tag is retained only when the text, the source
 rubric, or a clearly documented liturgical use supports it. A tune without a
 text is not assigned the season of one possible text pairing.
 
+## Addition priorities
+
+When expanding the library, prioritize hymns that are recognizable, common,
+popular, and commonly used in actual parish or office practice. Calendar
+coverage matters too: an unrepresented feast, feast class, or season/feast
+combination is a valuable target. But calendar fit alone is not enough. If a
+tune is so obscure that listeners will not recognize it as relevant to the
+day, the tag provides little practical value and the result is effectively a
+random tune. “Recognizable” and “popular” are audience-relative: a hymn may be
+well known specifically among Catholics who celebrate a particular feast or
+pray a particular hour, even if it is unfamiliar to the general public. A
+familiar hymn within the relevant Catholic community, with a well-supported
+liturgical association, is preferred over a technically perfect but irrelevant
+candidate.
+
+Canonical-hour assignments are the exception to the general popularity rule.
+If a hymn is tagged for a canonical hour, it must be the official hymn of that
+hour, day, feast, or common according to the relevant approved or authoritative
+office source. General popularity does not justify an hour tag, and an obscure
+official office hymn must be retained when it is the correct hymn for the
+claimed hour and celebration.
+
+For each proposed addition, evaluate both dimensions:
+
+1. Does it fill a genuine calendar or canonical-hour gap?
+2. Is it recognizable or demonstrably commonly used within the relevant
+   Catholic community for that liturgical context?
+
+For canonical-hour candidates, replace question 2 with: Is it the official
+hymn assigned to the claimed hour and celebration in an authoritative office
+source?
+
+Only add an obscure source when it fills an important gap that recognizable
+repertory cannot reasonably cover, and document that tradeoff explicitly.
+
 ## Inventory after correction
 
 The bundled library contains 62 hymns. Coverage is:

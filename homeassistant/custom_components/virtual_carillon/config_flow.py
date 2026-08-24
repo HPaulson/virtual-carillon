@@ -99,8 +99,11 @@ CATEGORY_OPTIONS = [
     {"value": "penitential", "label": "Penitential"},
     {"value": "psalm", "label": "Psalm"},
 ]
+CATEGORY_LABELS = {option["value"]: option["label"] for option in CATEGORY_OPTIONS}
 CANONICAL_HOUR_OPTIONS = [
-    {"value": "", "label": "None (Default)"},
+    # HA treats an empty value in a required selector as an omitted field.
+    # Use a real value in the form and translate it back to no filter below.
+    {"value": "None", "label": "None"},
     {"value": "matins", "label": "Matins (Office of Readings)"},
     {"value": "lauds", "label": "Lauds (Morning)"},
     {"value": "daytime", "label": "Terce/Sext/None (Daytime)"},
@@ -491,11 +494,13 @@ def _routine_schema(
     else:
         if selected_mode == "category":
             schema[vol.Required(CONF_CATEGORY_IDS, default=defaults["category_ids"])] = selector.SelectSelector(
-                selector.SelectSelectorConfig(options=CATEGORY_OPTIONS, multiple=True)
+                selector.SelectSelectorConfig(
+                    options=_category_options(assets, defaults["category_ids"]),
+                    multiple=True,
+                )
             )
-        # This must be Required so selecting the blank option is submitted as
-        # an explicit empty value. Optional fields with defaults can be
-        # omitted by HA for the blank selector choice, which would preserve a
+        # This must be Required so selecting None is submitted as an explicit
+        # value. Optional fields can be omitted by HA, which would preserve a
         # previously selected hour (for example, Vespers) while editing.
         schema[vol.Required(CONF_CANONICAL_HOUR, default=defaults["canonical_hour"])] = selector.SelectSelector(
             selector.SelectSelectorConfig(options=CANONICAL_HOUR_OPTIONS)
@@ -525,6 +530,30 @@ def _asset_options(assets: list[dict[str, Any]], *, include_empty: bool):
     return options
 
 
+def _category_options(assets: list[dict[str, Any]], selected: list[str] | None = None):
+    """Return selectable categories represented by the engine's hymn catalog.
+
+    The server is the source of truth for hymn metadata. Keep the canonical
+    options as a fallback for a temporarily unavailable catalog, and retain
+    saved values so editing a schedule never drops a category just because a
+    hymn fetch was incomplete.
+    """
+    category_ids = {
+        str(category)
+        for asset in assets
+        for category in (asset.get("liturgicalTags", {}).get("categories", []) if isinstance(asset.get("liturgicalTags"), dict) else [])
+        if str(category) in CATEGORY_LABELS
+    }
+    category_ids.update(str(category) for category in (selected or []) if str(category) in CATEGORY_LABELS)
+    if not category_ids:
+        category_ids = set(CATEGORY_LABELS)
+    return [
+        {"value": option["value"], "label": option["label"]}
+        for option in CATEGORY_OPTIONS
+        if option["value"] in category_ids
+    ]
+
+
 def _routine_defaults(routine: dict[str, Any] | None):
     if not routine:
         return {
@@ -533,7 +562,7 @@ def _routine_defaults(routine: dict[str, Any] | None):
             "play_type": "manual",
             "asset": "",
             "category_ids": [],
-            "canonical_hour": "",
+            "canonical_hour": "None",
             "times": "12:00",
             "weekdays": list(WEEKDAYS),
             "media_players": [],
@@ -563,7 +592,7 @@ def _routine_defaults(routine: dict[str, Any] | None):
         "play_type": "category" if action.get("type") == "select_hymn" and action.get("categoryIds") else ("automatic" if action.get("type") == "select_hymn" else "manual"),
         "asset": action.get("asset", ""),
         "category_ids": action.get("categoryIds", []),
-        "canonical_hour": (action.get("canonicalHours") or [""])[0],
+        "canonical_hour": (action.get("canonicalHours") or ["None"])[0] or "None",
         "times": ", ".join(trigger.get("times", [trigger.get("time", "12:00")])),
         "weekdays": trigger.get("weekdays", list(WEEKDAYS)),
         "media_players": action.get("mediaPlayers", []),
@@ -598,8 +627,8 @@ def _routine_from_input(user_input: dict[str, Any], *, routine_id: str | None = 
         }
         if play_type == "category":
             action["categoryIds"] = list(user_input.get(CONF_CATEGORY_IDS, []))
-        canonical_hour = str(user_input.get(CONF_CANONICAL_HOUR, "")).strip()
-        if canonical_hour:
+        canonical_hour = str(user_input.get(CONF_CANONICAL_HOUR, "None")).strip()
+        if canonical_hour and canonical_hour.casefold() != "none":
             action["canonicalHours"] = [canonical_hour]
         default_name = "Hymn from category" if play_type == "category" else "Automatic hymn"
     else:

@@ -32,6 +32,22 @@ runtime or default notation format; when a chant is imported from GABC, convert
 its pitches, durations, mode, and phrase boundaries into `melody()` first, then
 retain only the source URL and provenance in the hymn definition.
 
+When adding hymns, prioritize recognizable, common, popular, and commonly used
+repertory. Calendar gaps remain important—especially an uncovered feast or a
+feast/season combination—but a technically relevant yet unknown tune may be no
+more useful to listeners than a random tune. Prefer familiar hymns that people
+will recognize as relevant to the day, where “familiar” and “popular” are
+understood relative to the relevant Catholic community: a hymn can be popular
+among people who pray the Hours or celebrate a particular feast without being
+widely known outside that community. Use obscure material only when it fills a
+meaningful gap that recognizable repertory cannot cover.
+
+Canonical-hour tagging is a strict exception. Any hymn tagged to a canonical
+hour must be the official hymn assigned to that hour, day, feast, or common by
+an authoritative office source. It does not need broad public popularity, but
+it must be the correct official hymn for the relevant Catholic liturgical
+community. Popularity alone is never a reason to assign a canonical-hour tag.
+
 | Hymn                                                   | Source / provenance                                                                                                                                                                                              | License note                                                                                                               |
 | ------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
 | _Te lucis ante terminum_                               | [Gregorianum source GABC](https://www.gregorianum.org/index.php?mobileaction=toggle_view_mobile&title=Te_lucis_ante_terminum_%28ad_Completorium%29), Liber Hymnarius 1983, Mode VIII                             | Public-domain chant; source GABC and transcriber credited                                                                  |
