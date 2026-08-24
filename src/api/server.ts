@@ -80,7 +80,7 @@ const ScheduleClaimSchema = z.object({ at: z.string().min(1) });
 const ScheduleCompleteSchema = z.object({
   slotKey: z.string().min(1),
   status: z.enum(['completed', 'failed']),
-  message: z.string().optional(),
+  message: z.string().nullable().optional(),
 });
 const ScheduleRunSchema = z.object({
   at: z.string().min(1).optional(),
@@ -189,7 +189,7 @@ export async function createServer(services: ServerServices): Promise<FastifyIns
   app.post('/api/schedule/complete', async (request, reply) => {
     const parsed = ScheduleCompleteSchema.safeParse(request.body);
     if (!parsed.success) return reply.code(400).send({ error: parsed.error.flatten() });
-    services.database.completeScheduleRun(parsed.data.slotKey, parsed.data.status, parsed.data.message);
+    services.database.completeScheduleRun(parsed.data.slotKey, parsed.data.status, parsed.data.message ?? undefined);
     console.info(`[schedule] complete slot=${parsed.data.slotKey} status=${parsed.data.status}${parsed.data.message ? ` message=${parsed.data.message}` : ''}`);
     return { ok: true };
   });

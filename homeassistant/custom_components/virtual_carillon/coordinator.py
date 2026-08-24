@@ -9,6 +9,7 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 from .const import MEDIA_SOURCE_PREFIX
 
 _LOGGER = logging.getLogger(__name__)
+MAX_VOLUME_LEVEL = 499 / 500
 
 
 class CarillonCoordinator(DataUpdateCoordinator):
@@ -53,8 +54,9 @@ class CarillonCoordinator(DataUpdateCoordinator):
         refresh: bool = True,
         enqueue: str | None = None,
     ):
+        media_id = f"{MEDIA_SOURCE_PREFIX}{quote(asset, safe='')}"
         _LOGGER.info(
-            "Playing asset=%s on %s (volume=100%%, enqueue=%s)",
+            "Playing asset=%s on %s (volume=max, enqueue=%s)",
             asset,
             media_players,
             enqueue,
@@ -64,7 +66,7 @@ class CarillonCoordinator(DataUpdateCoordinator):
             "volume_set",
             {
                 "entity_id": media_players,
-                "volume_level": 1.0,
+                "volume_level": MAX_VOLUME_LEVEL,
             },
             blocking=True,
         )
