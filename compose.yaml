@@ -1,0 +1,38 @@
+services:
+  virtual-carillon:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: virtual-carillon:latest
+    restart: unless-stopped
+    expose:
+      - '9876'
+    environment:
+      VIRTUAL_CARILLON_API_TOKEN: ${VIRTUAL_CARILLON_API_TOKEN:?Set VIRTUAL_CARILLON_API_TOKEN in .env}
+      VIRTUAL_CARILLON_HOST: ${VIRTUAL_CARILLON_HOST:-0.0.0.0}
+      VIRTUAL_CARILLON_PORT: ${VIRTUAL_CARILLON_PORT:-9876}
+      VIRTUAL_CARILLON_DATA_DIR: ${VIRTUAL_CARILLON_DATA_DIR:-/app/.data}
+      VIRTUAL_CARILLON_DISTANCE_PROFILE: ${VIRTUAL_CARILLON_DISTANCE_PROFILE:-half-mile}
+      VIRTUAL_CARILLON_SAMPLE_RATE: ${VIRTUAL_CARILLON_SAMPLE_RATE:-44100}
+      VIRTUAL_CARILLON_LITCAL_ENABLED: ${VIRTUAL_CARILLON_LITCAL_ENABLED:-false}
+      VIRTUAL_CARILLON_LITCAL_URL: ${VIRTUAL_CARILLON_LITCAL_URL:-https://litcal.johnromanodorazio.com/api/v5}
+      VIRTUAL_CARILLON_LITCAL_CALENDAR: ${VIRTUAL_CARILLON_LITCAL_CALENDAR:-general}
+    volumes:
+      - virtual-carillon-data:/app/.data
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:9876/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  virtual-carillon-data:

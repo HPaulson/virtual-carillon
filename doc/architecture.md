@@ -1,0 +1,55 @@
+# Architecture
+
+## System boundary
+
+The Node service owns bell synthesis, asset rendering, audio serving, persistence of playback events, schedule persistence/evaluation, and diagnostics. Its public schedule API speaks in app concepts—Westminster, assets, Angelus, and Liturgical Hymn—and can run through native device outputs without Home Assistant. Home Assistant is the optional friendly frontend and output adapter: its integration options flow configures the same schedule, while HA sends due events to selected media players. Home Assistant does not contain audio/DSP logic.
+
+```text
+HA config flow ── semantic schedule ───► Fastify API + SQLite
+        │                                  │
+        └──── claim due event ◄────────────┘──── native schedule timer
+                    │                                  │
+                    ▼                                  ▼
+            HA media_player targets              host audio output
+```
+
+## Source map
+
+- `src/cli/index.ts` — CLI entry point and process composition for development/special cases.
+- `src/configuration/config.ts` — deployment environment parsing with Zod.
+- `src/database/db.ts` — SQLite event history using `node:sqlite`.
+- `src/scheduling/schedule.ts` — persisted routine/action model and due-time rules.
+- `src/bells/` — inharmonic partials, distance profiles, and bell-family definitions.
+- `src/audio/` — synthesis, WAV writing, output discovery, and playback.
+- `src/library/library.ts` — built-in and imported asset definitions, rendering, and playback.
+- `src/library/catalog.ts` — stable-ID liturgical queries, priority matching, and selection strategies.
+- `src/api/server.ts` — Fastify routes consumed by Home Assistant and explicit CLI/special-case clients.
+- `src/liturgical/litcal.ts` — cached LitCal client; stale data is used when the network is unavailable.
+- `src/liturgical/resolver.ts` — LitCal condition matching and conversion to catalog queries.
+- `src/liturgical/taxonomy.ts` — stable seasons, feast/category IDs, tagging, and LitCal inference.
+- `homeassistant/custom_components/virtual_carillon/` — HA config flow/options, schedule runner, coordinator, media source, sensor, and target-based services.
+- `homeassistant/blueprints/` — optional advanced HA automation overrides; the normal routine list is integration-configured.
+
+## Runtime data
+
+The configured data directory contains `carillon.sqlite` for playback events, `cache/*.wav` for lazily rendered audio, and cached LitCal years. Caches can be regenerated; keep the event database if its history matters.
+
+## Audio flow
+
+1. `AssetLibrary` validates an asset ID.
+2. A bell or sequence is rendered into a cached WAV file if needed.
+3. The engine serves the rendered audio through `/api/assets/:id/audio`.
+4. The Home Assistant integration exposes the asset through its media source and proxies the audio URL through Home Assistant.
+5. Home Assistant sends the media URL to the selected `media_player` entity or entities. The Node container does not need access to the speaker.
+
+The CLI and `/api/play` path support native host-output experiments and special cases. They are not required by the Home Assistant deployment.
+
+## Liturgical selection flow
+
+```text
+HA LitCal option → API request → LitCal day → primary celebration by grade
+               → LiturgicalTags → HymnQuery → selection strategy
+               → AssetLibrary renderer → HA media_player target
+```
+
+The catalog owns matching and selection state. Hymn definitions only declare metadata; they do not contain date or feast branches. If LitCal is disabled or temporarily unavailable, the API selects against a neutral general day, ensuring automatic mode still chooses a generic hymn when no stronger liturgical match exists.

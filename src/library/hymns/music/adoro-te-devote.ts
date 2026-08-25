@@ -1,0 +1,80 @@
+import { defineHymn } from '../defineHymn.js';
+import { melody, measure, note } from '../notation/index.js';
+
+export const adoroTeDevote = defineHymn({
+  id: 'adoro-te-devote',
+  name: 'Adoro te devote',
+  liturgical: {
+    categories: ['eucharistic', 'passion', 'christological'],
+    seasons: ['Lent', 'General'],
+    offices: [],
+    feasts: ['corpus-christi', 'holy-thursday'],
+  },
+  notation: melody({
+    meter: { numerator: 1, denominator: 1 },
+    unitLength: 'sixteenth',
+    key: 'C',
+    tempo: 92,
+    mode: 5,
+    rhythmicCharacter: 'free',
+    measures: [
+      measure([
+        note('D4', 'quarter'),
+        note('F5', 'quarter'),
+        note('A4', 'quarter'),
+        note('A5', 'quarter'),
+      ]),
+      measure([
+        note('A4', 'quarter'),
+        note('A4', 'eighth'),
+        note('B4', 'quarter'),
+        note('A4', 'half'),
+      ]),
+      measure([
+        note('G5', 'quarter'),
+        note('F4', 'quarter'),
+        note('E5', 'quarter'),
+        note('D4', 'quarter'),
+      ]),
+      measure([note('D4', 'half'), note('D5', 'quarter'), note('F4', 'quarter')]),
+      measure([
+        note('A5', 'quarter'),
+        note('A4', 'quarter'),
+        note('A4', 'eighth'),
+        note('B4', 'quarter'),
+        note('A4', 'half'),
+      ]),
+      measure([
+        note('G5', 'quarter'),
+        note('F4', 'quarter'),
+        note('E5', 'quarter'),
+        note('D4', 'quarter'),
+      ]),
+      measure([note('D4', 'half'), note('A5', 'quarter'), note('A4', 'quarter')]),
+      measure([
+        note('B4', 'eighth'),
+        note('C5', 'quarter'),
+        note('D5', 'quarter'),
+        note('D5', 'eighth'),
+        note('C5', 'quarter'),
+      ]),
+      measure([
+        note('A4', 'quarter'),
+        note('B5', 'quarter'),
+        note('A4', 'quarter'),
+        note('G5', 'quarter'),
+      ]),
+      measure([note('F4', 'quarter'), note('E4', 'half'), note('F5', 'quarter')]),
+      measure([
+        note('A4', 'quarter'),
+        note('G5', 'quarter'),
+        note('F4', 'quarter'),
+        note('E4', 'eighth'),
+        note('D4', 'quarter'),
+      ]),
+      measure([note('E4', 'half'), note('F5', 'quarter'), note('D4', 'quarter')]),
+      measure([note('E5', 'quarter'), note('D4', 'quarter'), note('D4', 'half')]),
+    ],
+  }),
+  arrangement: { style: 'contemplative', tonic: 'D3' },
+});

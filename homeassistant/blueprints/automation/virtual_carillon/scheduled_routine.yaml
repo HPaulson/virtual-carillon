@@ -1,0 +1,120 @@
+blueprint:
+  name: Virtual Carillon scheduled routine
+  description: >-
+    Run any Home Assistant action sequence on an exact time, hourly, every 15
+    minutes, or every 30 minutes, limited to selected weekdays and optional
+    excluded times. Use the action editor to add one or more
+    virtual_carillon.play or virtual_carillon.select_hymn actions, delays, and
+    different media-player targets. The automation's enabled toggle controls
+    whether the schedule is active.
+  domain: automation
+  author: Virtual Carillon
+  homeassistant:
+    min_version: 2024.10.0
+  input:
+    run_time:
+      name: Exact time
+      description: Used when the frequency is Exact time. Seconds are ignored.
+      default: '12:00:00'
+      selector:
+        time: {}
+    frequency:
+      name: Frequency
+      description: Choose a timing pattern for this Home Assistant routine.
+      default: exact
+      selector:
+        select:
+          options:
+            - label: Exact time
+              value: exact
+            - label: Every hour
+              value: hourly
+            - label: Every 15 minutes
+              value: every_15
+            - label: Every 30 minutes
+              value: every_30
+    weekdays:
+      name: Weekdays
+      description: Days on which the routine may run.
+      default:
+        - sun
+        - mon
+        - tue
+        - wed
+        - thu
+        - fri
+        - sat
+      selector:
+        select:
+          multiple: true
+          options:
+            - label: Sunday
+              value: sun
+            - label: Monday
+              value: mon
+            - label: Tuesday
+              value: tue
+            - label: Wednesday
+              value: wed
+            - label: Thursday
+              value: thu
+            - label: Friday
+              value: fri
+            - label: Saturday
+              value: sat
+    excluded_times:
+      name: Excluded times
+      description: >-
+        Optional exact HH:MM values to skip. This is useful for excluding noon
+        from an hourly routine that is replaced by a special routine.
+      default: []
+      selector:
+        text:
+          multiple: true
+          type: time
+    routine_actions:
+      name: Routine actions
+      description: >-
+        Add the ordered Virtual Carillon actions and any delays. Each action
+        can target one or more Home Assistant media players.
+      selector:
+        action: {}
+
+mode: queued
+max: 10
+max_exceeded: silent
+
+variables:
+  configured_time: !input run_time
+  configured_frequency: !input frequency
+  configured_excluded_times: !input excluded_times
+
+triggers:
+  - trigger: time_pattern
+    minutes: '/1'
+
+conditions:
+  - condition: time
+    weekday: !input weekdays
+  - condition: template
+    value_template: >-
+      {% set current = now().strftime('%H:%M') %}
+      {% set configured = (configured_time | string)[:5] %}
+      {% set values = namespace(items=configured_excluded_times | default([], true)) %}
+      {% if values.items is string %}
+        {% set values.items = [values.items] %}
+      {% endif %}
+      {% set excluded = namespace(found=false) %}
+      {% for value in values.items %}
+        {% if current == (value | string)[:5] %}
+          {% set excluded.found = true %}
+        {% endif %}
+      {% endfor %}
+      {{ not excluded.found and (
+        (configured_frequency == 'exact' and current == configured) or
+        (configured_frequency == 'hourly' and now().minute == 0) or
+        (configured_frequency == 'every_15' and now().minute % 15 == 0) or
+        (configured_frequency == 'every_30' and now().minute % 30 == 0)
+      ) }}
+
+actions: !input routine_actions

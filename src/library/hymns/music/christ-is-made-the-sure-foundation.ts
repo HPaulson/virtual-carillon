@@ -1,0 +1,51 @@
+import { defineHymn } from '../defineHymn.js';
+import { melody, measure, note } from '../notation/index.js';
+
+export const christIsMadeTheSureFoundation = defineHymn({
+  id: 'christ-is-made-the-sure-foundation',
+  name: 'Christ Is Made the Sure Foundation (WESTMINSTER ABBEY)',
+  liturgical: {
+    categories: ['christological', 'praise'],
+    seasons: ['General', 'Ordinary Time'],
+    offices: ['Lauds'],
+    feasts: ['dedication-of-a-church'],
+  },
+  notation: melody({
+    meter: { numerator: 4, denominator: 4 },
+    unitLength: 'sixteenth',
+    key: 'G',
+    tempo: 92,
+    rhythmicCharacter: 'metered',
+    measures: [
+      measure([
+        note('G4', 'quarter'),
+        note('G4', 'quarter'),
+        note('A4', 'quarter'),
+        note('B4', 'quarter'),
+      ]),
+      measure([note('D5', 'half'), note('B4', 'quarter'), note('A4', 'quarter')]),
+      measure([
+        note('G4', 'quarter'),
+        note('A4', 'quarter'),
+        note('B4', 'quarter'),
+        note('D5', 'quarter'),
+      ]),
+      measure([note('C5', 'half'), note('B4', 'quarter'), note('A4', 'quarter')]),
+      measure([
+        note('G4', 'quarter'),
+        note('G4', 'quarter'),
+        note('A4', 'quarter'),
+        note('B4', 'quarter'),
+      ]),
+      measure([note('D5', 'half'), note('C5', 'quarter'), note('B4', 'quarter')]),
+      measure([
+        note('A4', 'quarter'),
+        note('B4', 'quarter'),
+        note('A4', 'quarter'),
+        note('G4', 'quarter'),
+      ]),
+      measure([note('G4', 'whole')]),
+    ],
+  }),
+  arrangement: { style: 'celebratory', tonic: 'G3' },
+});

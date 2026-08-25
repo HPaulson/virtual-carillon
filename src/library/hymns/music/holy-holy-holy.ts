@@ -1,0 +1,40 @@
+import { defineHymn } from '../defineHymn.js';
+import { melody, measure, note } from '../notation/index.js';
+
+export const holyHolyHoly = defineHymn({
+  id: 'holy-holy-holy',
+  name: 'Holy, Holy, Holy! Lord God Almighty (NICAEA)',
+  liturgical: {
+    categories: ['christological'],
+    seasons: ['General', 'Ordinary Time'],
+    offices: [],
+    feasts: ['trinity-sunday'],
+  },
+  notation: melody({
+    meter: { numerator: 4, denominator: 2 },
+    unitLength: 'sixteenth',
+    key: 'D',
+    tempo: 100,
+    rhythmicCharacter: 'metered',
+    measures: [
+      measure([note('D4', 'half'), note('D4', 'half'), note('F#4', 'half'), note('F#4', 'half')]),
+      measure([note('A4', 'whole'), note('A4', 'whole')]),
+      measure([note('B4', 'whole'), note('B4', 'half'), note('B4', 'half')]),
+      measure([note('A4', 'whole'), note('F#4', 'whole')]),
+      measure([note('A4', 'dotted-whole'), note('A4', 'half')]),
+      measure([note('A4', 'whole'), note('A4', 'whole')]),
+      measure([note('D4', 'whole'), note('C#4', 'half'), note('A4', 'half')]),
+      measure([note('E4', 'half'), note('A4', 'half'), note('B4', 'dotted-whole')]),
+      measure([note('A4', 'half'), note('A4', 'whole'), note('D3', 'half')]),
+      measure([note('D4', 'half'), note('F#4', 'half'), note('F#4', 'half'), note('A4', 'whole')]),
+      measure([note('A4', 'whole'), note('B4', 'dotted-whole')]),
+      measure([note('B4', 'half'), note('B4', 'whole'), note('B4', 'whole')]),
+      measure([note('A4', 'whole'), note('A4', 'whole')]),
+      measure([note('D4', 'whole'), note('A4', 'half'), note('A4', 'half')]),
+      measure([note('B4', 'whole'), note('F#4', 'whole')]),
+      measure([note('G4', 'whole'), note('E4', 'half'), note('E4', 'dotted-whole')]),
+      measure([note('D4', 'half'), note('D4', 'whole')]),
+    ],
+  }),
+  arrangement: { style: 'grand', tonic: 'D3' },
+});
