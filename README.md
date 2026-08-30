@@ -4,7 +4,6 @@ Virtual Carillon brings the sound and rhythm of a Catholic bell tower to your ho
 
 It uses the liturgical calendar to ring the Angelus, mark the hours with Westminster chimes, play Catholic hymns, and choose music for the season or feast of the day. Run it from the command line, or connect it to Home Assistant for scheduling and speaker selection.
 
-It is meant for a living room, home chapel, garden, or family prayer routine—not to simulate a public church tower. You choose the times, volume, and sounds that work for your household.
 
 ## How it works
 
