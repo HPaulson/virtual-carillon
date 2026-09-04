@@ -1,6 +1,6 @@
 ## Summary
 
-Describe the user-visible change and its operational impact.
+Describe the user-visible change, its deployment impact, and any effect on existing schedules or configuration.
 
 ## Validation
 

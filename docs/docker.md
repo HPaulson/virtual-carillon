@@ -1,69 +1,50 @@
-# Docker deployment
+# Home Assistant Container with Docker
 
-The container renders and serves audio; Home Assistant owns output selection. The deployment does not mount ALSA, PipeWire, PulseAudio, Bluetooth, or other host speaker devices. Any media player already supported by Home Assistant can play Virtual Carillon audio.
+This is installation path 2 from the [main guide](../README.md#2-home-assistant-container-with-docker). Use it when Home Assistant runs in a Docker container. It is not the Home Assistant OS or Supervised app installation.
 
-## Start the container
+Virtual Carillon’s container renders and serves audio. Home Assistant’s integration sends that audio to the media players you select, so the engine container does not need access to ALSA, PipeWire, PulseAudio, Bluetooth, or the speaker hardware.
 
-Copy `.env.example` to `.env` and set a long random API token:
+## Installation
 
-```bash
-cp .env.example .env
-openssl rand -hex 32
-docker compose up -d --build
-docker compose ps
-```
+Use the [main README](../README.md#2-home-assistant-container-with-docker) for the complete Docker installation: creating `.env`, starting the container, connecting Home Assistant to its network, installing the integration, and adding the device. This page is deliberately limited to Docker-specific storage and troubleshooting details.
 
-The API listens on port `9876` inside the container. The default Compose deployment does not publish that port to the host; Home Assistant connects over the shared Docker network. Docker Compose refuses to start until `VIRTUAL_CARILLON_API_TOKEN` is set. `/health` is available to attached containers for health checks, and `/api/*` requires `Authorization: Bearer <VIRTUAL_CARILLON_API_TOKEN>`.
+The supplied Compose file creates the `virtual-carillon_default` network and keeps port `9876` inside that network. It does not publish the API to the Docker host. The integration address is `http://virtual-carillon:9876` when Home Assistant is attached to that network.
 
-The SQLite database and rendered audio cache live in the `virtual-carillon-data` Docker volume. Enable backups for that volume in production.
+Do not expose the API to the public internet. If you need remote access, place it behind a properly configured reverse proxy and keep the bearer token secret.
 
-Keep the default deployment HA-first: attach Home Assistant to the same Docker network as `virtual-carillon`, then configure the integration with `http://virtual-carillon:9876` and the same API token. Do not add a host port or public domain unless external access is intentionally required. Users who need that behavior can add a `ports` mapping or reverse proxy as a deployment-specific override.
+## Persistent data and backups
 
-The API token protects the engine API. The Home Assistant media proxy intentionally exposes only rendered audio at `/api/virtual_carillon/audio/<asset>` without a separate device token, because network media players need to fetch the URL. Keep Home Assistant and its media players on the appropriate trusted network.
+The `virtual-carillon-data` Docker volume holds the engine’s persistent state:
 
-## Home Assistant
+- `carillon.sqlite` — schedules, schedule claims, and playback history;
+- rendered WAV files;
+- LitCal cache files; and
+- imported recordings and their library index.
 
-Install the custom component from `homeassistant/custom_components/virtual_carillon` into `/config/custom_components/virtual_carillon`, restart Home Assistant, and add **Virtual Carillon** from Settings → Devices & services. Enter the service URL and the same API token.
-
-The integration adds a **Virtual Carillon** media source to Home Assistant's media browser. Browse assets or hymns, choose an asset, and select any compatible Home Assistant media player. It also adds target-based actions and an integration-owned schedule. Open the integration's **Configure** flow to set Westminster once, then add as many “play asset or Liturgical Hymn at...” schedules as needed, with multiple exact times, days, allowed-time windows, and media-player targets.
-
-```yaml
-service: virtual_carillon.play
-target:
-  entity_id:
-    - media_player.kitchen
-    - media_player.office
-data:
-  asset: test-bell
-```
-
-```yaml
-service: virtual_carillon.select_hymn
-target:
-  entity_id: media_player.kitchen
-data:
-  strategy: random
-```
-
-Virtual Carillon does not configure the selected media player. Wi-Fi speakers, Bluetooth speakers, Chromecast, Sonos, laptop audio, or any other output are the responsibility of the corresponding Home Assistant integration.
-
-Copy `homeassistant/blueprints/automation/virtual_carillon/scheduled_routine.yaml` to `/config/blueprints/automation/virtual_carillon/` only when an advanced custom automation is needed. The standard routine list does not require separate HA automations. The complete mapping is documented in [`doc/home-assistant.md`](../doc/home-assistant.md).
+Back up the volume before removing or recreating it. You may replace the container image without losing this data as long as the volume remains in place.
 
 ## Troubleshooting
 
 ### Home Assistant cannot connect
 
-Check the shared Docker network, URL, and token. The default deployment is not reachable through the host's `localhost:9876`. From a container attached to the shared network, test:
+Check the following in order:
+
+1. The `virtual-carillon` container is running: `docker compose ps`.
+2. Home Assistant and the engine share a Docker network.
+3. The integration uses `http://virtual-carillon:9876`, not the Docker host’s `localhost:9876`.
+4. The API token matches exactly.
+
+From a container on the shared network, these requests should succeed:
 
 ```bash
 curl http://virtual-carillon:9876/health
-curl -H "Authorization: Bearer $VIRTUAL_CARILLON_API_TOKEN" http://virtual-carillon:9876/api/assets
+curl -H 'Authorization: Bearer YOUR_TOKEN' http://virtual-carillon:9876/api/status
 ```
 
-### A media player cannot play an asset
+### A media player does not play an asset
 
-The engine may be healthy while the selected player cannot fetch the audio URL. Confirm that the player can reach Home Assistant's configured internal/external URL and that the player supports `media_player.play_media`. The engine container itself does not need to see the speaker.
+The engine can be healthy while a particular speaker cannot retrieve the audio. Confirm that the speaker can reach Home Assistant’s configured internal or external URL and that its integration supports `media_player.play_media`. Pairing, network access, and speaker-specific playback remain the responsibility of that media-player integration.
 
-### Direct engine playback
+### I want direct audio from the container
 
-The CLI and `/api/play` endpoint remain available for native-output experiments, but they are not part of the default Docker/Home Assistant deployment. They require a separate host audio setup and are intentionally outside the HA-native path.
+The standard Compose setup is deliberately Home Assistant–first and does not mount host audio devices. The CLI and `POST /api/play` support direct host-output playback in a separate native setup, but that is not part of this Docker configuration.

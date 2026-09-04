@@ -129,7 +129,7 @@ function westminsterAsset(
     instrument: 'clock-bell',
     tags: ['Westminster', 'Clock', 'Clock chime'],
     description:
-      'Big Ben’s Westminster Quarters: quarter phrases built from G♯–F♯–E–B, with the traditional rhythmic phrase and a separate E3 tower-hour bell.',
+      'Westminster Chimes. The full-hour sequence is followed by the appropriate number of hour strikes.',
   };
 }
 
@@ -197,7 +197,7 @@ export const BUILTIN_ASSETS: AssetDefinition[] = [
     frequency: 523.25,
     instrument: 'carillon',
     tags: ['Bell', 'Carillon'],
-    description: 'A dry, tuned carillon bell for checking the output path.',
+    description: 'A clear single carillon bell for testing speaker playback.',
   },
   {
     id: 'small-bell',
@@ -292,7 +292,7 @@ export const BUILTIN_ASSETS: AssetDefinition[] = [
     instrument: 'tower-bell',
     tags: ['Angelus', 'Bell', 'Traditional'],
     description:
-      'A traditional Angelus signal: three tolls, a pause, repeated three times. Local practice varies; this is an identifiable traditional pattern rather than a melody.',
+      'The traditional Angelus signal: three groups of three tolls, with a pause between each group. Local customs vary.',
   },
   {
     id: 'angelus-rome',
@@ -305,7 +305,7 @@ export const BUILTIN_ASSETS: AssetDefinition[] = [
     instrument: 'tower-bell',
     tags: ['Angelus', 'Bell', 'Traditional', 'Rome'],
     description:
-      'Roman variant described in the Catholic Encyclopedia: three strokes, pause; four, pause; five, pause; one final stroke.',
+      'A Roman evening Angelus variation: three tolls, then four, then five, followed by one final toll.',
   },
   signalAsset(
     'divine-office-matins',
@@ -314,7 +314,7 @@ export const BUILTIN_ASSETS: AssetDefinition[] = [
     174.61,
     3,
     2.6,
-    'A configurable bell signal for Matins. The library does not claim a universal canonical melody where local traditions differ.',
+    'Three low tolls for use before Matins. Bell customs for the Office vary by place.',
   ),
   signalAsset(
     'divine-office-lauds',
@@ -323,7 +323,7 @@ export const BUILTIN_ASSETS: AssetDefinition[] = [
     220,
     3,
     1.8,
-    'A configurable bell signal for Lauds. The library does not invent a melody for an Office that has no single universal bell tune.',
+    'Three tolls for use before Lauds. Bell customs for the Office vary by place.',
   ),
   signalAsset(
     'divine-office-vespers',
@@ -332,7 +332,7 @@ export const BUILTIN_ASSETS: AssetDefinition[] = [
     220,
     3,
     1.8,
-    'A configurable bell signal for Vespers. Replace with a local recording or sequence when a house tradition is known.',
+    'Three tolls for use before Vespers. A local recording can be used when a community has its own custom.',
   ),
   signalAsset(
     'divine-office-compline',
@@ -341,7 +341,7 @@ export const BUILTIN_ASSETS: AssetDefinition[] = [
     174.61,
     1,
     0,
-    'A single deep bell signal for Compline; Office bell customs are local and configurable.',
+    'One low toll for use before Compline. Bell customs for the Office vary by place.',
   ),
   ...BUILTIN_HYMNS,
 ];

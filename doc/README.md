@@ -1,21 +1,26 @@
 # Documentation
 
-These documents describe the current implementation and deployment model.
+The [main README](../README.md) is the canonical guide for installation choices, prerequisites, routine modes, and everyday use. The pages below each cover one subject in more detail; they do not repeat the installation instructions.
 
-| Document                            | Contents                                                      |
-| ----------------------------------- | ------------------------------------------------------------- |
-| [Architecture](architecture.md)     | Runtime components, data flow, and source map                 |
-| [Development](development.md)       | Install, build, run, and edit workflow                        |
-| [Operations](operations.md)         | Docker, Home Assistant playback, backups, and troubleshooting |
-| [API](api.md)                       | HTTP endpoints and payloads                                   |
-| [Home Assistant](home-assistant.md) | Custom component installation and usage                       |
-| [Testing](testing.md)               | Automated and manual validation                               |
-| [Content](content.md)               | Audio strategy and recording boundary                         |
-| [Contributing](../CONTRIBUTING.md)  | Development, content-rights, and pull-request rules           |
-| [Security](../SECURITY.md)          | Private vulnerability reporting and deployment boundary       |
-| [Roadmap](roadmap.md)               | Current gaps and safe next improvements                       |
+## Using Virtual Carillon
 
-The `docs/` directory contains deployment-oriented documents, especially
-[`docs/docker.md`](../docs/docker.md) and
-[`docs/configuration.md`](../docs/configuration.md). Keep those documents in
-sync when deployment behavior changes.
+| Guide                                               | When to use it                                                              |
+| --------------------------------------------------- | --------------------------------------------------------------------------- |
+| [Home Assistant](home-assistant.md)                 | Media browser, actions, status, and schedule details after installation.    |
+| [Automatic mode](automatic-mode.md)                 | How LitCal-based hymn scoring and selection work.                           |
+| [Docker deployment](../docs/docker.md)              | Docker networking, persistent data, and troubleshooting after installation. |
+| [Configuration reference](../docs/configuration.md) | Set environment variables, LitCal, and audio-distance defaults.             |
+| [Content and recordings](content.md)                | Understand bundled material and add or remove local recordings.             |
+| [Operations and troubleshooting](operations.md)     | Maintain a deployment and diagnose common problems.                         |
+
+## For developers and contributors
+
+| Guide                              | Contents                                                         |
+| ---------------------------------- | ---------------------------------------------------------------- |
+| [Development](development.md)      | Requirements, local commands, checks, and release preparation.   |
+| [Testing](testing.md)              | Automated checks and manual smoke tests.                         |
+| [HTTP API](api.md)                 | Advanced integration and API reference.                          |
+| [Architecture](architecture.md)    | Runtime boundaries, persistence, scheduling, and selection flow. |
+| [Contributing](../CONTRIBUTING.md) | Contribution expectations and pull-request guidance.             |
+| [Security](../SECURITY.md)         | Vulnerability reporting and deployment boundary.                 |
+| [Roadmap](roadmap.md)              | Current project direction.                                       |

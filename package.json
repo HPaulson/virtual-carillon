@@ -1,16 +1,16 @@
 {
   "name": "virtual-carillon",
-  "version": "0.1.0",
-  "description": "A Linux-first virtual church carillon engine with Home Assistant integration.",
+  "version": "0.1.0-beta.1",
+  "description": "A virtual carillon with Catholic bells, hymn arrangements, and Home Assistant integration.",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/HPaulson/digital-carillon.git"
+    "url": "git+https://github.com/HPaulson/virtual-carillon.git"
   },
   "bugs": {
-    "url": "https://github.com/HPaulson/digital-carillon/issues"
+    "url": "https://github.com/HPaulson/virtual-carillon/issues"
   },
-  "homepage": "https://github.com/HPaulson/digital-carillon#readme",
+  "homepage": "https://github.com/HPaulson/virtual-carillon#readme",
   "keywords": [
     "audio",
     "carillon",
@@ -26,12 +26,12 @@
   "files": [
     "dist",
     "bin",
-    "homeassistant",
+    "custom_components",
     "README.md",
     "LICENSE"
   ],
   "engines": {
-    "node": ">=22.5"
+    "node": ">=24"
   },
   "scripts": {
     "build": "node scripts/build.mjs",
@@ -43,21 +43,23 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "check": "pnpm format:check && pnpm typecheck && pnpm lint && pnpm test && pnpm build"
+    "check": "pnpm format:check && pnpm typecheck && pnpm lint && pnpm test && pnpm build",
+    "ci:check": "node scripts/check-ci.mjs",
+    "release:check": "node scripts/check-release.mjs"
   },
   "dependencies": {
-    "commander": "^13.1.0",
-    "fastify": "^5.2.1",
-    "zod": "^3.24.2"
+    "commander": "^15.0.0",
+    "fastify": "^5.12.1",
+    "zod": "^4.5.4"
   },
   "devDependencies": {
-    "@types/node": "^22.13.4",
-    "@typescript-eslint/eslint-plugin": "^8.24.0",
-    "@typescript-eslint/parser": "^8.24.0",
-    "eslint": "^9.21.0",
-    "prettier": "^3.5.3",
-    "tsx": "^4.19.3",
-    "typescript": "^5.7.3",
-    "vitest": "^3.0.7"
+    "@types/node": "^26.4.1",
+    "@typescript-eslint/eslint-plugin": "^8.69.0",
+    "@typescript-eslint/parser": "^8.69.0",
+    "eslint": "^10.9.1",
+    "prettier": "^3.9.6",
+    "tsx": "^4.23.13",
+    "typescript": "^6.0.3",
+    "vitest": "^5.0.0"
   }
 }

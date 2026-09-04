@@ -29,4 +29,24 @@ class CarillonStatusSensor(SensorEntity):
     @property
     def extra_state_attributes(self):
         data = self.coordinator.data or {}
-        return {"outputs": data.get("outputs", []), "bluetooth": data.get("bluetooth", {}), "recent_events": data.get("recentEvents", []), "assets": data.get("assets", []), "hymns": data.get("hymns", []), "litcal_enabled": self.coordinator.litcal_enabled, "litcal_calendar": self.coordinator.litcal_calendar, "liturgical_day": data.get("liturgical_day")}
+        # The API catalog includes full melody/notation data. Storing that in
+        # Recorder makes this entity exceed HA's 16 KiB state-attribute limit.
+        return {
+            "outputs": data.get("outputs", []),
+            "bluetooth": data.get("bluetooth", {}),
+            "recent_events": data.get("recentEvents", []),
+            "assets": _compact_assets(data.get("assets", [])),
+            "hymns": _compact_assets(data.get("hymns", [])),
+            "litcal_calendar": self.coordinator.litcal_calendar,
+            "liturgical_day": data.get("liturgical_day"),
+        }
+
+
+def _compact_assets(assets: object) -> list[dict[str, object]]:
+    if not isinstance(assets, list):
+        return []
+    return [
+        {key: asset[key] for key in ("id", "name", "type") if key in asset}
+        for asset in assets
+        if isinstance(asset, dict) and asset.get("id")
+    ]

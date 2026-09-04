@@ -3,49 +3,48 @@
     "step": {
       "user": {
         "title": "Connect to Virtual Carillon",
-        "description": "Enter the URL of the Virtual Carillon API, the optional bearer token, and the LitCal settings.",
+        "description": "Enter the engine address. If the engine has an API token, enter the same token here. Choose the LitCal calendar that Automatic routines will use; you can change it later.",
         "data": {
-          "url": "API URL",
+          "url": "Engine URL",
           "token": "API token",
-          "litcal_enabled": "Use LitCal",
           "litcal_calendar": "LitCal calendar"
         }
       }
     },
     "error": {
-      "cannot_connect": "Unable to connect to the Virtual Carillon API.",
+      "cannot_connect": "Unable to connect to the Virtual Carillon engine.",
       "invalid_auth": "The API token was rejected."
     },
     "abort": {
-      "already_configured": "This Virtual Carillon API is already configured."
+      "already_configured": "This Virtual Carillon engine is already configured."
     }
   },
   "options": {
     "step": {
       "init": {
         "title": "Virtual Carillon schedules",
-        "description": "Turn on Westminster once, then add manual or automatic schedules. Manual schedules play a selected asset or hymn; automatic schedules let LitCal choose the hymn. Each schedule can contain multiple times, selected days, a daily time window, and Home Assistant media players.",
+        "description": "Set the overall schedule and LitCal calendar, configure Westminster Chimes, and add routines. Manual plays one exact asset, Category chooses a hymn from selected categories, and Automatic chooses a hymn from the liturgical calendar.",
         "menu_options": {
           "global": "Settings",
           "westminster": "Westminster Chimes",
           "add_routine": "Schedule: Add",
           "edit_routine": "Schedule: Edit",
           "remove_routine": "Schedule: Remove",
-          "finish": "Save All"
+          "finish": "Save all"
         }
       },
       "global": {
-        "title": "Global settings",
+        "title": "Settings",
+        "description": "Enable or disable all saved schedules, select the LitCal calendar for Automatic routines, and choose the Home Assistant playback distance.",
         "data": {
           "schedule_enabled": "Enable schedules",
-          "litcal_enabled": "Use LitCal for liturgical hymns",
           "litcal_calendar": "LitCal calendar",
           "distance_profile": "Playback distance"
         }
       },
       "westminster": {
-        "title": "Westminster",
-        "description": "Choose the cadence, days, daily time window, and Home Assistant speakers. Hour strikes automatically use the actual hour count.",
+        "title": "Westminster Chimes",
+        "description": "Choose the cadence, days, optional daily window, volume, and media players. At the hour, Virtual Carillon plays the full Westminster sequence and the correct count of hour strikes.",
         "data": {
           "westminster_enabled": "Enable Westminster",
           "westminster_cadence": "Every",
@@ -58,19 +57,18 @@
       },
       "add_routine": {
         "title": "Choose schedule mode",
-        "description": "Manual plays one specific asset or hymn. Automatic uses LitCal and the hymn catalog to choose the best hymn for the date. Automatic is recommended for normal use.",
+        "description": "Manual plays one specific asset or hymn. Category chooses a hymn from selected categories. Automatic uses the selected LitCal calendar to choose a hymn for the day.",
         "data": {
           "play_type": "Mode"
         }
       },
       "add_routine_manual": {
-        "title": "Configure manual playback",
-        "description": "Choose one specific asset or hymn, then set the time, days, and speakers.",
+        "title": "Configure Manual playback",
+        "description": "Choose the exact asset or hymn to play, then set its times, days, media players, optional window, and volume.",
         "data": {
           "routine_name": "Name (optional)",
           "routine_enabled": "Enable schedule",
-          "asset": "Specific asset or hymn (Manual mode only)",
-          "canonical_hour": "Traditional Liturgy of the Hours preference (Automatic mode only)",
+          "asset": "Specific asset or hymn",
           "times": "Times (HH:MM, comma separated)",
           "weekdays": "Days",
           "not_before": "Never before",
@@ -80,8 +78,8 @@
         }
       },
       "add_routine_category": {
-        "title": "Configure category playback",
-        "description": "Choose one or more hymn categories, then set the time, days, and speakers.",
+        "title": "Configure Category playback",
+        "description": "Choose one or more hymn categories, then set the times, days, media players, optional window, and volume.",
         "data": {
           "routine_name": "Name (optional)",
           "routine_enabled": "Enable schedule",
@@ -95,12 +93,12 @@
         }
       },
       "add_routine_automatic": {
-        "title": "Configure automatic playback",
-        "description": "LitCal will choose the hymn using the date's feast, season, and catalog metadata. Leave the hour at Default (recommended); select a canonical hour only when you specifically want traditional Liturgy of the Hours matching.",
+        "title": "Configure Automatic playback",
+        "description": "Automatic mode uses the date’s LitCal context. The canonical-hour setting is a preference for selecting a hymn; it does not set the routine’s time.",
         "data": {
           "routine_name": "Name (optional)",
           "routine_enabled": "Enable schedule",
-          "canonical_hour": "Specific Canonical Hour",
+          "canonical_hour": "Liturgy of the Hours preference",
           "times": "Times (HH:MM, comma separated)",
           "weekdays": "Days",
           "not_before": "Never before",
@@ -117,19 +115,18 @@
       },
       "edit_routine_mode": {
         "title": "Choose schedule mode",
-        "description": "Manual plays one specific asset or hymn. Automatic uses LitCal and the hymn catalog to choose the best hymn for the date. Automatic is recommended for normal use.",
+        "description": "Manual plays one specific asset or hymn. Category chooses a hymn from selected categories. Automatic uses the selected LitCal calendar to choose a hymn for the day.",
         "data": {
           "play_type": "Mode"
         }
       },
       "edit_routine_manual": {
-        "title": "Edit manual playback",
-        "description": "Change the selected asset or hymn, times, days, time window, or speakers.",
+        "title": "Edit Manual playback",
+        "description": "Change the selected asset or hymn, times, days, media players, optional window, or volume.",
         "data": {
           "routine_name": "Name (optional)",
           "routine_enabled": "Enable schedule",
-          "asset": "Specific asset or hymn (Manual mode only)",
-          "canonical_hour": "Traditional Liturgy of the Hours preference (Automatic mode only)",
+          "asset": "Specific asset or hymn",
           "times": "Times (HH:MM, comma separated)",
           "weekdays": "Days",
           "not_before": "Never before",
@@ -139,8 +136,8 @@
         }
       },
       "edit_routine_category": {
-        "title": "Edit category playback",
-        "description": "Change the selected hymn categories, times, days, time window, or speakers.",
+        "title": "Edit Category playback",
+        "description": "Change the hymn categories, times, days, media players, optional window, or volume.",
         "data": {
           "routine_name": "Name (optional)",
           "routine_enabled": "Enable schedule",
@@ -154,12 +151,12 @@
         }
       },
       "edit_routine_automatic": {
-        "title": "Edit automatic playback",
-        "description": "Automatic mode uses LitCal and the hymn catalog. Leave the hour at Default (recommended); select a canonical hour only for traditional Liturgy of the Hours matching.",
+        "title": "Edit Automatic playback",
+        "description": "Automatic mode uses the date’s LitCal context. The canonical-hour setting is a preference for selecting a hymn; it does not set the routine’s time.",
         "data": {
           "routine_name": "Name (optional)",
           "routine_enabled": "Enable schedule",
-          "canonical_hour": "Specific Canonical Hour",
+          "canonical_hour": "Liturgy of the Hours preference",
           "times": "Times (HH:MM, comma separated)",
           "weekdays": "Days",
           "not_before": "Never before",
@@ -176,7 +173,7 @@
       }
     },
     "error": {
-      "asset_required": "Choose a specific asset or hymn for Manual mode.",
+      "asset_required": "Choose an asset or hymn for Manual mode.",
       "category_required": "Choose at least one hymn category for Category mode.",
       "invalid_times": "Enter one or more times in HH:MM format, separated by commas.",
       "media_players_required": "Select at least one Home Assistant media player."
@@ -187,26 +184,26 @@
   },
   "services": {
     "play": {
-      "name": "Play asset",
-      "description": "Render and play an asset through the selected Home Assistant media players.",
+      "name": "Play an asset",
+      "description": "Render and play one named Virtual Carillon asset through the selected media players.",
       "fields": {
         "asset": {
           "name": "Asset",
-          "description": "The stable Virtual Carillon asset ID to play."
+          "description": "The stable asset ID to play, such as angelus or salve-regina."
         }
       }
     },
     "stop": {
       "name": "Stop playback",
-      "description": "Stop playback on the selected Home Assistant media players."
+      "description": "Stop the selected Home Assistant media players."
     },
     "select_hymn": {
       "name": "Select and play a hymn",
-      "description": "Select a hymn using LitCal and optional filters, then play it through the selected media players.",
+      "description": "Select a hymn using the configured LitCal calendar and any supplied conditions, then play it through the selected media players.",
       "fields": {
         "strategy": {
           "name": "Selection strategy",
-          "description": "Fixed, random, or sequential selection."
+          "description": "Fixed uses fixed_asset_id when supplied; random chooses a matching hymn; sequential cycles through matching hymns while the engine is running."
         },
         "fixed_asset_id": {
           "name": "Fixed asset ID",
@@ -214,32 +211,40 @@
         },
         "category_ids": {
           "name": "Category IDs",
-          "description": "Category IDs to use as a selection filter."
+          "description": "Restrict selection to category IDs such as marian or eucharistic."
         },
         "feast_ids": {
           "name": "Feast IDs",
-          "description": "Feast IDs to use as a LitCal condition and selection filter."
+          "description": "Require a matching LitCal feast, then restrict selection to those feast tags."
         },
         "offices": {
           "name": "Office IDs",
-          "description": "Office IDs to use as a selection filter."
+          "description": "Restrict selection to hymns tagged for matins, lauds, daytime, vespers, or compline."
         },
         "seasons": {
           "name": "Season IDs",
-          "description": "Season IDs to use as a LitCal condition and selection filter."
+          "description": "Require a matching liturgical season, then restrict selection to those season tags."
         },
-        "rank": { "name": "Liturgical rank", "description": "Liturgical rank condition." },
+        "rank": {
+          "name": "Liturgical rank",
+          "description": "Require a matching LitCal rank, such as solemnity, feast, or memorial."
+        },
         "canonical_hours": {
           "name": "Canonical hours",
-          "description": "Canonical hour IDs to use as a selection filter."
+          "description": "Prefer these Liturgy of the Hours contexts while selecting. This is not a clock-time trigger."
         },
-        "tags": { "name": "Tags", "description": "Asset tags to use as a selection filter." },
-        "seed": { "name": "Seed", "description": "Optional deterministic selection seed." },
+        "seed": {
+          "name": "Seed",
+          "description": "Make a random candidate choice reproducible for the same date and request."
+        },
         "recent_exclusion": {
           "name": "Recent exclusion",
-          "description": "Number of recently selected assets to avoid."
+          "description": "For unseeded non-automatic selection, avoid this many recent selections when enough hymns are available."
         },
-        "date": { "name": "Liturgical date", "description": "Liturgical date to evaluate." }
+        "date": {
+          "name": "Liturgical date",
+          "description": "Liturgical date in YYYY-MM-DD form to evaluate instead of today."
+        }
       }
     }
   }

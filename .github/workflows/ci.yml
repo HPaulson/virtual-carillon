@@ -1,0 +1,93 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Validate project
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.29.2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run TypeScript checks, tests, and build
+        run: pnpm check
+
+      - name: Check release metadata
+        run: pnpm release:check
+
+      - name: Validate Home Assistant integration syntax
+        run: python3 -m compileall -q custom_components/virtual_carillon
+
+      - name: Validate JSON metadata
+        run: |
+          python3 -m json.tool custom_components/virtual_carillon/manifest.json >/dev/null
+          python3 -m json.tool hacs.json >/dev/null
+
+  container:
+    name: Build and smoke-test container
+    runs-on: ubuntu-latest
+    needs: validate
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Build image
+        run: docker build --tag virtual-carillon:ci .
+
+      - name: Start container
+        run: |
+          docker run --detach --name virtual-carillon \
+            --env VIRTUAL_CARILLON_API_TOKEN=ci-test-token \
+            --publish 9876:9876 \
+            virtual-carillon:ci
+
+      - name: Wait for health endpoint
+        run: |
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:9876/health >/dev/null; then
+              exit 0
+            fi
+            sleep 2
+          done
+          docker logs virtual-carillon
+          exit 1
+
+      - name: Check authenticated API
+        run: >-
+          curl --fail --silent -H 'Authorization: Bearer ci-test-token'
+          http://127.0.0.1:9876/api/status >/dev/null
+
+      - name: Show container logs on failure
+        if: failure()
+        run: docker logs virtual-carillon
+
+      - name: Remove container
+        if: always()
+        run: docker rm --force virtual-carillon

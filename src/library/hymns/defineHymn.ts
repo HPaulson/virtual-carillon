@@ -84,7 +84,7 @@ export function defineHymn(definition: HymnDefinition): HymnAsset {
     liturgicalTags,
     liturgicalSeasons: liturgical.seasons,
     feastTypes: undefined,
-    description: 'Bundled carillon arrangement.',
+    description: 'Carillon arrangement of this hymn.',
   };
 }
 

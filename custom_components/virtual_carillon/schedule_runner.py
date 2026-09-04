@@ -42,6 +42,12 @@ class ScheduleRunner:
     async def _run(self, now: datetime) -> None:
         try:
             claim = await self.coordinator.async_claim_schedule(now)
+            for diagnostic in claim.get("diagnostics", []):
+                message = str(diagnostic.get("message", "Virtual Carillon schedule could not select audio"))
+                if diagnostic.get("level") == "error":
+                    _LOGGER.error("Virtual Carillon schedule: %s", message)
+                else:
+                    _LOGGER.warning("Virtual Carillon schedule: %s", message)
             if not claim.get("claimed"):
                 return
             slot_key = claim["slotKey"]
@@ -56,7 +62,9 @@ class ScheduleRunner:
                 existing_players = [player for player in media_players if player in queued_players]
                 if existing_players:
                     await self._wait_for_players(existing_players, actions[action_index - 1])
-                if not action.get("selectionAudit"):
+                if action.get("selectionAudit"):
+                    _LOGGER.info("Virtual Carillon %s", action["selectionAudit"])
+                else:
                     _LOGGER.info("Now playing: %s", action.get("asset"))
                 if new_players:
                     await self.coordinator.async_play(

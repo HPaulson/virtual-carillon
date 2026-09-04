@@ -5,14 +5,15 @@ body:
   - type: textarea
     attributes:
       label: What happened?
-      description: Include expected behavior and exact steps to reproduce. Remove tokens, URLs, recordings, and other private deployment data.
+      description: Tell us what you expected, what occurred, and the exact steps to reproduce it. Remove API tokens, private URLs, recordings, and other personal deployment details.
     validations:
       required: true
   - type: input
     attributes:
       label: Version or commit
-      placeholder: e.g. v0.1.0 or abc1234
+      placeholder: e.g. v0.1.0-beta.1 or abc1234
   - type: dropdown
     attributes:
-      label: Deployment
-      options: [Docker, Native Node.js, Home Assistant integration, Other]
+      label: How are you running Virtual Carillon?
+      options:
+        [Docker Compose, Native Node.js, Home Assistant app, Home Assistant integration, Other]

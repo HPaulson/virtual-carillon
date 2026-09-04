@@ -1,0 +1,30 @@
+name: Virtual Carillon
+version: 0.1.0-beta.1
+slug: virtual_carillon
+description: Bells, traditional signals, and Catholic hymn arrangements for Home Assistant
+url: https://github.com/HPaulson/virtual-carillon
+image: ghcr.io/hpaulson/virtual-carillon
+arch:
+  - amd64
+  - aarch64
+startup: services
+boot: auto
+init: false
+ports:
+  9876/tcp: 9876
+ports_description:
+  9876/tcp: Virtual Carillon API
+watchdog: http://[HOST]:[PORT:9876]/health
+options:
+  api_token: null
+  distance_profile: half-mile
+  sample_rate: '44100'
+  litcal_url: https://litcal.johnromanodorazio.com/api/v5
+  litcal_calendar: general
+schema:
+  api_token: password
+  distance_profile: list(near|church-grounds|quarter-mile|half-mile|one-mile)
+  sample_rate: list(44100|48000)
+  litcal_url: url
+  litcal_calendar: list(general|US|IT|NL|VA|CA)
+stage: stable

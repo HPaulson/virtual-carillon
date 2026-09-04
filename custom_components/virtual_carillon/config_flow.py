@@ -18,7 +18,6 @@ from .const import (
     CONF_CATEGORY_IDS,
     CONF_DISTANCE_PROFILE,
     CONF_LITCAL_CALENDAR,
-    CONF_LITCAL_ENABLED,
     CONF_MEDIA_PLAYERS,
     CONF_NOT_AFTER,
     CONF_NOT_BEFORE,
@@ -39,7 +38,6 @@ from .const import (
     CONF_WESTMINSTER_NOT_BEFORE,
     DEFAULT_LITCAL_CALENDAR,
     DEFAULT_DISTANCE_PROFILE,
-    DEFAULT_LITCAL_ENABLED,
     DEFAULT_URL,
     DOMAIN,
     DISTANCE_PROFILES,
@@ -55,7 +53,7 @@ DEFAULT_SCHEDULE = {
         "mediaPlayers": [],
     },
     "routines": [],
-    "litcal": {"enabled": DEFAULT_LITCAL_ENABLED, "calendar": DEFAULT_LITCAL_CALENDAR},
+    "litcal": {"calendar": DEFAULT_LITCAL_CALENDAR},
 }
 WEEKDAYS = ("sun", "mon", "tue", "wed", "thu", "fri", "sat")
 WEEKDAY_OPTIONS = [
@@ -148,18 +146,20 @@ class VirtualCarillonConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     data={
                         CONF_URL: url,
                         CONF_TOKEN: token,
-                        CONF_LITCAL_ENABLED: user_input[CONF_LITCAL_ENABLED],
                         CONF_LITCAL_CALENDAR: user_input[CONF_LITCAL_CALENDAR],
                     },
                 )
         return self.async_show_form(
             step_id="user",
-            data_schema=vol.Schema(_litcal_schema({
+            data_schema=vol.Schema({
                 vol.Required(CONF_URL, default=DEFAULT_URL): str,
                 vol.Optional(CONF_TOKEN, default=""): selector.TextSelector(
                     selector.TextSelectorConfig(type=selector.TextSelectorType.PASSWORD)
                 ),
-            })),
+                vol.Required(CONF_LITCAL_CALENDAR, default=DEFAULT_LITCAL_CALENDAR): selector.SelectSelector(
+                    selector.SelectSelectorConfig(options=list(LITCAL_CALENDARS))
+                ),
+            }),
             errors=errors,
         )
 
@@ -177,9 +177,15 @@ class VirtualCarillonOptionsFlow(config_entries.OptionsFlow):
             schedule = existing.get(CONF_SCHEDULE)
             if not schedule:
                 schedule = await self._async_get_schedule()
+                # A newly added integration has no saved local schedule yet.
+                # In that case, honor the calendar chosen on the connection
+                # form instead of showing the engine's generic default.
+                schedule = deepcopy(schedule)
+                schedule["litcal"] = {
+                    "calendar": existing.get(CONF_LITCAL_CALENDAR, DEFAULT_LITCAL_CALENDAR)
+                }
             self._schedule = _normalise_schedule(
                 schedule,
-                litcal_enabled=existing.get(CONF_LITCAL_ENABLED, DEFAULT_LITCAL_ENABLED),
                 litcal_calendar=existing.get(CONF_LITCAL_CALENDAR, DEFAULT_LITCAL_CALENDAR),
             )
             self._assets = await self._async_get_assets()
@@ -195,7 +201,6 @@ class VirtualCarillonOptionsFlow(config_entries.OptionsFlow):
         if user_input is not None:
             self._schedule["enabled"] = user_input["schedule_enabled"]
             self._schedule["litcal"] = {
-                "enabled": user_input[CONF_LITCAL_ENABLED],
                 "calendar": user_input[CONF_LITCAL_CALENDAR],
             }
             self._distance_profile = user_input[CONF_DISTANCE_PROFILE]
@@ -204,7 +209,6 @@ class VirtualCarillonOptionsFlow(config_entries.OptionsFlow):
             step_id="global",
             data_schema=vol.Schema({
                 vol.Required("schedule_enabled", default=self._schedule["enabled"]): selector.BooleanSelector(),
-                vol.Required(CONF_LITCAL_ENABLED, default=self._schedule["litcal"]["enabled"]): selector.BooleanSelector(),
                 vol.Required(CONF_LITCAL_CALENDAR, default=self._schedule["litcal"]["calendar"]): selector.SelectSelector(
                     selector.SelectSelectorConfig(options=list(LITCAL_CALENDARS))
                 ),
@@ -366,7 +370,6 @@ class VirtualCarillonOptionsFlow(config_entries.OptionsFlow):
             title="",
             data={
                 CONF_SCHEDULE: deepcopy(self._schedule),
-                CONF_LITCAL_ENABLED: self._schedule["litcal"]["enabled"],
                 CONF_LITCAL_CALENDAR: self._schedule["litcal"]["calendar"],
                 CONF_DISTANCE_PROFILE: self._distance_profile,
             },
@@ -424,17 +427,6 @@ class VirtualCarillonOptionsFlow(config_entries.OptionsFlow):
         ) as response:
             if response.status >= 300:
                 raise RuntimeError(await response.text())
-
-
-def _litcal_schema(schema: dict[Any, Any], defaults: dict[str, Any] | None = None):
-    defaults = defaults or {}
-    schema.update({
-        vol.Required(CONF_LITCAL_ENABLED, default=defaults.get(CONF_LITCAL_ENABLED, DEFAULT_LITCAL_ENABLED)): selector.BooleanSelector(),
-        vol.Required(CONF_LITCAL_CALENDAR, default=defaults.get(CONF_LITCAL_CALENDAR, DEFAULT_LITCAL_CALENDAR)): selector.SelectSelector(
-            selector.SelectSelectorConfig(options=list(LITCAL_CALENDARS))
-        ),
-    })
-    return schema
 
 
 def _westminster_schema(westminster: dict[str, Any]):
@@ -669,7 +661,7 @@ def _routine_from_input(user_input: dict[str, Any], *, routine_id: str | None = 
     }
 
 
-def _normalise_schedule(value: Any, *, litcal_enabled: bool, litcal_calendar: str):
+def _normalise_schedule(value: Any, *, litcal_calendar: str):
     if not isinstance(value, dict):
         value = {}
     westminster = value.get("westminster") if isinstance(value.get("westminster"), dict) else {}
@@ -688,7 +680,6 @@ def _normalise_schedule(value: Any, *, litcal_enabled: bool, litcal_calendar: st
         },
         "routines": normalised_routines,
         "litcal": {
-            "enabled": bool(litcal.get("enabled", litcal_enabled)),
             "calendar": litcal.get("calendar", litcal_calendar),
         },
     }
@@ -764,7 +755,7 @@ def _simple_schedule(schedule: dict[str, Any]):
     return {
         "enabled": schedule.get("enabled", False),
         "westminster": deepcopy(schedule.get("westminster", DEFAULT_SCHEDULE["westminster"])),
-        "litcal": deepcopy(schedule.get("litcal", {"enabled": True, "calendar": "general"})),
+        "litcal": {"calendar": schedule.get("litcal", {}).get("calendar", "general")},
         "routines": routines,
     }
 

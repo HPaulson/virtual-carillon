@@ -53,7 +53,7 @@ export async function discoverOutputs(): Promise<AudioOutput[]> {
       name: 'Default CoreAudio output',
       kind: 'local',
       available: true,
-      description: 'Development fallback; Linux uses PipeWire.',
+      description: 'Default macOS audio output.',
     });
   }
   return outputs;

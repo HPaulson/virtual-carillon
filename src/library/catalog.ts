@@ -13,9 +13,8 @@ export type HymnMatchLevel =
   'exact-feast' | 'saint' | 'category' | 'season' | 'general' | 'fixed' | 'none';
 
 /**
- * Broad devotional themes for an hour. These are scoring hints only: they do
- * not add a canonical-hour tag to a hymn and therefore never make it an
- * official hymn of that hour.
+ * Broad devotional themes for an hour. These are scoring hints only and do
+ * not add a canonical-hour tag to a hymn.
  */
 const CANONICAL_HOUR_THEMES: Readonly<Record<LiturgicalOfficeId, readonly string[]>> = {
   // In the reformed Roman Hours, Matins is the Office of Readings; its

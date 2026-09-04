@@ -1,70 +1,138 @@
 # HTTP API
 
-The server defaults to `http://127.0.0.1:9876`. CORS is enabled for local Home Assistant/dashboard use.
+This reference is for custom integrations and advanced local setups. Most Home Assistant users should use the integration rather than call these endpoints directly. The API can identify native outputs, but it does not configure audio drivers, Bluetooth, or particular speaker hardware.
 
-If `VIRTUAL_CARILLON_API_TOKEN` is set, every `/api/*` endpoint requires an `Authorization: Bearer <token>` header. `GET /health` remains unauthenticated for Docker and reverse-proxy health checks.
+By default, the server listens at `http://127.0.0.1:9876`. When `VIRTUAL_CARILLON_API_TOKEN` is set, every `/api/*` endpoint requires:
 
-Home Assistant is the friendly frontend and media-player adapter, not a requirement. The public API uses the product vocabulary—Westminster, assets such as Angelus, and Liturgical Hymn—while the Node service keeps its internal action graph private. HA sends due assets to selected media players; API-only clients can target native device outputs instead.
+```http
+Authorization: Bearer <token>
+```
 
-## Health and devices
+`GET /health` is the exception: it is always unauthenticated for container health checks. If no API token is configured, `/api/*` endpoints are also unauthenticated; do not use that arrangement on a networked deployment.
 
-- `GET /health` returns `{ ok, service, platform, arch, node }`.
-- `GET /api/status` returns the default distance profile, outputs, Bluetooth diagnostics, and recent events.
-- `GET /api/devices` returns outputs and Bluetooth diagnostics without event history.
+## Status and output devices
+
+| Endpoint           | Response                                                                                          |
+| ------------------ | ------------------------------------------------------------------------------------------------- |
+| `GET /health`      | Service, platform, architecture, Node.js version, and `ok: true`.                                 |
+| `GET /api/status`  | Default distance profile, discovered outputs, Bluetooth diagnostics, and up to ten recent events. |
+| `GET /api/devices` | Discovered outputs and Bluetooth diagnostics, without event history.                              |
+
+An output ID or name returned by `/api/devices` may be used as `output` in a direct playback request or in an API-managed schedule.
 
 ## Assets and audio
 
-- `GET /api/assets` returns built-in and imported assets with type, tags, and, where supplied, `liturgicalTags` metadata.
-- `GET /api/assets/:asset/audio` renders/caches and returns a WAV file.
-- `POST /api/assets/import` registers a local recording. JSON requires `name` and `sourcePath`; optional fields include `id`, `type`, `tags`, `liturgicalSeasons`, `feastTypes`, and a stable-ID `liturgicalTags` object.
-- `DELETE /api/assets/:asset` removes a user asset; bundled assets cannot be removed.
+| Endpoint                       | Response or action                                                                               |
+| ------------------------------ | ------------------------------------------------------------------------------------------------ |
+| `GET /api/assets`              | Lists bundled and imported assets.                                                               |
+| `GET /api/assets/:asset/audio` | Renders, caches, and returns the named asset as audio. HTTP byte ranges are supported.           |
+| `POST /api/assets/import`      | Copies a local recording into the engine’s data directory and adds it to the persistent library. |
+| `DELETE /api/assets/:asset`    | Removes an imported asset and its copied file. Bundled assets cannot be removed.                 |
+
+`GET /api/assets/:asset/audio` accepts one optional query parameter:
+
+| Parameter  | Values                                                            | Default                              |
+| ---------- | ----------------------------------------------------------------- | ------------------------------------ |
+| `distance` | `near`, `church-grounds`, `quarter-mile`, `half-mile`, `one-mile` | Engine default, normally `half-mile` |
+
+The audio endpoint does not accept `custom` distance settings.
+
+### Import a recording
+
+The request body must include `name` and `sourcePath`. `sourcePath` is a path on the machine or container where the engine runs, not on the client making the request. The engine copies the source file into its data directory.
+
+```json
+{
+  "name": "Custom Angelus",
+  "sourcePath": "/srv/audio/custom-angelus.wav",
+  "id": "custom-angelus",
+  "type": "recording",
+  "tags": ["Angelus"],
+  "liturgicalTags": {
+    "categories": ["marian"],
+    "seasons": ["easter"]
+  }
+}
+```
+
+`id` is optional; if omitted, the file name becomes the asset ID after normalization. `type` is `recording` or `hymn` and defaults to `recording`. Optional `tags`, `liturgicalSeasons`, `feastTypes`, and `liturgicalTags` are stored with the asset. The supported source extensions are `.wav`, `.flac`, `.mp3`, `.ogg`, `.m4a`, and `.aac`.
+
+Import only recordings that you have the right to copy and use. The engine does not transcode or publish them.
 
 ## LitCal and hymn selection
 
-- `GET /api/liturgical/:date?calendar=general` returns the normalized LitCal day for `general`, `US`, `IT`, `NL`, `VA`, or `CA`.
-- `GET /api/liturgical/:date/hymn?calendar=general` returns the day and automatic selection.
-- `GET /api/hymns` lists hymns and their complete `liturgicalTags`. Filter with `feastIds`, `categoryIds`, `seasonIds`, `officeIds`, or `canonicalHours`. `canonicalHours` is an explicit filter; schedule clock times do not implicitly become Liturgy-of-the-Hours labels.
-- `GET /api/hymns/:hymn` returns one hymn's metadata.
-- `POST /api/hymns/select` accepts `date`, `useLitCal`, `calendar`, `seasons`, `rank`, `feastIds`, `categoryIds`, `offices`, `canonicalHours`, `strategy` (`random`, `sequential`, or `fixed`), `fixedAssetId`, `seed`, and `recentExclusion`.
-- `POST /api/hymns/reset-day` accepts `{ "date": "YYYY-MM-DD" }` (optional; defaults to the server's local liturgical date) and clears that date's completed-hymn history. This is useful for testing or replaying a day's schedule.
+| Endpoint                                          | Response or action                                                                |
+| ------------------------------------------------- | --------------------------------------------------------------------------------- |
+| `GET /api/liturgical/:date?calendar=general`      | Returns the normalized LitCal day for `general`, `US`, `IT`, `NL`, `VA`, or `CA`. |
+| `GET /api/liturgical/:date/hymn?calendar=general` | Returns the day and an automatic hymn selection.                                  |
+| `GET /api/hymns`                                  | Lists hymn metadata.                                                              |
+| `GET /api/hymns/:hymn`                            | Returns metadata for one hymn.                                                    |
+| `POST /api/hymns/select`                          | Selects a hymn for a date and optional conditions. It does not start playback.    |
+| `POST /api/hymns/reset-day`                       | Clears the completed-hymn history for one local date.                             |
 
-Season, rank, and feast fields are LitCal conditions. If LitCal is unavailable, selection uses a neutral general day so automatic mode still chooses the best available hymn. Automatic selection scores feast, saint/category, season, and canonical-hour matches; a requested canonical hour also gives a smaller thematic boost to suitable categories (for example, praise at Lauds and thanksgiving at Vespers) without assigning the hymn to that hour. Hymns already played on the same local schedule date are strongly penalized. Seeded random selection is reproducible; unseeded random selection randomizes equal-score ties.
+`GET /api/hymns` accepts comma-separated or repeated `feastIds`, `categoryIds`, `seasonIds`, `officeIds`, and `canonicalHours` query parameters. These are all filters on the returned list. For example:
 
-### Canonical-hour thematic scoring
+```text
+/api/hymns?categoryIds=marian&seasonIds=easter
+```
 
-The thematic boost uses one primary theme per hour. These are selection heuristics derived from the Roman General Instruction; they are not official canonical-hour designations and never add an hour tag to a hymn.
+### `POST /api/hymns/select`
 
-| Hour                        | Primary theme   | Basis                                                                                                                                                     |
-| --------------------------- | --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Matins / Office of Readings | `contemplative` | Extended meditation on Scripture and spiritual writers (GILH 55–57).                                                                                      |
-| Lauds                       | `praise`        | Morning prayer recalls the Resurrection, and its psalmody traditionally includes a psalm of praise (GILH 38, 43).                                         |
-| Daytime Prayer              | `passion`       | Terce, Sext, and None commemorate the Lord’s Passion and the first preaching of the Gospel (GILH 74–75).                                                  |
-| Vespers                     | `thanksgiving`  | Evening Prayer gives thanks for the day and its evening sacrifice (GILH 39). Praise remains part of Vespers’ character but is not a second scoring theme. |
-| Compline                    | `confidence`    | Its psalmody is selected to evoke confidence in God (GILH 84, 88).                                                                                        |
+The request body accepts these fields:
 
-Metadata additions are intentionally sparse: `Exsultet Caelum Laudibus` is tagged `praise` from its praise-focused office hymn text; `O God Beyond All Praising` is tagged `thanksgiving`, consistent with its documented “Praise and Thanksgiving” subject classification; and `Te lucis ante terminum` is tagged `confidence` because its Compline text entrusts the night to God’s guarding care. Existing feast and explicit canonical-hour metadata remains higher priority.
+| Field             | Default             | Meaning                                                                                                                                                                            |
+| ----------------- | ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `date`            | Server’s local date | Date to evaluate in `YYYY-MM-DD` form.                                                                                                                                             |
+| `useLitCal`       | `true`              | Uses LitCal for the selected date. Set `false` only for a direct API request that deliberately needs a neutral general context; the Home Assistant integration always uses LitCal. |
+| `calendar`        | `general`           | LitCal calendar: `general`, `US`, `IT`, `NL`, `VA`, or `CA`.                                                                                                                       |
+| `seasons`         | —                   | Requires the evaluated day to match one of these seasons and restricts candidates to them.                                                                                         |
+| `rank`            | —                   | Requires the evaluated day to have this rank. Common IDs include `solemnity`, `feast`, and `memorial`.                                                                             |
+| `feastIds`        | —                   | Requires the evaluated day to match one of these feast IDs and restricts candidates to them.                                                                                       |
+| `categoryIds`     | —                   | Restricts candidates to these hymn categories. It does not require the calendar day to share the category.                                                                         |
+| `offices`         | —                   | Restricts candidates to their Office metadata.                                                                                                                                     |
+| `canonicalHours`  | —                   | Prefers the listed Liturgy of the Hours contexts while selecting. It is not a hard candidate filter in this endpoint.                                                              |
+| `strategy`        | `random`            | `fixed`, `random`, or `sequential`; see below.                                                                                                                                     |
+| `fixedAssetId`    | —                   | Exact hymn ID for `fixed` selection. When present, it bypasses automatic scoring if the hymn is otherwise eligible.                                                                |
+| `seed`            | —                   | Gives reproducible random selection for the same date and request where a random choice is made.                                                                                   |
+| `recentExclusion` | —                   | Number of recent unseeded selections to avoid for non-automatic selection. `0` permits an immediate repeat.                                                                        |
 
-Sources: [General Instruction of the Liturgy of the Hours](https://www.liturgyoffice.org.uk/Resources//Rites/GILH.pdf), [Vatican II, _Sacrosanctum Concilium_ §§89–90](https://www.vatican.va/content/vatican/en/archives/councils/ii_vatican_council/documents/vat-ii_const_19631204_sacrosanctum-concilium.html), [Divinum Officium: _Te lucis ante terminum_](https://www.divinumofficium.com/cgi-bin/horas/Pofficium.pl?command=prayCompletorium&date1=1-21-2026&lang2=Latin-gabc&version=Rubrics+1960+-+2020+USA&votive=C7b), and [Hymnary: _O God beyond all praising_](https://www.hymnary.org/text/o_god_beyond_all_praising_we_worship_you).
+When the request has no explicit feast, category, or season filter, the engine performs automatic scoring. A direct feast match is strongest, followed by a saint match, category match, and season match. A requested canonical hour can favor explicit hour tags, related themes, and Office metadata. A hymn outside a concrete current season is penalized, and hymns already completed on that local date are strongly avoided when a suitable unused hymn exists.
 
-### Liturgical metadata contract
+When a request explicitly selects a feast, category, or season, the engine first finds the strongest matching tier and then applies the strategy to its candidates. `random` chooses from the available candidates; `sequential` cycles through them while the engine process is running; `fixed` uses `fixedAssetId` (or the first candidate if no fixed ID is supplied). A seeded random choice is stable for the same date, seed, and request.
 
-The `liturgical` object on a built-in hymn is intentionally closed and compile-time checked. Its fields accept only the finite taxonomy exported from `src/liturgical/taxonomy.ts`: `categories` use `LiturgicalCategoryId`, `seasons` use the known season IDs or their existing display names, `offices` use the five supported office IDs or display names, and `feasts`/`solemnities` use `LiturgicalFeastId`. Do not add free-form strings; add a value to the central taxonomy first, with a label and the corresponding matching logic where needed. Saint identities remain dynamic because LitCal does not expose a finite project-wide saint-ID taxonomy.
+```json
+{
+  "date": "2026-08-15",
+  "useLitCal": true,
+  "calendar": "general",
+  "strategy": "random",
+  "canonicalHours": ["vespers"]
+}
+```
+
+`POST /api/hymns/reset-day` accepts an optional date:
+
+```json
+{ "date": "2026-08-15" }
+```
+
+Omit `date` to clear the server’s current local date. This is useful for testing a schedule again; it deliberately removes that day’s completed-hymn history.
 
 ## Schedules
 
-- `GET /api/schedule` returns the simple persisted configuration and its `updatedAt` value. `/api/schedule/simple` is an equivalent explicit alias.
-- `PUT /api/schedule` stores the simple configuration below. `/api/schedule/simple` is an equivalent explicit alias. The server also accepts the older internal action format for migration, but new clients should use this public form:
+The public schedule format is returned by `GET /api/schedule` and accepted by `PUT /api/schedule`. `GET` and `PUT /api/schedule/simple` are equivalent aliases. The engine persists the schedule in SQLite.
 
 ```json
 {
   "enabled": true,
   "westminster": {
     "enabled": true,
-    "cadence": "every_15",
+    "cadence": "hourly",
     "weekdays": ["sun", "mon", "tue", "wed", "thu", "fri", "sat"],
-    "notBefore": "07:00",
-    "notAfter": "22:00",
-    "mediaPlayers": [],
+    "notBefore": "08:00",
+    "notAfter": "20:00",
+    "volume": 25,
+    "mediaPlayers": ["media_player.kitchen"],
     "outputs": []
   },
   "routines": [
@@ -75,50 +143,74 @@ The `liturgical` object on a built-in hymn is intentionally closed and compile-t
       "type": "asset",
       "asset": "angelus",
       "times": ["12:00", "18:00"],
-      "weekdays": ["mon", "wed"],
-      "volume": 100,
-      "mediaPlayers": [],
+      "weekdays": ["sun", "mon", "tue", "wed", "thu", "fri", "sat"],
+      "mediaPlayers": ["media_player.kitchen"],
       "outputs": []
     },
     {
-      "id": "seasonal-hymn",
-      "name": "Seasonal hymn",
+      "id": "evening-hymn",
+      "name": "Evening hymn",
       "enabled": true,
       "type": "liturgical_hymn",
-      "times": ["15:00"],
+      "canonicalHour": "vespers",
+      "times": ["19:30"],
       "weekdays": ["sun", "mon", "tue", "wed", "thu", "fri", "sat"],
-      "notBefore": "09:00",
-      "notAfter": "21:00",
-      "mediaPlayers": [],
+      "mediaPlayers": ["media_player.kitchen"],
       "outputs": []
     }
   ],
-  "litcal": { "enabled": true, "calendar": "general" }
+  "litcal": { "calendar": "general" }
 }
 ```
 
-`westminster.cadence` is `every_15`, `every_30`, or `hourly`; the server chooses the correct quarter asset and actual 1–12 hour-strike asset. An optional `westminster.volume` sets the Westminster Home Assistant media-player volume percentage from 0 to 100; when omitted, the current player volume is left unchanged. A routine's `type` is `asset`, `liturgical_hymn`, or `hymn_category`; use `asset: "angelus"` for the Angelus. A `hymn_category` routine may include `categoryIds` and optionally `canonicalHour` to choose a hymn from that collection. `times` accepts any number of exact `HH:MM` values. An optional `volume` sets the routine's Home Assistant media-player volume percentage from 0 to 100; when omitted, the current player volume is left unchanged. `weekdays`, `notBefore`, and `notAfter` apply to every listed time, including overnight windows such as 22:00–06:00. A Liturgical Hymn can optionally include `canonicalHour` when the selection should prefer a particular Office hour. `mediaPlayers` are Home Assistant entity IDs; `outputs` are native device IDs or names from `/api/devices`.
+### Global and Westminster fields
 
-- `POST /api/schedule/claim` accepts `{ "at": "<ISO timestamp>" }`, evaluates all routines due at that local date/time, and atomically claims the resulting playback sequence for the current schedule revision.
-- `POST /api/schedule/complete` accepts `{ "slotKey": "...", "status": "completed|failed" }` so the HA runner can record the result.
-- `POST /api/schedule/run` accepts `{ "at": "<ISO timestamp>", "output": "optional native output id or name" }`, evaluates the same schedule, and immediately renders/plays due events through native device output. If `output` is omitted, each routine's `outputs` are used; with no native targets, the platform default is used. This is also the API-only smoke-test/trigger path and does not require Home Assistant.
+- `enabled` is the master schedule switch. When `false`, no Westminster or routine playback is due.
+- `litcal.calendar` is the LitCal calendar used by every `liturgical_hymn` routine: `general`, `US`, `IT`, `NL`, `VA`, or `CA`. Automatic routines always evaluate the date through LitCal.
+- `westminster.enabled` controls Westminster independently of the master switch.
+- `westminster.cadence` is `every_15`, `every_30`, or `hourly`. The hourly chime is always included; the cadence controls the additional quarter chimes.
+- `westminster.weekdays` is a non-empty list of `sun`, `mon`, `tue`, `wed`, `thu`, `fri`, and `sat`.
+- `notBefore` and `notAfter` are optional inclusive `HH:MM` bounds. If the range crosses midnight, the early-morning part belongs to the preceding configured day. For example, a Monday `22:00`–`06:00` window includes Tuesday at `05:00`.
+- `volume` is optional and must be 0–100. In a Home Assistant run, it sets player volume before playback and does not restore it afterward.
 
-The default schedule is disabled with no routines. No household-specific Westminster, Angelus, or hymn timetable is built into the default configuration. When native targets are configured—or when a routine has neither HA nor native targets—the running server checks the schedule every five seconds and plays due events itself. HA-targeted routines use `/api/schedule/claim` and the integration's media-player handoff.
+### Routine fields
 
-## Native playback
+Every routine needs `id`, `name`, `enabled`, a non-empty `times` array of `HH:MM` strings, and a non-empty `weekdays` array. Its `type` is one of:
 
-The HA path uses Home Assistant's media source and `media_player.play_media`; Home Assistant chooses and controls the speakers. The direct endpoints remain available for CLI and native host-output experiments.
+| Type              | Required field | Behavior                                                                |
+| ----------------- | -------------- | ----------------------------------------------------------------------- |
+| `asset`           | `asset`        | Plays one exact asset. Use `asset: "angelus"` for the Angelus.          |
+| `hymn_category`   | `categoryIds`  | Selects a hymn from the listed categories. `canonicalHour` is optional. |
+| `liturgical_hymn` | —              | Uses the current LitCal context. `canonicalHour` is optional.           |
 
-`POST /api/play`
+`mediaPlayers` contains Home Assistant entity IDs. `outputs` contains native output IDs or names returned by `/api/devices`. A Home Assistant runner handles routines with `mediaPlayers`; the engine’s native timer handles routines with `outputs`, or routines with neither target list by using the platform default output. If you provide both, both delivery paths can play the same due event.
+
+The Home Assistant configuration form writes this public format. The server also reads an older internal action format for migration, but new clients should not use it.
+
+### Running a schedule
+
+| Endpoint                      | Purpose                                                                                                                                        |
+| ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `POST /api/schedule/claim`    | Used by Home Assistant. Submit `{ "at": "<ISO timestamp>" }` to claim the due Home Assistant-targeted actions once for that schedule revision. |
+| `POST /api/schedule/complete` | Used by Home Assistant after delivery. Submit `{ "slotKey": "...", "status": "completed" }` or `"failed"`, with optional `message`.            |
+| `POST /api/schedule/run`      | Evaluates due native-output actions immediately. Accepts optional ISO `at` and optional `output` ID or name.                                   |
+
+The running server evaluates native-output schedules every five seconds. A request to `/api/schedule/run` with no `output` uses the routine’s `outputs`; when those are empty it uses the platform default output. The normal Home Assistant path should use the integration, not `claim` and `complete` by hand.
+
+## Direct playback
+
+`POST /api/play` renders an asset and starts native local playback:
 
 ```json
-{ "asset": "test-bell", "output": "optional output id or name", "distance": "half-mile" }
+{
+  "asset": "test-bell",
+  "output": "optional output ID or name",
+  "distance": "half-mile"
+}
 ```
 
-`distance` accepts `near`, `church-grounds`, `quarter-mile`, `half-mile`, `one-mile`, or `custom`. A custom request may include partial `customDistance` settings such as `highCutHz`, `gain`, `attackGain`, `reflectionMix`, `reflectionDelays`, `reflectionGains`, and `stereoSpread`.
+`distance` is one of `near`, `church-grounds`, `quarter-mile`, `half-mile`, `one-mile`, or `custom`. For `custom`, add `customDistance` with any of `gain`, `highCutHz`, `attackGain`, `reflectionMix`, `reflectionDelays`, `reflectionGains`, or `stereoSpread`.
 
-`GET /api/assets/:asset/audio?distance=<profile>` accepts the same non-custom profiles and renders the asset using that profile. Without the query parameter, rendering defaults to `half-mile`.
+On success, the endpoint returns `{ ok, filePath, command }`. Invalid request bodies return `400`; unknown assets or unavailable native playback return `503` and are recorded in the event history.
 
-Returns `{ ok, filePath, command }` on success. Invalid request bodies return `400`; unknown assets or unavailable playback return `503` and are recorded in the event table.
-
-`POST /api/stop` stops tracked active playback and returns `{ ok: true }`.
+`POST /api/stop` stops active direct playback and returns `{ "ok": true }`.
