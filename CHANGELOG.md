@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.0-beta.4
+
+- Fixed README branding for published repository and HACS package views.
+- Avoided duplicate CI runs after changes land on `main`.
+
 ## 0.1.0-beta.2
 
 Follow-up beta release containing the polish and cleanup that missed the initial beta.

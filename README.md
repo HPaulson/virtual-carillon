@@ -1,7 +1,7 @@
 # Virtual Carillon
 
 <p align="center">
-  <img src="custom_components/virtual_carillon/brand/logo@2x.png" alt="Virtual Carillon" width="480">
+  <img src="https://raw.githubusercontent.com/HPaulson/virtual-carillon/main/custom_components/virtual_carillon/brand/logo@2x.png" alt="Virtual Carillon" width="480">
 </p>
 
 Virtual Carillon turns your speakers into a programmable Church carillon.
