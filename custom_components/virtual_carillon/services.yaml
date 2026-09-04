@@ -1,0 +1,88 @@
+play:
+  name: Play an asset
+  description: Render one named Virtual Carillon asset and play it through the selected Home Assistant media players.
+  target:
+    entity:
+      domain: media_player
+  fields:
+    asset:
+      required: true
+      example: test-bell
+      selector: { text: {} }
+
+stop:
+  name: Stop playback
+  description: Stop the selected Home Assistant media players.
+  target:
+    entity:
+      domain: media_player
+
+select_hymn:
+  name: Select and play a hymn
+  description: Select a hymn using the configured LitCal calendar and any supplied conditions, then play it through the selected media players.
+  target:
+    entity:
+      domain: media_player
+  fields:
+    strategy:
+      required: false
+      example: random
+      description: Fixed uses fixed_asset_id when supplied; random chooses a matching hymn; sequential cycles through matching hymns while the engine is running.
+      selector:
+        select:
+          options: [fixed, random, sequential]
+    fixed_asset_id:
+      required: false
+      description: Exact hymn asset ID for fixed selection, for example salve-regina.
+      selector: { text: {} }
+    category_ids:
+      required: false
+      description: Restrict selection to these hymn category IDs, such as marian or eucharistic.
+      selector:
+        text:
+          multiple: true
+    feast_ids:
+      required: false
+      description: Play only when the evaluated LitCal day matches one of these feast IDs, then restrict selection to those feast tags.
+      selector:
+        text:
+          multiple: true
+    offices:
+      required: false
+      description: 'Restrict selection to hymns tagged for these Office IDs: matins, lauds, daytime, vespers, or compline.'
+      selector:
+        text:
+          multiple: true
+    seasons:
+      required: false
+      description: Play only in these liturgical seasons, then restrict selection to those season tags.
+      selector:
+        text:
+          multiple: true
+    rank:
+      required: false
+      description: Play only when the LitCal day has this rank, such as solemnity, feast, or memorial.
+      example: solemnity
+      selector: { text: {} }
+    canonical_hours:
+      required: false
+      description: Prefer these Liturgy of the Hours contexts while selecting. This is not a clock-time trigger.
+      selector:
+        text:
+          multiple: true
+    seed:
+      required: false
+      description: Make a random candidate choice reproducible for the same date and request.
+      selector: { text: {} }
+    recent_exclusion:
+      required: false
+      description: For unseeded non-automatic selection, avoid this many recent selections when enough hymns are available. Set 0 to allow immediate repeats.
+      selector:
+        number:
+          min: 0
+          max: 100
+          mode: box
+    date:
+      required: false
+      description: Liturgical date in YYYY-MM-DD form to evaluate instead of today.
+      selector: { date: {} }

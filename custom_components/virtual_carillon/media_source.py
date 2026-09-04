@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from datetime import date
+import logging
 from urllib.parse import quote, unquote
 
 from aiohttp import web
@@ -15,8 +17,9 @@ from homeassistant.components.media_source import (
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
-from .const import DOMAIN
+from .const import AUTOMATIC_HYMN_ASSET, DOMAIN
 
+_LOGGER = logging.getLogger(__name__)
 AUDIO_URL = "/api/virtual_carillon/audio/{asset}"
 
 
@@ -67,6 +70,7 @@ class VirtualCarillonAudioView(HomeAssistantView):
                 async for chunk in upstream.content.iter_chunked(64 * 1024):
                     await response.write(chunk)
                 await response.write_eof()
+                _LOGGER.info("Virtual Carillon playing asset=%s through Home Assistant", asset)
                 return response
         except Exception as err:
             return web.Response(status=502, text=f"Unable to fetch rendered audio: {err}")
@@ -98,12 +102,24 @@ class VirtualCarillonMediaSource(MediaSource):
                 can_expand=True,
                 children=[
                     self._directory("assets", "All assets"),
+                    self._asset_item(self._automatic_asset()),
+                    self._directory("assets/bell", "Bells"),
+                    self._directory("assets/sequence", "Sequences"),
                     self._directory("hymns", "Hymns"),
                 ],
             )
 
         if identifier == "assets":
             assets = (coordinator.data or {}).get("assets", [])
+        elif identifier.startswith("assets/"):
+            asset_type = identifier.removeprefix("assets/")
+            if asset_type not in {"bell", "sequence"}:
+                raise BrowseError(f"Unknown Virtual Carillon media path: {identifier}")
+            assets = [
+                asset
+                for asset in (coordinator.data or {}).get("assets", [])
+                if isinstance(asset, dict) and asset.get("type") == asset_type
+            ]
         elif identifier == "hymns":
             return self._hymn_root((coordinator.data or {}).get("hymns", []))
         elif identifier == "hymns/all":
@@ -183,6 +199,8 @@ class VirtualCarillonMediaSource(MediaSource):
             raise Unresolvable("Unknown Virtual Carillon media item")
 
         asset_id = unquote(identifier.removeprefix("asset/"))
+        if asset_id == AUTOMATIC_HYMN_ASSET:
+            asset_id = await self._select_automatic_hymn(coordinator)
         assets = [
             *(coordinator.data or {}).get("assets", []),
             *(coordinator.data or {}).get("hymns", []),
@@ -191,6 +209,44 @@ class VirtualCarillonMediaSource(MediaSource):
             raise Unresolvable(f"Unknown Virtual Carillon asset: {asset_id}")
 
         return PlayMedia(AUDIO_URL.format(asset=quote(asset_id, safe="")), "audio/wav")
+
+    async def _select_automatic_hymn(self, coordinator) -> str:
+        """Resolve the virtual item at playback time using today's LitCal context."""
+        try:
+            async with async_get_clientsession(self.hass).post(
+                f"{coordinator.url}/api/hymns/select",
+                headers={**coordinator.headers, "Content-Type": "application/json"},
+                json={
+                    "strategy": "random",
+                    "useLitCal": True,
+                    "calendar": coordinator.litcal_calendar,
+                    "date": date.today().isoformat(),
+                    "reserve": True,
+                },
+                timeout=10,
+            ) as response:
+                if response.status >= 300:
+                    detail = await response.text()
+                    raise Unresolvable(
+                        f"Automatic hymn selection failed (HTTP {response.status}): {detail or 'no detail returned'}"
+                    )
+                result = await response.json()
+        except Unresolvable:
+            raise
+        except Exception as err:
+            raise Unresolvable(f"Unable to select the automatic hymn: {err}") from err
+
+        asset_id = ((result.get("selection") or {}).get("asset") or {}).get("id")
+        if not asset_id:
+            raise Unresolvable("No automatic hymn is available for today")
+        selection = result.get("selection") or {}
+        _LOGGER.info(
+            "Virtual Carillon selected automatic hymn=%s matched_by=%s date=%s",
+            asset_id,
+            selection.get("matchedBy", "unknown"),
+            (result.get("day") or {}).get("date", date.today().isoformat()),
+        )
+        return str(asset_id)
 
     @staticmethod
     def _directory(
@@ -222,6 +278,10 @@ class VirtualCarillonMediaSource(MediaSource):
             can_play=True,
             can_expand=False,
         )
+
+    @staticmethod
+    def _automatic_asset() -> dict:
+        return {"id": AUTOMATIC_HYMN_ASSET, "name": "Automatic hymn", "type": "hymn"}
 
 
 async def async_get_media_source(hass: HomeAssistant) -> VirtualCarillonMediaSource:

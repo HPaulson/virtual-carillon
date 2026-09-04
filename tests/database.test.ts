@@ -91,4 +91,20 @@ describe('carillon database schedule state', () => {
     database.close();
     await rm(directory, { recursive: true, force: true });
   });
+
+  it('includes an automatic selection reservation before audio is fetched', async () => {
+    const directory = await mkdtemp(path.join(tmpdir(), 'virtual-carillon-db-'));
+    const database = new CarillonDatabase(path.join(directory, 'carillon.sqlite'));
+
+    database.addEvent({
+      asset: 'reserved-automatic-hymn',
+      status: 'started',
+      createdAt: '2026-08-24T23:30:00.000Z',
+    });
+
+    expect(database.completedScheduleAssets('2026-08-24')).toContain('reserved-automatic-hymn');
+
+    database.close();
+    await rm(directory, { recursive: true, force: true });
+  });
 });

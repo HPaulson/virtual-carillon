@@ -2,6 +2,14 @@ import { describe, expect, it } from 'vitest';
 import { normalizeSchedule, toSimpleSchedule } from '../src/scheduling/schedule.js';
 
 describe('category hymn schedules', () => {
+  it('drops the retired schedule flag while preserving the calendar', () => {
+    const config = normalizeSchedule({
+      litcal: { enabled: false, calendar: 'US' },
+    });
+
+    expect(config.litcal).toEqual({ calendar: 'US' });
+  });
+
   it('round-trips a category collection with an optional canonical hour', () => {
     const config = normalizeSchedule({
       enabled: true,
@@ -26,7 +34,7 @@ describe('category hymn schedules', () => {
           outputs: [],
         },
       ],
-      litcal: { enabled: true, calendar: 'general' },
+      litcal: { calendar: 'general' },
     });
 
     expect(toSimpleSchedule(config).routines[0]).toMatchObject({

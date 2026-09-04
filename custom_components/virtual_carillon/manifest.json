@@ -1,0 +1,11 @@
+{
+  "domain": "virtual_carillon",
+  "name": "Virtual Carillon",
+  "version": "0.1.0-beta.1",
+  "documentation": "https://github.com/HPaulson/virtual-carillon",
+  "issue_tracker": "https://github.com/HPaulson/virtual-carillon/issues",
+  "codeowners": [],
+  "config_flow": true,
+  "iot_class": "local_push",
+  "requirements": []
+}

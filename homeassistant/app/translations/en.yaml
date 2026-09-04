@@ -1,0 +1,18 @@
+configuration:
+  api_token:
+    name: API token
+    description: A long, private token shared with the Virtual Carillon integration. Set one before using the app on a network.
+  distance_profile:
+    name: Distance profile
+    description: Changes the generated audio from close and clear to more distant, quieter, and less bright.
+  sample_rate:
+    name: Sample rate
+    description: Generated WAV sample rate. Choose 44100 or 48000 Hz.
+  litcal_url:
+    name: LitCal API URL
+    description: Liturgical Calendar API endpoint. Change this only for a compatible LitCal service.
+  litcal_calendar:
+    name: LitCal calendar
+    description: Default calendar for direct engine requests. Home Assistant schedules store their own calendar setting.
+network:
+  9876/tcp: Virtual Carillon API

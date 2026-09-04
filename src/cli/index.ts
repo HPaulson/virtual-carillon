@@ -13,6 +13,7 @@ import { arrangeForCarillon } from '../melodies/arranger.js';
 import { scoreFromMelody } from '../melodies/types.js';
 import { wavDurationFromFile } from '../audio/wav.js';
 import { cycleHymns } from './hymn-cycle.js';
+import { formatHymnOrderEntry, previewHymnOrder } from './hymn-order.js';
 import {
   DEFAULT_SCHEDULE_CONFIG,
   normalizeSchedule,
@@ -22,7 +23,11 @@ import {
 const config = loadConfig();
 const displayConfig = { ...config, apiToken: config.apiToken ? '[configured]' : undefined };
 const database = new CarillonDatabase(defaultDatabasePath(config));
-const engine = new AudioEngine(path.join(config.dataDir, 'cache'), config.sampleRate);
+const engine = new AudioEngine(
+  path.join(config.dataDir, 'cache'),
+  config.sampleRate,
+  config.distanceProfile,
+);
 const library = new AssetLibrary(
   engine,
   path.join(config.dataDir, 'cache'),
@@ -31,13 +36,15 @@ const library = new AssetLibrary(
 const hymnCatalog = new HymnCatalog(library);
 const liturgicalCalendar = new LiturgicalCalendarClient({
   cacheDir: path.join(config.dataDir, 'litcal'),
+  baseUrl: config.litcalUrl,
+  defaultCalendar: config.litcalCalendar,
 });
 
 const program = new Command();
 program
   .name('virtual-carillon')
-  .description('Virtual Carillon church bell engine')
-  .version('0.1.0');
+  .description('Bells, traditional signals, and Catholic hymn arrangements')
+  .version('1.0.0');
 program
   .command('status')
   .description('Show engine, audio, and Bluetooth status')
@@ -97,7 +104,7 @@ program
   });
 program
   .command('test')
-  .description('Render representative bells, clock signals, Angelus, chant, and hymns')
+  .description('Render a representative sample of bells, signals, chant, and hymns')
   .action(async () => {
     for (const asset of [
       'test-bell',
@@ -171,6 +178,38 @@ program
         process.off('SIGINT', stop);
         process.off('SIGTERM', stop);
       }
+    }
+  });
+program
+  .command('hymn-order')
+  .aliases(['preview-hymns', 'hymns-order'])
+  .description('Show the automatic hymn order and scoring without playing anything')
+  .option('-d, --date <date>', 'local calendar date (YYYY-MM-DD)', localDateString())
+  .option('-n, --count <number>', 'number of hymns to show')
+  .option('--calendar <calendar>', 'general, US, IT, NL, VA, or CA', 'general')
+  .action(async (options) => {
+    try {
+      const count =
+        options.count === undefined ? undefined : parsePositiveInteger(options.count, '--count');
+      const date = parseDate(options.date);
+      const entries = await previewHymnOrder(
+        hymnCatalog,
+        (requestedDate, calendar) => liturgicalCalendar.getDay(requestedDate, calendar),
+        {
+          date,
+          calendar: options.calendar,
+          count,
+          alreadyPlayed: database.completedScheduleAssets?.(date) ?? [],
+        },
+      );
+      if (!entries.length) {
+        console.log(`No hymns are available for ${date}.`);
+        return;
+      }
+      for (const entry of entries) console.log(formatHymnOrderEntry(entry));
+    } catch (error) {
+      console.error(error instanceof Error ? error.message : error);
+      process.exitCode = 1;
     }
   });
 program
@@ -250,7 +289,7 @@ program
   });
 program
   .command('server')
-  .description('Run the Home Assistant API server')
+  .description('Run the Virtual Carillon API server')
   .option('-p, --port <port>', 'port')
   .action(async (options) => {
     const app = await createServer({
@@ -313,4 +352,20 @@ function parseNonNegativeNumber(value: string | undefined, option: string): numb
   if (!Number.isFinite(parsed) || parsed < 0)
     throw new Error(`${option} must be a non-negative number of seconds.`);
   return parsed;
+}
+
+function localDateString(date = new Date()): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function parseDate(value: string): string {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) throw new Error('--date must be YYYY-MM-DD.');
+  const date = new Date(`${value}T00:00:00`);
+  if (Number.isNaN(date.getTime()) || localDateString(date) !== value) {
+    throw new Error('--date must be a valid calendar date.');
+  }
+  return value;
 }

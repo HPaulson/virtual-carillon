@@ -77,6 +77,9 @@ const HymnSelectSchema = LiturgicalSelectionSchema.extend({
     .optional(),
   useLitCal: z.boolean().optional(),
   calendar: z.enum(['general', 'US', 'IT', 'NL', 'VA', 'CA']).optional(),
+  // Home Assistant's media-source resolver can reserve the selected hymn
+  // before it requests the audio.
+  reserve: z.boolean().optional(),
 });
 const ScheduleClaimSchema = z.object({ at: z.string().min(1) });
 const ScheduleCompleteSchema = z.object({
@@ -95,6 +98,12 @@ const HymnDaySchema = z.object({
     .optional(),
 });
 type ScheduleRunner = 'home_assistant' | 'native';
+type ScheduleDiagnostic = { level: 'warning' | 'error'; message: string };
+type ResolvedScheduleAsset = {
+  asset?: string;
+  selectionAudit?: string;
+  diagnostics: ScheduleDiagnostic[];
+};
 const ImportSchema = z.object({
   name: z.string().min(1),
   sourcePath: z.string().min(1),
@@ -103,7 +112,7 @@ const ImportSchema = z.object({
   tags: z.array(z.string()).optional(),
   liturgicalSeasons: z.array(z.string()).optional(),
   feastTypes: z.array(z.string()).optional(),
-  liturgicalTags: z.record(z.array(z.string())).optional(),
+  liturgicalTags: z.record(z.string(), z.array(z.string())).optional(),
 });
 
 export interface ServerServices {
@@ -178,18 +187,25 @@ export async function createServer(services: ServerServices): Promise<FastifyIns
     try {
       const stored = currentStoredSchedule(services);
       const time = localScheduleTime(parsed.data.at);
-      const actions = await scheduledPlaybacks(
+      const result = await scheduledPlaybacks(
         time,
         stored.config,
         services,
         hymnCatalog,
         'home_assistant',
       );
-      if (!actions.length) return { due: false, actions: [] };
+      if (!result.actions.length)
+        return { due: false, actions: [], diagnostics: result.diagnostics };
       const slotKey = scheduleSlotKey(time, stored.updatedAt, 'home_assistant');
-      const claimed = services.database.claimScheduleRun(slotKey, JSON.stringify(actions));
-      if (claimed) logSelectionAudits(actions);
-      return { due: true, claimed, slotKey, actions: claimed ? actions : [] };
+      const claimed = services.database.claimScheduleRun(slotKey, JSON.stringify(result.actions));
+      if (claimed) logSelectionAudits(result.actions);
+      return {
+        due: true,
+        claimed,
+        slotKey,
+        actions: claimed ? result.actions : [],
+        diagnostics: result.diagnostics,
+      };
     } catch (error) {
       return reply
         .code(400)
@@ -350,7 +366,7 @@ export async function createServer(services: ServerServices): Promise<FastifyIns
   app.post('/api/hymns/select', async (request, reply) => {
     const parsed = HymnSelectSchema.safeParse(request.body);
     if (!parsed.success) return reply.code(400).send({ error: parsed.error.flatten() });
-    const { date, useLitCal = true, calendar = 'general', ...input } = parsed.data;
+    const { date, useLitCal = true, calendar = 'general', reserve = false, ...input } = parsed.data;
     const selectedDate = date ?? localDate(new Date());
     const day = useLitCal
       ? ((await services.liturgicalCalendar?.getDay(selectedDate, calendar)) ??
@@ -365,7 +381,11 @@ export async function createServer(services: ServerServices): Promise<FastifyIns
     }
     const query = toHymnQuery(condition);
     query.alreadyPlayed = services.database.completedScheduleAssets?.(selectedDate) ?? [];
-    return { day, selection: hymnCatalog.selectForDay(day, query) };
+    const selection = hymnCatalog.selectForDay(day, query);
+    if (reserve && selection.asset) {
+      services.database.addEvent({ asset: selection.asset.id, status: 'started' });
+    }
+    return { day, selection };
   });
   app.post('/api/play', async (request, reply) => {
     const parsed = PlaySchema.safeParse(request.body);
@@ -414,13 +434,12 @@ async function scheduledPlaybacks(
   services: ServerServices,
   hymnCatalog: HymnCatalog,
   runner: ScheduleRunner,
-): Promise<SchedulePlayback[]> {
-  if (!config.enabled) return [];
+): Promise<{ actions: SchedulePlayback[]; diagnostics: ScheduleDiagnostic[] }> {
+  if (!config.enabled) return { actions: [], diagnostics: [] };
 
   const playbacks: SchedulePlayback[] = [];
-  const reservedHymns = new Set(
-    services.database.completedScheduleAssets?.(time.date) ?? [],
-  );
+  const diagnostics: ScheduleDiagnostic[] = [];
+  const reservedHymns = new Set(services.database.completedScheduleAssets?.(time.date) ?? []);
   let pendingDelay = 0;
   const westminster = westminsterAsset(config.westminster, time);
   if (
@@ -456,8 +475,10 @@ async function scheduledPlaybacks(
         services,
         hymnCatalog,
         reservedHymns,
+        routine.name,
       );
-      if (!resolved) continue;
+      diagnostics.push(...resolved.diagnostics);
+      if (!resolved.asset) continue;
       reservedHymns.add(resolved.asset);
       playbacks.push({
         asset: resolved.asset,
@@ -476,7 +497,7 @@ async function scheduledPlaybacks(
       pendingDelay = 0;
     }
   }
-  return playbacks;
+  return { actions: playbacks, diagnostics };
 }
 
 function targetMatches(mediaPlayers: string[], outputs: string[], runner: ScheduleRunner): boolean {
@@ -494,8 +515,14 @@ async function runNativeSchedule(
   const hymnCatalog = services.hymnCatalog ?? new HymnCatalog(services.library);
   const stored = currentStoredSchedule(services);
   const time = localScheduleTime(at);
-  const actions = await scheduledPlaybacks(time, stored.config, services, hymnCatalog, 'native');
-  if (!actions.length) return { due: false as const, actions: [] as SchedulePlayback[] };
+  const result = await scheduledPlaybacks(time, stored.config, services, hymnCatalog, 'native');
+  const actions = result.actions;
+  if (!actions.length)
+    return {
+      due: false as const,
+      actions: [] as SchedulePlayback[],
+      diagnostics: result.diagnostics,
+    };
   const slotKey = scheduleSlotKey(time, stored.updatedAt, 'native');
   const claimed = services.database.claimScheduleRun(slotKey, JSON.stringify(actions));
   if (!claimed)
@@ -506,6 +533,7 @@ async function runNativeSchedule(
       actions: [] as SchedulePlayback[],
     };
   logSelectionAudits(actions);
+  logScheduleDiagnostics(result.diagnostics);
   try {
     await playScheduledNatively(actions, outputOverride, services);
     services.database.completeScheduleRun(slotKey, 'completed');
@@ -515,6 +543,7 @@ async function runNativeSchedule(
       completed: true as const,
       slotKey,
       actions,
+      diagnostics: result.diagnostics,
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
@@ -525,6 +554,7 @@ async function runNativeSchedule(
       completed: false as const,
       slotKey,
       error: message,
+      diagnostics: result.diagnostics,
     };
   }
 }
@@ -573,24 +603,41 @@ async function resolveScheduleAsset(
   services: ServerServices,
   hymnCatalog: HymnCatalog,
   reservedHymns: Set<string> = new Set(),
-): Promise<{ asset: string; selectionAudit?: string } | undefined> {
-  if (action.type === 'play') return { asset: action.asset };
+  routineName = 'Scheduled hymn',
+): Promise<ResolvedScheduleAsset> {
+  if (action.type === 'play') return { asset: action.asset, diagnostics: [] };
 
-  const day = config.litcal.enabled
-    ? ((await services.liturgicalCalendar?.getDay(date, config.litcal.calendar)) ??
-      neutralLiturgicalDay(date))
-    : neutralLiturgicalDay(date);
-  if (!day || !conditionMatches(day, action)) return undefined;
+  const automatic = !action.categoryIds?.length;
+  const needsLitCal =
+    automatic || Boolean(action.seasons?.length || action.rank || action.feastIds?.length);
+  const liturgicalDay = needsLitCal
+    ? await services.liturgicalCalendar?.getDay(date, config.litcal.calendar)
+    : undefined;
+  const diagnostics: ScheduleDiagnostic[] = [];
+  if (automatic && !liturgicalDay) {
+    diagnostics.push({
+      level: 'error',
+      message: `Automatic routine “${routineName}” could not obtain a LitCal day for ${date} using the ${config.litcal.calendar} calendar. Check the LitCal connection and try again.`,
+    });
+    return { diagnostics };
+  }
+  const day = liturgicalDay ?? neutralLiturgicalDay(date);
+  if (!conditionMatches(day, action)) return { diagnostics };
   const query = toHymnQuery(action);
   query.alreadyPlayed = [
-    ...new Set([
-      ...(services.database.completedScheduleAssets?.(date) ?? []),
-      ...reservedHymns,
-    ]),
+    ...new Set([...(services.database.completedScheduleAssets?.(date) ?? []), ...reservedHymns]),
   ];
   const selection = hymnCatalog.selectForDay(day, query);
   const asset = selection.asset;
-  if (!asset) return undefined;
+  if (!asset) {
+    diagnostics.push({
+      level: 'error',
+      message: automatic
+        ? `Automatic routine “${routineName}” could not select a hymn for ${date}. Check that the hymn library is available and has eligible hymns.`
+        : `Category routine “${routineName}” could not select a hymn from its configured categories.`,
+    });
+    return { diagnostics };
+  }
   const selectedContributions = (selection.selectedScoreBreakdown ?? [])
     .map(({ label, score: points }) => `${label} (${points})`)
     .join(', ');
@@ -600,12 +647,20 @@ async function resolveScheduleAsset(
   return {
     asset: asset.id,
     selectionAudit: `Playing: ${asset.name ?? asset.id} • ${details} • ${total}, #${rank}`,
+    diagnostics,
   };
 }
 
 function logSelectionAudits(actions: SchedulePlayback[]) {
   for (const action of actions) {
     if (action.selectionAudit) console.info(action.selectionAudit);
+  }
+}
+
+function logScheduleDiagnostics(diagnostics: ScheduleDiagnostic[]) {
+  for (const diagnostic of diagnostics) {
+    const output = diagnostic.level === 'error' ? console.error : console.warn;
+    output(`Virtual Carillon: ${diagnostic.message}`);
   }
 }
 
@@ -661,7 +716,7 @@ function neutralLiturgicalDay(date: string): LiturgicalDay {
     season: 'General',
     seasonIds: ['general'],
     celebrations: [],
-    source: 'home-assistant-disabled',
+    source: 'neutral-context',
   };
 }
 

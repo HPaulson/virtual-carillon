@@ -1,45 +1,66 @@
-# Testing and Validation
+# Testing
 
 ## Automated checks
 
-Run all four checks before handoff:
+Run the normal project checks while developing:
 
 ```bash
-pnpm typecheck
-pnpm build
-pnpm test
-pnpm lint
+pnpm check
 ```
 
-Tests cover the bell registry, synthesis safety, distance attenuation, sequence rendering, score parsing/arranging, hymn metadata and selection, user recording import, LitCal normalization/cache behavior, database event history, generic routine persistence/claiming, and API validation/selection.
+Before review or release preparation, run the local CI preflight:
 
-## Manual CLI smoke test
+```bash
+pnpm ci:check
+```
+
+`pnpm ci:check` runs `pnpm check`, validates release metadata, compiles the Home Assistant integration, validates JSON metadata, builds the Docker image, and performs an authenticated API smoke test. It requires Docker and Python 3.
+
+The test suite covers bell synthesis and distance rendering, hymn notation and arrangements, LitCal normalization and caching, liturgical metadata and selection, imported recordings, schedule matching and claims, database history, and API validation.
+
+## Local command-line smoke test
+
+Build first, then run:
 
 ```bash
 node dist/cli/index.js doctor
+node dist/cli/index.js assets
 node dist/cli/index.js test
 node dist/cli/index.js shuffle-hymns --count 1
-node dist/cli/index.js assets
+node dist/cli/index.js hymn-order --count 3
 ```
 
-Confirm that the cache contains WAV files. Native CLI playback can be tested separately when the development host has an audio backend, but it is not required for the Docker/Home Assistant deployment.
+`test` renders representative bells, signals, chant, and hymns. Confirm that WAV files appear under the configured data directory’s `cache/` folder. Native playback needs a working local audio backend and is not part of the Docker/Home Assistant smoke path.
 
-## Manual API smoke test
+## API smoke test
 
-Start `node dist/cli/index.js server`, then query:
+Start the server with an API token, then query it:
 
 ```bash
-# Add this header to every /api/* request. Docker Compose requires VIRTUAL_CARILLON_API_TOKEN.
-curl http://127.0.0.1:9876/health
-curl -H 'Authorization: Bearer YOUR_TOKEN' http://127.0.0.1:9876/api/status
-curl -H 'Authorization: Bearer YOUR_TOKEN' http://127.0.0.1:9876/api/devices
-curl -H 'Authorization: Bearer YOUR_TOKEN' http://127.0.0.1:9876/api/assets
-curl -H 'Authorization: Bearer YOUR_TOKEN' http://127.0.0.1:9876/api/hymns
-curl -H 'Authorization: Bearer YOUR_TOKEN' http://127.0.0.1:9876/api/schedule
-curl -H 'Authorization: Bearer YOUR_TOKEN' http://127.0.0.1:9876/api/devices
-# API-only clients can use POST /api/schedule/run for an immediate due-time smoke test.
-curl -H 'Authorization: Bearer YOUR_TOKEN' 'http://127.0.0.1:9876/api/liturgical/2026-08-15/hymn?calendar=general'
-curl -H 'Authorization: Bearer YOUR_TOKEN' http://127.0.0.1:9876/api/assets/test-bell/audio -o /tmp/test-bell.wav
+VIRTUAL_CARILLON_API_TOKEN=test-token node dist/cli/index.js server
 ```
 
-In Home Assistant, add the integration, open its **Configure** flow, create a test “play asset at...” schedule for an exact time, and save it. Confirm it plays on a known-good `media_player`, then remove the test schedule. Also exercise Westminster and the **Liturgical Hymn** option. This validates the intended deployment path; speaker-specific behavior remains the responsibility of that media-player integration.
+In another terminal:
+
+```bash
+curl http://127.0.0.1:9876/health
+curl -H 'Authorization: Bearer test-token' http://127.0.0.1:9876/api/status
+curl -H 'Authorization: Bearer test-token' http://127.0.0.1:9876/api/assets
+curl -H 'Authorization: Bearer test-token' http://127.0.0.1:9876/api/hymns
+curl -H 'Authorization: Bearer test-token' \
+  'http://127.0.0.1:9876/api/liturgical/2026-08-15/hymn?calendar=general'
+curl -H 'Authorization: Bearer test-token' \
+  http://127.0.0.1:9876/api/assets/test-bell/audio -o /tmp/test-bell.wav
+```
+
+For native schedule testing, save an output-targeted schedule and call `POST /api/schedule/run` at a due time. See the [API reference](api.md#schedules) for the public schedule format.
+
+## Home Assistant smoke test
+
+1. Add the integration and confirm that the **Virtual Carillon Status** sensor is `online`.
+2. In the media browser, play `test-bell` on one known-working media player.
+3. Use **Configure** to turn on schedules and create a Manual test routine a few minutes ahead.
+4. Confirm that it plays once, then test Westminster and an Automatic hymn routine.
+5. Remove or disable the test routine afterward.
+
+This validates the intended path from engine to Home Assistant media player. Speaker-specific behavior belongs to the media-player integration being used.

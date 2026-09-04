@@ -1,15 +1,32 @@
-# Configuration
+# Configuration reference
 
-The Node service is configured with environment variables for deployment concerns only. Scheduling, media-player targets, and LitCal settings belong to Home Assistant.
+The engine reads its deployment settings from environment variables when it starts. Copy `.env.example` to `.env` for Docker Compose, or set the same variables in the environment that starts the server.
 
-| Variable                       | Default     | Purpose                                                                        |
-| ------------------------------ | ----------- | ------------------------------------------------------------------------------ |
-| `VIRTUAL_CARILLON_DATA_DIR`    | `.data`     | SQLite event history and rendered audio cache                                  |
-| `VIRTUAL_CARILLON_HOST`        | `127.0.0.1` | HTTP bind address                                                              |
-| `VIRTUAL_CARILLON_PORT`        | `9876`      | Home Assistant API port                                                        |
-| `VIRTUAL_CARILLON_API_TOKEN`   | unset       | Bearer token required by Docker Compose for `/api/*`; required for deployments |
-| `VIRTUAL_CARILLON_SAMPLE_RATE` | `44100`     | WAV sample rate; `44100` or `48000`                                            |
+Home Assistant schedules, speaker targets, and the schedule’s LitCal choice are configured in the integration’s **Configure** flow, not with environment variables. See [Home Assistant setup](../doc/home-assistant.md).
 
-Configure LitCal and the schedule in the Virtual Carillon integration's Options flow in Home Assistant, or save the same simple schedule through `PUT /api/schedule`. Enable Westminster with its cadence, days, and time window, then add any number of asset or Liturgical Hymn schedules with multiple exact times and selected days. Use Home Assistant `mediaPlayers` when HA should choose speakers, or leave them empty for native output/API-only playback. The schedule is persisted by the Node service in SQLite.
+| Variable                            | Default                                       | Use                                                                                                                                                                              |
+| ----------------------------------- | --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `VIRTUAL_CARILLON_DATA_DIR`         | `.data`                                       | Stores `carillon.sqlite`, rendered audio, imported recordings, and LitCal cache files. Back up this directory if you want to retain schedules, history, and imported recordings. |
+| `VIRTUAL_CARILLON_HOST`             | `127.0.0.1`                                   | HTTP address on which the engine listens. Docker Compose uses `0.0.0.0` inside the container.                                                                                    |
+| `VIRTUAL_CARILLON_PORT`             | `9876`                                        | HTTP port for `/health` and the authenticated `/api/*` endpoints.                                                                                                                |
+| `VIRTUAL_CARILLON_API_TOKEN`        | unset                                         | Bearer token for every `/api/*` endpoint. Set a long, unique value for every networked deployment. `/health` remains unauthenticated for health checks.                          |
+| `VIRTUAL_CARILLON_DISTANCE_PROFILE` | `half-mile`                                   | Default acoustic distance used by native playback and API audio requests that do not specify a profile.                                                                          |
+| `VIRTUAL_CARILLON_SAMPLE_RATE`      | `44100`                                       | WAV sample rate. The only accepted values are `44100` and `48000`.                                                                                                               |
+| `VIRTUAL_CARILLON_LITCAL_URL`       | `https://litcal.johnromanodorazio.com/api/v5` | Base URL for the Liturgical Calendar API. Change this only when using a compatible LitCal endpoint.                                                                              |
+| `VIRTUAL_CARILLON_LITCAL_CALENDAR`  | `general`                                     | Default calendar used by the command line and API: `general`, `US`, `IT`, `NL`, `VA`, or `CA`. A Home Assistant schedule stores its own calendar choice.                         |
 
-Configure the Home Assistant playback distance profile under the integration's General settings. The Node engine and CLI default to `half-mile`; CLI/API per-play overrides remain available.
+## Distance profiles
+
+The following names are accepted by `VIRTUAL_CARILLON_DISTANCE_PROFILE`, the `play --distance` command option, and the API’s `distance` field. The profile changes the generated audio: farther settings are quieter, less bright, and have more distant reflections.
+
+| Profile          | Intended character                              |
+| ---------------- | ----------------------------------------------- |
+| `near`           | Close, clear bells.                             |
+| `church-grounds` | Bells heard from nearby grounds.                |
+| `quarter-mile`   | Bells heard from a short distance away.         |
+| `half-mile`      | The default: a more distant outdoor sound.      |
+| `one-mile`       | The quietest and most filtered bundled profile. |
+
+The HTTP `POST /api/play` endpoint also accepts `custom` with individual distance values. That is an API-only advanced option; the environment variable and Home Assistant integration accept the five bundled profiles only.
+
+Home Assistant’s schedule controls, LitCal calendar, playback distance, routine modes, Westminster cadence, volume handling, time windows, and canonical-hour preference are documented in the [Home Assistant guide](../doc/home-assistant.md).

@@ -88,7 +88,9 @@ export class CarillonDatabase {
     // persisted. Events are stored as ISO timestamps; the schedule date is
     // the local date and normally has the same ISO date in this deployment.
     const playedEvents = this.db
-      .prepare("SELECT asset FROM events WHERE status = 'played' AND created_at LIKE ?")
+      .prepare(
+        "SELECT asset FROM events WHERE status IN ('started', 'played') AND created_at LIKE ?",
+      )
       .all(`${date}T%`) as Array<{ asset?: string }>;
     return [
       ...new Set([
@@ -178,7 +180,7 @@ export class CarillonDatabase {
         outputs,
       },
       routines: [],
-      litcal: { enabled: true, calendar: 'general' },
+      litcal: { calendar: 'general' },
     };
     this.db
       .prepare('INSERT INTO schedules (id, config, updated_at) VALUES (1, ?, ?)')

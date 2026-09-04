@@ -74,7 +74,6 @@ export const WestminsterScheduleSchema = z.object({
 });
 
 const LitcalScheduleSchema = z.object({
-  enabled: z.boolean(),
   calendar: z.enum(['general', 'US', 'IT', 'NL', 'VA', 'CA']),
 });
 
@@ -132,7 +131,7 @@ export const DEFAULT_SCHEDULE_CONFIG: ScheduleConfig = {
     outputs: [],
   },
   routines: [],
-  litcal: { enabled: true, calendar: 'general' },
+  litcal: { calendar: 'general' },
 };
 
 export function normalizeSchedule(input: unknown): ScheduleConfig {

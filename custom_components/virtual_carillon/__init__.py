@@ -8,7 +8,6 @@ import voluptuous as vol
 
 from .const import (
     CONF_LITCAL_CALENDAR,
-    CONF_LITCAL_ENABLED,
     CONF_DISTANCE_PROFILE,
     CONF_TOKEN,
     DOMAIN,
@@ -16,7 +15,6 @@ from .const import (
     SERVICE_SELECT_HYMN,
     SERVICE_STOP,
     DEFAULT_LITCAL_CALENDAR,
-    DEFAULT_LITCAL_ENABLED,
     DEFAULT_DISTANCE_PROFILE,
 )
 from .coordinator import CarillonCoordinator
@@ -96,7 +94,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         hass,
         entry.data["url"],
         entry.data.get(CONF_TOKEN, ""),
-        litcal_enabled=options.get(CONF_LITCAL_ENABLED, DEFAULT_LITCAL_ENABLED),
         litcal_calendar=options.get(CONF_LITCAL_CALENDAR, DEFAULT_LITCAL_CALENDAR),
         distance_profile=options.get(CONF_DISTANCE_PROFILE, DEFAULT_DISTANCE_PROFILE),
     )

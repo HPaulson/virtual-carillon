@@ -83,7 +83,7 @@ describe('selection API', () => {
     });
   });
 
-  it('selects against a neutral day when HA disables LitCal', async () => {
+  it('selects against a neutral day when the direct API requests it', async () => {
     app = await createServer({
       engine: { defaultDistanceProfile: 'half-mile' },
       library: { list: () => [] },
@@ -105,7 +105,7 @@ describe('selection API', () => {
     });
 
     expect(response.statusCode).toBe(200);
-    expect(response.json().day.source).toBe('home-assistant-disabled');
+    expect(response.json().day.source).toBe('neutral-context');
     expect(response.json().selection.asset.id).toBe('hymn-to-joy');
   });
 });
@@ -196,7 +196,7 @@ describe('server-owned schedule API', () => {
           outputs: ['default'],
         },
       ],
-      litcal: { enabled: true, calendar: 'general' },
+      litcal: { calendar: 'general' },
     };
     const saved = await app.inject({ method: 'PUT', url: '/api/schedule', payload: schedule });
     expect(saved.statusCode).toBe(200);
@@ -264,7 +264,7 @@ describe('server-owned schedule API', () => {
             outputs: [],
           },
         ],
-        litcal: { enabled: true, calendar: 'general' },
+        litcal: { calendar: 'general' },
       },
     });
     const response = await app.inject({
@@ -275,6 +275,70 @@ describe('server-owned schedule API', () => {
     expect(response.statusCode).toBe(200);
     expect(response.json().completed).toBe(true);
     expect(played).toEqual(['angelus']);
+    await app.close();
+  });
+
+  it('reports a clear Home Assistant diagnostic when Automatic mode cannot obtain LitCal', async () => {
+    let stored: { config: Record<string, unknown>; updatedAt: string } | undefined;
+    const app = await createServer({
+      engine: { defaultDistanceProfile: 'half-mile' },
+      library: { list: () => [] },
+      database: {
+        recentEvents: () => [],
+        getSchedule: () => stored,
+        saveSchedule: (config: Record<string, unknown>) => {
+          stored = { config, updatedAt: 'schedule-automatic' };
+          return stored;
+        },
+      },
+      liturgicalCalendar: { getDay: async () => undefined },
+    } as never);
+    await app.inject({
+      method: 'PUT',
+      url: '/api/schedule',
+      payload: {
+        enabled: true,
+        westminster: {
+          enabled: false,
+          cadence: 'hourly',
+          weekdays: ['mon'],
+          mediaPlayers: [],
+          outputs: [],
+        },
+        routines: [
+          {
+            id: 'automatic-evening',
+            name: 'Automatic evening hymn',
+            enabled: true,
+            type: 'liturgical_hymn',
+            times: ['19:30'],
+            weekdays: ['mon'],
+            mediaPlayers: ['media_player.kitchen'],
+            outputs: [],
+          },
+        ],
+        litcal: { calendar: 'US' },
+      },
+    });
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/schedule/claim',
+      payload: { at: '2026-08-24T19:30:00-04:00' },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toMatchObject({
+      due: false,
+      actions: [],
+      diagnostics: [
+        {
+          level: 'error',
+          message:
+            'Automatic routine “Automatic evening hymn” could not obtain a LitCal day for 2026-08-24 using the US calendar. Check the LitCal connection and try again.',
+        },
+      ],
+    });
     await app.close();
   });
 
@@ -359,7 +423,7 @@ describe('server-owned schedule API', () => {
           ],
         },
       ],
-      litcal: { enabled: true, calendar: 'general' },
+      litcal: { calendar: 'general' },
     };
     const saved = await app.inject({ method: 'PUT', url: '/api/schedule', payload: schedule });
     expect(saved.statusCode).toBe(200);
@@ -414,7 +478,7 @@ describe('server-owned schedule API', () => {
       url: '/api/schedule/claim',
       payload: { at: '2026-08-24T17:00:00-04:00' },
     });
-    expect(outsideWindow.json()).toEqual({ due: false, actions: [] });
+    expect(outsideWindow.json()).toEqual({ due: false, actions: [], diagnostics: [] });
     await app.close();
   });
 
