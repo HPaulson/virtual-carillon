@@ -57,7 +57,7 @@ Run the same combined checks locally with `pnpm ci:check` before requesting revi
 
 ## Development deployment helper
 
-`scripts/push-live.sh` is available for testing Home Assistant integration changes on a configured remote Docker installation. It type-checks the project, copies the current working tree’s `homeassistant/integration/virtual_carillon` directory into the target Home Assistant container’s `/config/custom_components/virtual_carillon` location over SSH, restarts the container, and waits for it to become healthy.
+`scripts/push-live.sh` is available for testing Home Assistant integration changes on a configured remote Docker installation. It type-checks the project, copies the current working tree’s `homeassistant/integration` directory into the target Home Assistant container’s `/config/custom_components/virtual_carillon` location over SSH, restarts the container, and waits for it to become healthy.
 
 It reads `REMOTE_HOST` and `HA_CONTAINER` from a local ignored `dev.env` file. This is a development convenience, not a substitute for CI or the release process. Check the current branch, working tree, remote host, and target container before running it. It does not deploy the engine container or publish a release.
 
@@ -65,7 +65,7 @@ It reads `REMOTE_HOST` and `HA_CONTAINER` from a local ignored `dev.env` file. T
 
 ## Releases
 
-Release versions must agree in `package.json`, `homeassistant/integration/virtual_carillon/manifest.json`, `homeassistant/app/config.yaml`, and `Dockerfile`. Run:
+Release versions must agree in `package.json`, `homeassistant/integration/manifest.json`, `homeassistant/app/config.yaml`, and `Dockerfile`. Run:
 
 ```bash
 pnpm release:check

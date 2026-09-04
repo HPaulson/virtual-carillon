@@ -100,7 +100,7 @@ node engine/dist/cli/index.js schedule show
 
 ### `scripts/push-live.sh`
 
-This script deploys the current working tree’s engine and Home Assistant integration to a remote Docker-based installation. It runs pnpm typecheck, archives `homeassistant/integration/virtual_carillon`, installs it into Home Assistant’s runtime `/config/custom_components/virtual_carillon` location, builds the engine image on the remote host for its architecture, and force-recreates the engine through its existing Compose project. It then restarts Home Assistant and waits for the Home Assistant health check. The engine’s persistent data volume is preserved and not modified. This is useful for live-testing the integration, though a local Home Assistant instance may also be used. The first run may take several minutes because the image installs FFmpeg and its dependencies.
+This script deploys the current working tree’s engine and Home Assistant integration to a remote Docker-based installation. It runs pnpm typecheck, archives `homeassistant/integration`, installs it into Home Assistant’s runtime `/config/custom_components/virtual_carillon` location, builds the engine image on the remote host for its architecture, and force-recreates the engine through its existing Compose project. It then restarts Home Assistant and waits for the Home Assistant health check. The engine’s persistent data volume is preserved and not modified. This is useful for live-testing the integration, though a local Home Assistant instance may also be used. The first run may take several minutes because the image installs FFmpeg and its dependencies.
 
 Create a local, ignored `dev.env` with at least:
 
@@ -168,7 +168,7 @@ Keep the major boundaries intact: audio synthesis, the asset library, persistenc
 The project version is duplicated intentionally for the package, Home Assistant integration, Home Assistant app, and container metadata. These values must agree in:
 
 - `package.json` (`version`);
-- `homeassistant/integration/virtual_carillon/manifest.json` (`version`);
+- `homeassistant/integration/manifest.json` (`version`);
 - `homeassistant/app/config.yaml` (`version`); and
 - `Dockerfile` (`ARG BUILD_VERSION`).
 

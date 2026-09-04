@@ -1,10 +1,10 @@
 # Virtual Carillon
 
 <p align="center">
-  <img src="assets/virtual-carillon-logo.svg" alt="Virtual Carillon" width="480">
+  <img src="homeassistant/app/logo.png" alt="Virtual Carillon" width="480">
 </p>
 
-Virtual Carillon turns your speakers into a programmable carillon. Play a bell, signal, or liturgically-appropriate Catholic hymn whenever you like.
+Virtual Carillon turns your speakers into a programmable Church carillon.
 
 Use it with Home Assistant to build routines such as:
 
@@ -42,7 +42,7 @@ Use this path when your Home Assistant installation has **Settings → Apps**. I
 3. Open the app’s **Configuration** tab. Set **API token** to a long, unique private value, choose **Save**, and restart the app if Home Assistant asks.
 4. Install the integration:
 
-   - **Manual installation:** copy this repository’s `homeassistant/integration/virtual_carillon` directory to `/config/custom_components/virtual_carillon/`, then restart Home Assistant.
+   - **Manual installation:** copy this repository’s `homeassistant/integration` directory to `/config/custom_components/virtual_carillon/`, then restart Home Assistant.
 
 5. Open **Settings → Devices & services → Add integration**, search for **Virtual Carillon**, and enter:
 
@@ -80,7 +80,7 @@ Use this path when Home Assistant itself runs in a Docker container. Virtual Car
 
    The `virtual-carillon_default` network is created by the command in step 3. Once both containers share it, Home Assistant can reach the engine as `http://virtual-carillon:9876`. Keep this connection in your own Compose configuration if you recreate the Home Assistant container.
 
-5. Copy this repository’s `homeassistant/integration/virtual_carillon` directory to `/config/custom_components/virtual_carillon/`, then restart Home Assistant. HACS custom repositories currently require the integration under a repository-root `custom_components/` directory, so this source layout is intentionally installed manually.
+5. Copy this repository’s `homeassistant/integration` directory to `/config/custom_components/virtual_carillon/`, then restart Home Assistant. HACS custom repositories currently require the integration under a repository-root `custom_components/` directory, so this source layout is intentionally installed manually.
 6. Open **Settings → Devices & services → Add integration**, search for **Virtual Carillon**, and enter:
 
    - **Engine URL:** `http://virtual-carillon:9876`

@@ -41,14 +41,15 @@ COPYFILE_DISABLE=1 tar \
   --no-fflags \
   --exclude='._*' \
   --exclude='*/._*' \
-  --exclude='virtual_carillon/__pycache__' \
-  --exclude='virtual_carillon/**/*.pyc' \
+  --exclude='__pycache__' \
+  --exclude='**/*.pyc' \
   -czf "$LOCAL_ARCHIVE" \
   -C "$ROOT_DIR/homeassistant/integration" \
-  virtual_carillon
+  .
 scp "$LOCAL_ARCHIVE" "$REMOTE_HOST:$REMOTE_ARCHIVE"
 ssh "$REMOTE_HOST" "docker cp '$REMOTE_ARCHIVE' '$HA_CONTAINER:/tmp/virtual-carillon-ha.tar.gz'"
-ssh "$REMOTE_HOST" "docker exec '$HA_CONTAINER' tar --extract --gzip --no-same-owner --no-same-permissions --file=/tmp/virtual-carillon-ha.tar.gz --directory=/config/custom_components"
+ssh "$REMOTE_HOST" "docker exec '$HA_CONTAINER' mkdir -p /config/custom_components/virtual_carillon"
+ssh "$REMOTE_HOST" "docker exec '$HA_CONTAINER' tar --extract --gzip --no-same-owner --no-same-permissions --file=/tmp/virtual-carillon-ha.tar.gz --directory=/config/custom_components/virtual_carillon"
 ssh "$REMOTE_HOST" "docker exec '$HA_CONTAINER' rm -f /tmp/virtual-carillon-ha.tar.gz"
 
 echo "==> Building the current engine source archive"
