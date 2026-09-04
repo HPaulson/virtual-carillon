@@ -34,9 +34,8 @@ LABEL \
     org.opencontainers.image.licenses="MIT"
 COPY --from=build /app/engine/dist ./engine/dist
 COPY engine/bin ./engine/bin
-COPY homeassistant ./homeassistant
 COPY README.md LICENSE ./
-COPY homeassistant/app/entrypoint.mjs ./engine/bin/virtual-carillon-app-entrypoint.mjs
+COPY add-on/entrypoint.mjs ./engine/bin/virtual-carillon-app-entrypoint.mjs
 RUN mkdir -p /app/.data/cache
 EXPOSE 9876
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
