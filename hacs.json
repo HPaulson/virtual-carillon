@@ -1,4 +1,7 @@
 {
   "name": "Virtual Carillon",
-  "homeassistant": "2024.1.0"
+  "homeassistant": "2024.1.0",
+  "zip_release": true,
+  "filename": "virtual_carillon.zip",
+  "hide_default_branch": true
 }
