@@ -147,11 +147,14 @@ Virtual Carillon does not set up speakers, Bluetooth pairing, or media-player in
 
 ## Further reading
 
+The guides below expand on the relevant parts of this README:
+
 - [Home Assistant setup, actions, and schedule details](docs/home-assistant.md)
-- [Docker deployment](docs/docker.md)
-- [Configuration reference](docs/configuration.md)
-- [Adding your own recordings](docs/content.md)
-- [Documentation index](docs/README.md)
+- [Automatic hymn selection](docs/automatic-mode.md)
+- [Development, architecture, and testing](docs/development.md)
+- [HTTP API reference](docs/api.md)
+- [Contributing guide](CONTRIBUTING.md)
+- [Security policy](SECURITY.md)
 
 ## License
 

@@ -4,7 +4,7 @@ Thank you for helping improve Virtual Carillon. Contributions should preserve a 
 
 ## Before you begin
 
-Read the [development guide](docs/development.md) for setup, checks, deployment helpers, and releases. The [architecture guide](docs/architecture.md) explains the project boundaries, and the [testing guide](docs/testing.md) describes the expected smoke tests.
+Read the [development guide](docs/development.md) for setup, architecture, checks, testing, deployment helpers, and releases.
 
 For a bug, include the deployment method, the relevant date and calendar when liturgical selection is involved, steps to reproduce, and the useful portion of the logs. Remove API tokens, private URLs, personal information, and private recordings before posting.
 
