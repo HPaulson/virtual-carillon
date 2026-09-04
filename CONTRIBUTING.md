@@ -4,7 +4,7 @@ Thank you for helping improve Virtual Carillon. Contributions should preserve a 
 
 ## Before you begin
 
-Read the [development guide](doc/development.md) for setup, checks, deployment helpers, and releases. The [architecture guide](doc/architecture.md) explains the project boundaries, and the [testing guide](doc/testing.md) describes the expected smoke tests.
+Read the [development guide](docs/development.md) for setup, architecture, checks, testing, deployment helpers, and releases.
 
 For a bug, include the deployment method, the relevant date and calendar when liturgical selection is involved, steps to reproduce, and the useful portion of the logs. Remove API tokens, private URLs, personal information, and private recordings before posting.
 
@@ -57,7 +57,7 @@ Run the same combined checks locally with `pnpm ci:check` before requesting revi
 
 ## Development deployment helper
 
-`scripts/push-live.sh` is available for testing Home Assistant integration changes on a configured remote Docker installation. It type-checks the project, copies the current working tree’s `custom_components/virtual_carillon` directory over SSH, restarts the target Home Assistant container, and waits for it to become healthy.
+`scripts/push-live.sh` is available for testing Home Assistant integration changes on a configured remote Docker installation. It type-checks the project, copies the current working tree’s `homeassistant/integration` directory into the target Home Assistant container’s `/config/custom_components/virtual_carillon` location over SSH, restarts the container, and waits for it to become healthy.
 
 It reads `REMOTE_HOST` and `HA_CONTAINER` from a local ignored `dev.env` file. This is a development convenience, not a substitute for CI or the release process. Check the current branch, working tree, remote host, and target container before running it. It does not deploy the engine container or publish a release.
 
@@ -65,7 +65,7 @@ It reads `REMOTE_HOST` and `HA_CONTAINER` from a local ignored `dev.env` file. T
 
 ## Releases
 
-Release versions must agree in `package.json`, `custom_components/virtual_carillon/manifest.json`, `homeassistant/app/config.yaml`, and `Dockerfile`. Run:
+Release versions must agree in `package.json`, `homeassistant/integration/manifest.json`, `homeassistant/app/config.yaml`, and `Dockerfile`. Run:
 
 ```bash
 pnpm release:check
@@ -91,4 +91,4 @@ git status
 git diff --check
 ```
 
-Do not commit `.env` or `dev.env` files, credentials, runtime data, private recordings, generated audio, `dist/`, `node_modules/`, Python bytecode, coverage output, or editor files. Keep test data disposable and avoid placing personal deployment details in examples.
+Do not commit `.env` or `dev.env` files, credentials, runtime data, private recordings, generated audio, `engine/dist/`, `node_modules/`, Python bytecode, coverage output, or editor files. Keep test data disposable and avoid placing personal deployment details in examples.

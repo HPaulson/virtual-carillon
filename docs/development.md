@@ -1,6 +1,6 @@
 # Development
 
-This guide is for contributors working on the Virtual Carillon engine, Home Assistant integration, Home Assistant app, documentation, and hymn catalog.
+This guide is for contributors working on the Virtual Carillon engine, Home Assistant integration, Home Assistant app, documentation, and hymn catalog. It also owns the project architecture and test workflow.
 
 ## Requirements
 
@@ -30,7 +30,7 @@ Keep runtime data in the ignored `.data/` directory. Do not use a production dat
 
 ## Local checks
 
-The usual check is:
+The engine tests live beside the engine in `engine/tests/`; the Home Assistant integration currently has syntax and metadata validation but no Python test suite. The usual check is:
 
 ```bash
 pnpm check
@@ -62,19 +62,19 @@ Start the development server through `tsx`:
 pnpm dev
 ```
 
-The default address is `http://127.0.0.1:9876`. Set `VIRTUAL_CARILLON_API_TOKEN` when testing authenticated requests. Environment variables and their defaults are listed in the [configuration reference](../docs/configuration.md).
+The default address is `http://127.0.0.1:9876`. Set `VIRTUAL_CARILLON_API_TOKEN` when testing authenticated requests. Docker defaults are available in `.env.example`.
 
 After a build, useful command-line checks include:
 
 ```bash
 pnpm build
-node dist/cli/index.js assets
-node dist/cli/index.js doctor
-node dist/cli/index.js devices
-node dist/cli/index.js test
-node dist/cli/index.js hymn-order --count 3
-node dist/cli/index.js diagnose salve-regina
-node dist/cli/index.js schedule show
+node engine/dist/cli/index.js assets
+node engine/dist/cli/index.js doctor
+node engine/dist/cli/index.js devices
+node engine/dist/cli/index.js test
+node engine/dist/cli/index.js hymn-order --count 3
+node engine/dist/cli/index.js diagnose salve-regina
+node engine/dist/cli/index.js schedule show
 ```
 
 `hymn-order` previews automatic selection without playing audio. `test` renders representative bells, signals, chants, and hymns. Native playback requires a working local audio backend and is separate from the Home Assistant and Docker playback path.
@@ -86,7 +86,7 @@ node dist/cli/index.js schedule show
 | Command or script                     | Purpose                                                                                                                                                            |
 | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `pnpm dev`                            | Run the TypeScript server directly through `tsx`.                                                                                                                  |
-| `pnpm build`                          | Clear the render cache and build `dist/`.                                                                                                                          |
+| `pnpm build`                          | Clear the render cache and build `engine/dist/`, failing if the compiler fails.                                                                                    |
 | `pnpm test`                           | Run the automated tests once.                                                                                                                                      |
 | `pnpm test:watch`                     | Re-run tests while developing.                                                                                                                                     |
 | `pnpm typecheck`                      | Run TypeScript without emitting files.                                                                                                                             |
@@ -100,7 +100,7 @@ node dist/cli/index.js schedule show
 
 ### `scripts/push-live.sh`
 
-This script deploys the current working tree’s engine and Home Assistant integration to a remote Docker-based installation. It runs pnpm typecheck, archives the integration, builds the engine image on the remote host for its architecture, and force-recreates the engine through its existing Compose project. It then restarts Home Assistant and waits for the Home Assistant health check. The engine’s persistent data volume is preserved and not modified. This is useful for live-testing the integration, though a local Home Assistant instance may also be used. The first run may take several minutes because the image installs FFmpeg and its dependencies.
+This script deploys the current working tree’s engine and Home Assistant integration to a remote Docker-based installation. It runs pnpm typecheck, archives `homeassistant/integration`, installs it into Home Assistant’s runtime `/config/custom_components/virtual_carillon` location, builds the engine image on the remote host for its architecture, and force-recreates the engine through its existing Compose project. It then restarts Home Assistant and waits for the Home Assistant health check. The engine’s persistent data volume is preserved and not modified. This is useful for live-testing the integration, though a local Home Assistant instance may also be used. The first run may take several minutes because the image installs FFmpeg and its dependencies.
 
 Create a local, ignored `dev.env` with at least:
 
@@ -146,7 +146,7 @@ For a bundled hymn or melody:
 4. Add or update tests for notation, arrangement, metadata, or selection behavior.
 5. Confirm that the project has the right to distribute the melody, arrangement, and any included text or recording.
 
-For imported user recordings, follow [Content and recordings](content.md). User recordings and generated audio belong in runtime storage, not in the source tree.
+Imported user recordings and generated audio belong in runtime storage, not in the source tree. The API guide covers importing recordings and their metadata.
 
 ## Public contracts
 
@@ -168,7 +168,7 @@ Keep the major boundaries intact: audio synthesis, the asset library, persistenc
 The project version is duplicated intentionally for the package, Home Assistant integration, Home Assistant app, and container metadata. These values must agree in:
 
 - `package.json` (`version`);
-- `custom_components/virtual_carillon/manifest.json` (`version`);
+- `homeassistant/integration/manifest.json` (`version`);
 - `homeassistant/app/config.yaml` (`version`); and
 - `Dockerfile` (`ARG BUILD_VERSION`).
 
@@ -199,7 +199,41 @@ Do not commit:
 - `.env`, `dev.env`, credentials, API tokens, or private URLs;
 - `.data/`, SQLite databases, WAL files, or runtime caches;
 - imported or private recordings;
-- `dist/`, `node_modules/`, Python bytecode, coverage output, or editor files; or
+- `engine/dist/`, `node_modules/`, Python bytecode, coverage output, or editor files; or
 - generated WAV files.
 
 The repository’s ignore rules cover the usual cases, but check `git status` before committing.
+
+## Architecture
+
+The Node engine owns bell synthesis, asset rendering, the HTTP API, persistent schedules, schedule claims, event history, user recordings, and LitCal cache files. Home Assistant is optional: the integration supplies forms, media browsing, and speaker delivery, but it does not render audio.
+
+The standard Home Assistant path is speaker-agnostic. The integration turns a rendered asset into a Home Assistant media-source URL and calls `media_player.play_media`; the engine does not pair, discover, or configure speakers.
+
+| Path                                                | Responsibility                                                              |
+| --------------------------------------------------- | --------------------------------------------------------------------------- |
+| `engine/src/cli/`                                   | Command-line entry point and hymn-selection preview.                        |
+| `engine/src/api/`                                   | Fastify API, authentication, direct playback, and schedule handoff.         |
+| `engine/src/audio/` and `engine/src/bells/`         | Bell synthesis, WAV rendering, distance profiles, and native playback.      |
+| `engine/src/library/`                               | Bundled assets, imported recordings, hymn catalog, metadata, and rendering. |
+| `engine/src/liturgical/`                            | LitCal retrieval and caching, taxonomy, conditions, and hymn queries.       |
+| `engine/src/scheduling/` and `engine/src/database/` | Schedule validation, matching, claims, events, and completed-hymn history.  |
+| `homeassistant/integration/`                        | Config flow, schedule runner, media source, services, sensor, and branding. |
+| `homeassistant/app/`                                | Home Assistant Supervisor app definition and entrypoint.                    |
+
+Schedules with Home Assistant `mediaPlayers` are claimed by the integration. Schedules with native `outputs`, or no target list, are evaluated by the engine’s native timer. Claims use the local date, minute, and schedule revision to avoid duplicate delivery after restarts.
+
+## Testing
+
+Run the normal checks with `pnpm check` and the complete local CI preflight with `pnpm ci:check`. The preflight also validates release metadata, compiles the Home Assistant integration, validates JSON, builds the Docker image, and performs an authenticated API smoke test. It requires Docker and Python 3.
+
+After a build, useful CLI checks are:
+
+```bash
+node engine/dist/cli/index.js doctor
+node engine/dist/cli/index.js assets
+node engine/dist/cli/index.js test
+node engine/dist/cli/index.js hymn-order --count 3
+```
+
+`test` renders representative bells, signals, chant, and hymns under the configured data directory’s `cache/` folder. Native playback needs a local audio backend and is separate from the Docker/Home Assistant path. For a Home Assistant smoke test, add the integration, confirm the status sensor is `online`, play `test-bell` from the media browser, create a Manual test routine a few minutes ahead, then test Westminster and Automatic mode. Remove or disable the test routine afterward.

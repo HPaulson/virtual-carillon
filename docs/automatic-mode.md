@@ -88,7 +88,7 @@ The API returns `scoring`, `selectedScore`, `selectedRank`, and `selectedScoreBr
 To preview the automatic order without playing audio:
 
 ```bash
-node dist/cli/index.js hymn-order --date 2026-08-15 --calendar general --count 5
+node engine/dist/cli/index.js hymn-order --date 2026-08-15 --calendar general --count 5
 ```
 
 The HTTP API provides the same selection information:

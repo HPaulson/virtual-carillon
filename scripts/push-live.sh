@@ -41,14 +41,15 @@ COPYFILE_DISABLE=1 tar \
   --no-fflags \
   --exclude='._*' \
   --exclude='*/._*' \
-  --exclude='virtual_carillon/__pycache__' \
-  --exclude='virtual_carillon/**/*.pyc' \
+  --exclude='__pycache__' \
+  --exclude='**/*.pyc' \
   -czf "$LOCAL_ARCHIVE" \
-  -C "$ROOT_DIR/custom_components" \
-  virtual_carillon
+  -C "$ROOT_DIR/homeassistant/integration" \
+  .
 scp "$LOCAL_ARCHIVE" "$REMOTE_HOST:$REMOTE_ARCHIVE"
 ssh "$REMOTE_HOST" "docker cp '$REMOTE_ARCHIVE' '$HA_CONTAINER:/tmp/virtual-carillon-ha.tar.gz'"
-ssh "$REMOTE_HOST" "docker exec '$HA_CONTAINER' tar --extract --gzip --no-same-owner --no-same-permissions --file=/tmp/virtual-carillon-ha.tar.gz --directory=/config/custom_components"
+ssh "$REMOTE_HOST" "docker exec '$HA_CONTAINER' mkdir -p /config/custom_components/virtual_carillon"
+ssh "$REMOTE_HOST" "docker exec '$HA_CONTAINER' tar --extract --gzip --no-same-owner --no-same-permissions --file=/tmp/virtual-carillon-ha.tar.gz --directory=/config/custom_components/virtual_carillon"
 ssh "$REMOTE_HOST" "docker exec '$HA_CONTAINER' rm -f /tmp/virtual-carillon-ha.tar.gz"
 
 echo "==> Building the current engine source archive"
@@ -66,7 +67,7 @@ COPYFILE_DISABLE=1 tar \
   --exclude='*.sqlite-wal' \
   -czf "$ENGINE_ARCHIVE" \
   -C "$ROOT_DIR" \
-  Dockerfile package.json pnpm-lock.yaml tsconfig.json eslint.config.mjs .prettierrc.json scripts src bin homeassistant README.md LICENSE
+  Dockerfile package.json pnpm-lock.yaml tsconfig.json eslint.config.mjs .prettierrc.json scripts engine homeassistant README.md LICENSE
 scp "$ENGINE_ARCHIVE" "$REMOTE_HOST:$REMOTE_ENGINE_ARCHIVE"
 
 echo "==> Rebuilding and restarting the Virtual Carillon engine"

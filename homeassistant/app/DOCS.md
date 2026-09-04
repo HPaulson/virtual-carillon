@@ -12,4 +12,4 @@ The Home Assistant app runs the engine on port `9876`. The separate Virtual Cari
 
 The app exposes port `9876` to the Home Assistant host and internal app network. Use `http://<home-assistant-ip>:9876` when adding the integration; `http://local-virtual-carillon:9876` may also work for a local app installation.
 
-The app is for Home Assistant OS and Home Assistant Supervised. For Home Assistant Container, run the engine with [Docker Compose](../../docs/docker.md) instead.
+The app is for Home Assistant OS and Home Assistant Supervised. For Home Assistant Container, run the engine with [Docker Compose](../../README.md#2-home-assistant-container-with-docker) instead.
