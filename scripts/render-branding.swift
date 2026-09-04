@@ -17,10 +17,10 @@ struct Output {
 let outputs = [
   Output(path: "homeassistant/app/icon.png", width: 128, height: 128),
   Output(path: "homeassistant/app/logo.png", width: 250, height: 100),
-  Output(path: "homeassistant/integration/virtual_carillon/brand/icon.png", width: 256, height: 256),
-  Output(path: "homeassistant/integration/virtual_carillon/brand/icon@2x.png", width: 512, height: 512),
-  Output(path: "homeassistant/integration/virtual_carillon/brand/logo.png", width: 640, height: 256),
-  Output(path: "homeassistant/integration/virtual_carillon/brand/logo@2x.png", width: 1280, height: 512),
+  Output(path: "homeassistant/integration/brand/icon.png", width: 256, height: 256),
+  Output(path: "homeassistant/integration/brand/icon@2x.png", width: 512, height: 512),
+  Output(path: "homeassistant/integration/brand/logo.png", width: 640, height: 256),
+  Output(path: "homeassistant/integration/brand/logo@2x.png", width: 1280, height: 512),
 ]
 
 func point(_ x: CGFloat, _ y: CGFloat) -> CGPoint { CGPoint(x: x, y: y) }
