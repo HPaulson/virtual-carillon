@@ -23,7 +23,7 @@ COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --prod --frozen-lockfile
 
 FROM runtime-deps AS runtime
-ARG BUILD_VERSION=0.1.0-beta.2
+ARG BUILD_VERSION=0.1.0-beta.3
 ARG BUILD_ARCH=amd64
 LABEL \
     io.hass.version="${BUILD_VERSION}" \
@@ -34,9 +34,8 @@ LABEL \
     org.opencontainers.image.licenses="MIT"
 COPY --from=build /app/engine/dist ./engine/dist
 COPY engine/bin ./engine/bin
-COPY homeassistant ./homeassistant
 COPY README.md LICENSE ./
-COPY homeassistant/app/entrypoint.mjs ./engine/bin/virtual-carillon-app-entrypoint.mjs
+COPY add-on/entrypoint.mjs ./engine/bin/virtual-carillon-app-entrypoint.mjs
 RUN mkdir -p /app/.data/cache
 EXPOSE 9876
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \

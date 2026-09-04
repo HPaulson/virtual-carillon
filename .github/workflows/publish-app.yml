@@ -61,11 +61,11 @@ jobs:
         run: pnpm release:check -- "${RELEASE_VERSION#v}"
 
       - name: Validate Home Assistant integration syntax
-        run: python3 -m compileall -q homeassistant/integration
+        run: python3 -m compileall -q custom_components/virtual_carillon
 
       - name: Package HACS integration release
         run: |
-          cd homeassistant/integration
+          cd custom_components/virtual_carillon
           zip -r ../../virtual_carillon.zip . -x '__pycache__/*' '*.pyc'
 
       - name: Publish GitHub release with HACS asset
