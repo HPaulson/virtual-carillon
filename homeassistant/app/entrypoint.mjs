@@ -35,7 +35,7 @@ for (const [option, variable] of Object.entries(optionEnv)) {
   }
 }
 
-const child = spawn('node', ['dist/cli/index.js', 'server'], {
+const child = spawn('node', ['engine/dist/cli/index.js', 'server'], {
   env,
   stdio: 'inherit',
 });

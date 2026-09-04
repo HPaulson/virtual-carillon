@@ -20,7 +20,7 @@ You can also run the carillon on its own from the command line or connect to it 
 
 Most people will use Virtual Carillon with [Home Assistant](https://www.home-assistant.io/getting-started/), a free, self-hosted home-automation system. The included Home Assistant Integration provides a user-friendly GUI to interact with Virtual Carillon. We also provide Virtual Carillon as a standalone app for advanced users who are comfortable working from the command line and don't want to use Home Assistant.
 
-[HACS](https://hacs.xyz/docs/use/) (Home Assistant Community Store) is an optional community store inside Home Assistant that we recommend for most users. It makes the Virtual Carillon integration easy to install, but it is not required if you prefer to copy the integration files manually.
+[HACS](https://hacs.xyz/docs/use/) (Home Assistant Community Store) is an optional community store inside Home Assistant. This repository keeps all Home Assistant sources under `homeassistant/`; use the manual installation path below unless a HACS release package is provided.
 
 For either Home Assistant path, you must have at least one working Home Assistant `media_player` (speaker) before setting up Virtual Carillon.
 
@@ -42,8 +42,7 @@ Use this path when your Home Assistant installation has **Settings → Apps**. I
 3. Open the app’s **Configuration** tab. Set **API token** to a long, unique private value, choose **Save**, and restart the app if Home Assistant asks.
 4. Install the integration:
 
-   - **With HACS (Recommended):** open **HACS → Integrations**. Open the three-dot menu, choose **Custom repositories**, add `https://github.com/HPaulson/virtual-carillon` with category **Integration**, then choose **Add**. Search HACS for **Virtual Carillon**, open it, and choose **Download**. Restart Home Assistant when the download finishes.
-   - **Without HACS:** copy this repository’s `custom_components/virtual_carillon` directory to `/config/custom_components/virtual_carillon/`, then restart Home Assistant.
+   - **Manual installation:** copy this repository’s `homeassistant/integration/virtual_carillon` directory to `/config/custom_components/virtual_carillon/`, then restart Home Assistant.
 
 5. Open **Settings → Devices & services → Add integration**, search for **Virtual Carillon**, and enter:
 
@@ -81,7 +80,7 @@ Use this path when Home Assistant itself runs in a Docker container. Virtual Car
 
    The `virtual-carillon_default` network is created by the command in step 3. Once both containers share it, Home Assistant can reach the engine as `http://virtual-carillon:9876`. Keep this connection in your own Compose configuration if you recreate the Home Assistant container.
 
-5. In the Home Assistant web interface, install the integration through HACS: **HACS → Integrations → three-dot menu → Custom repositories**. Add `https://github.com/HPaulson/virtual-carillon` as an **Integration**, download **Virtual Carillon**, and restart Home Assistant. Without HACS, copy `custom_components/virtual_carillon` to `/config/custom_components/virtual_carillon/` and restart instead.
+5. Copy this repository’s `homeassistant/integration/virtual_carillon` directory to `/config/custom_components/virtual_carillon/`, then restart Home Assistant. HACS custom repositories currently require the integration under a repository-root `custom_components/` directory, so this source layout is intentionally installed manually.
 6. Open **Settings → Devices & services → Add integration**, search for **Virtual Carillon**, and enter:
 
    - **Engine URL:** `http://virtual-carillon:9876`
@@ -94,7 +93,7 @@ Do not run the Home Assistant app and the Compose service against the same port 
 
 ### 3. Standalone engine (advanced)
 
-Use this path only when you are comfortable working with the command line without a GUI to interact with the Virtual Carillon. It can play the host’s default audio output, but local speakers, Bluetooth, and unusual audio setups are outside the project’s supported deployment paths. The CLI and [HTTP API](doc/api.md) are provided for experienced users to integrate as they see fit.
+Use this path only when you are comfortable working with the command line without a GUI to interact with the Virtual Carillon. It can play the host’s default audio output, but local speakers, Bluetooth, and unusual audio setups are outside the project’s supported deployment paths. The CLI and [HTTP API](docs/api.md) are provided for experienced users to integrate as they see fit.
 
 Install Node.js 24 or later and the pnpm version declared in `package.json`, then run:
 
@@ -103,18 +102,18 @@ pnpm install --frozen-lockfile
 pnpm build
 
 # List the available bells, signals, and hymns.
-node dist/cli/index.js assets
+node engine/dist/cli/index.js assets
 
 # Check whether this host has an available local audio output.
-node dist/cli/index.js doctor
-node dist/cli/index.js devices
+node engine/dist/cli/index.js doctor
+node engine/dist/cli/index.js devices
 
 # Play through the default local output.
-node dist/cli/index.js play test-bell
-node dist/cli/index.js play angelus
+node engine/dist/cli/index.js play test-bell
+node engine/dist/cli/index.js play angelus
 ```
 
-To expose the API on the local machine, run `node dist/cli/index.js server`. Set `VIRTUAL_CARILLON_API_TOKEN` before binding it to any network address. Run `node dist/cli/index.js --help` for the complete command reference.
+To expose the API on the local machine, run `node engine/dist/cli/index.js server`. Set `VIRTUAL_CARILLON_API_TOKEN` before binding it to any network address. Run `node engine/dist/cli/index.js --help` for the complete command reference.
 
 ## Scheduling in Home Assistant
 
@@ -129,11 +128,11 @@ The editor has one Westminster schedule and three routine modes:
 | **Category — Select from a hymn category**                 | Variety within a chosen category, such as Marian or Eucharistic.                                                |
 | **Automatic — Hymn selected based on liturgical calendar** | A hymn chosen from the current LitCal context, with an optional Liturgy of the Hours preference.                |
 
-Automatic mode uses the selected LitCal calendar, favoring the day’s feast, saint, category, and season while avoiding a suitable hymn already used that day. See the [automatic mode guide](doc/automatic-mode.md) for details on the hymn selection behavior.
+Automatic mode uses the selected LitCal calendar, favoring the day’s feast, saint, category, and season while avoiding a suitable hymn already used that day. See the [automatic mode guide](docs/automatic-mode.md) for details on the hymn selection behavior.
 
 Use the built-in editor for simple, repetitive schedules with fixed times, days, and media players. When a schedule depends on other Home Assistant entities, use a regular automation and select a Virtual Carillon item from the Media browser. The engine renders and serves the audio and keeps it available in Home Assistant’s media library; Home Assistant chooses the media players and handles those additional conditions.
 
-The [Home Assistant guide](doc/home-assistant.md#create-schedules) documents every schedule field, cadence, time-window rule, category, canonical-hour preference, and volume behavior in the GUI.
+The [Home Assistant guide](docs/home-assistant.md#create-schedules) documents every schedule field, cadence, time-window rule, category, canonical-hour preference, and volume behavior in the GUI.
 
 ## A few good starting points
 
@@ -148,11 +147,11 @@ Virtual Carillon does not set up speakers, Bluetooth pairing, or media-player in
 
 ## Further reading
 
-- [Home Assistant setup, actions, and schedule details](doc/home-assistant.md)
+- [Home Assistant setup, actions, and schedule details](docs/home-assistant.md)
 - [Docker deployment](docs/docker.md)
 - [Configuration reference](docs/configuration.md)
-- [Adding your own recordings](doc/content.md)
-- [Documentation index](doc/README.md)
+- [Adding your own recordings](docs/content.md)
+- [Documentation index](docs/README.md)
 
 ## License
 

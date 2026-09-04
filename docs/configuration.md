@@ -2,7 +2,7 @@
 
 The engine reads its deployment settings from environment variables when it starts. Copy `.env.example` to `.env` for Docker Compose, or set the same variables in the environment that starts the server.
 
-Home Assistant schedules, speaker targets, and the schedule’s LitCal choice are configured in the integration’s **Configure** flow, not with environment variables. See [Home Assistant setup](../doc/home-assistant.md).
+Home Assistant schedules, speaker targets, and the schedule’s LitCal choice are configured in the integration’s **Configure** flow, not with environment variables. See [Home Assistant setup](home-assistant.md).
 
 | Variable                            | Default                                       | Use                                                                                                                                                                              |
 | ----------------------------------- | --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -29,4 +29,4 @@ The following names are accepted by `VIRTUAL_CARILLON_DISTANCE_PROFILE`, the `pl
 
 The HTTP `POST /api/play` endpoint also accepts `custom` with individual distance values. That is an API-only advanced option; the environment variable and Home Assistant integration accept the five bundled profiles only.
 
-Home Assistant’s schedule controls, LitCal calendar, playback distance, routine modes, Westminster cadence, volume handling, time windows, and canonical-hour preference are documented in the [Home Assistant guide](../doc/home-assistant.md).
+Home Assistant’s schedule controls, LitCal calendar, playback distance, routine modes, Westminster cadence, volume handling, time windows, and canonical-hour preference are documented in the [Home Assistant guide](home-assistant.md).

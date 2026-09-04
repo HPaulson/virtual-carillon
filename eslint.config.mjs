@@ -2,9 +2,9 @@ import tseslint from '@typescript-eslint/eslint-plugin';
 import parser from '@typescript-eslint/parser';
 
 export default [
-  { ignores: ['dist/**', 'node_modules/**'] },
+  { ignores: ['engine/dist/**', 'node_modules/**'] },
   {
-    files: ['src/**/*.ts', 'tests/**/*.ts'],
+    files: ['engine/src/**/*.ts', 'engine/tests/**/*.ts'],
     languageOptions: { parser, parserOptions: { ecmaVersion: 'latest', sourceType: 'module' } },
     plugins: { '@typescript-eslint': tseslint },
     rules: {

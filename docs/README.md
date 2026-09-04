@@ -4,14 +4,14 @@ The [main README](../README.md) is the canonical guide for installation choices,
 
 ## Using Virtual Carillon
 
-| Guide                                               | When to use it                                                              |
-| --------------------------------------------------- | --------------------------------------------------------------------------- |
-| [Home Assistant](home-assistant.md)                 | Media browser, actions, status, and schedule details after installation.    |
-| [Automatic mode](automatic-mode.md)                 | How LitCal-based hymn scoring and selection work.                           |
-| [Docker deployment](../docs/docker.md)              | Docker networking, persistent data, and troubleshooting after installation. |
-| [Configuration reference](../docs/configuration.md) | Set environment variables, LitCal, and audio-distance defaults.             |
-| [Content and recordings](content.md)                | Understand bundled material and add or remove local recordings.             |
-| [Operations and troubleshooting](operations.md)     | Maintain a deployment and diagnose common problems.                         |
+| Guide                                           | When to use it                                                              |
+| ----------------------------------------------- | --------------------------------------------------------------------------- |
+| [Home Assistant](home-assistant.md)             | Media browser, actions, status, and schedule details after installation.    |
+| [Automatic mode](automatic-mode.md)             | How LitCal-based hymn scoring and selection work.                           |
+| [Docker deployment](docker.md)                  | Docker networking, persistent data, and troubleshooting after installation. |
+| [Configuration reference](configuration.md)     | Set environment variables, LitCal, and audio-distance defaults.             |
+| [Content and recordings](content.md)            | Understand bundled material and add or remove local recordings.             |
+| [Operations and troubleshooting](operations.md) | Maintain a deployment and diagnose common problems.                         |
 
 ## For developers and contributors
 

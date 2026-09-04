@@ -18,18 +18,19 @@ The standard Home Assistant path is deliberately speaker-agnostic. The integrati
 
 ## Main modules
 
-| Path                                  | Responsibility                                                                                         |
-| ------------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| `src/cli/`                            | Command-line entry point, hymn-cycle commands, and automatic-selection preview.                        |
-| `src/configuration/`                  | Environment settings and default data paths.                                                           |
-| `src/api/`                            | Fastify HTTP API, authentication, direct playback, and schedule handoff.                               |
-| `src/scheduling/`                     | Schedule validation, normalization, time windows, Westminster matching, and target rules.              |
-| `src/database/`                       | SQLite storage for schedules, claims, events, and completed-hymn history.                              |
-| `src/audio/` and `src/bells/`         | Bell synthesis, WAV rendering, distance profiles, local-output discovery, and native playback.         |
-| `src/library/`                        | Bundled assets, imported recordings, hymn catalog, metadata, rendering, and playback.                  |
-| `src/liturgical/`                     | LitCal retrieval and caching, calendar normalization, taxonomy, conditions, and hymn-query conversion. |
-| `custom_components/virtual_carillon/` | Home Assistant config flow, coordinator, schedule runner, media source, services, and status sensor.   |
-| `homeassistant/app/`                  | Supervisor app definition and entrypoint.                                                              |
+| Path                                          | Responsibility                                                                                         |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `engine/src/cli/`                             | Command-line entry point, hymn-cycle commands, and automatic-selection preview.                        |
+| `engine/src/configuration/`                   | Environment settings and default data paths.                                                           |
+| `engine/src/api/`                             | Fastify HTTP API, authentication, direct playback, and schedule handoff.                               |
+| `engine/src/scheduling/`                      | Schedule validation, normalization, time windows, Westminster matching, and target rules.              |
+| `engine/src/database/`                        | SQLite storage for schedules, claims, events, and completed-hymn history.                              |
+| `engine/src/audio/` and `engine/src/bells/`   | Bell synthesis, WAV rendering, distance profiles, local-output discovery, and native playback.         |
+| `engine/src/library/`                         | Bundled assets, imported recordings, hymn catalog, metadata, rendering, and playback.                  |
+| `engine/src/liturgical/`                      | LitCal retrieval and caching, calendar normalization, taxonomy, conditions, and hymn-query conversion. |
+| `engine/tests/`                               | Automated tests for the engine’s API, audio, library, liturgical, notation, and scheduling behavior.   |
+| `homeassistant/integration/virtual_carillon/` | Home Assistant config flow, coordinator, schedule runner, media source, services, and status sensor.   |
+| `homeassistant/app/`                          | Supervisor app definition and entrypoint.                                                              |
 
 ## Data directory
 

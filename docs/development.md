@@ -30,7 +30,7 @@ Keep runtime data in the ignored `.data/` directory. Do not use a production dat
 
 ## Local checks
 
-The usual check is:
+The engine tests live beside the engine in `engine/tests/`; the Home Assistant integration currently has syntax and metadata validation but no Python test suite. The usual check is:
 
 ```bash
 pnpm check
@@ -62,19 +62,19 @@ Start the development server through `tsx`:
 pnpm dev
 ```
 
-The default address is `http://127.0.0.1:9876`. Set `VIRTUAL_CARILLON_API_TOKEN` when testing authenticated requests. Environment variables and their defaults are listed in the [configuration reference](../docs/configuration.md).
+The default address is `http://127.0.0.1:9876`. Set `VIRTUAL_CARILLON_API_TOKEN` when testing authenticated requests. Environment variables and their defaults are listed in the [configuration reference](configuration.md).
 
 After a build, useful command-line checks include:
 
 ```bash
 pnpm build
-node dist/cli/index.js assets
-node dist/cli/index.js doctor
-node dist/cli/index.js devices
-node dist/cli/index.js test
-node dist/cli/index.js hymn-order --count 3
-node dist/cli/index.js diagnose salve-regina
-node dist/cli/index.js schedule show
+node engine/dist/cli/index.js assets
+node engine/dist/cli/index.js doctor
+node engine/dist/cli/index.js devices
+node engine/dist/cli/index.js test
+node engine/dist/cli/index.js hymn-order --count 3
+node engine/dist/cli/index.js diagnose salve-regina
+node engine/dist/cli/index.js schedule show
 ```
 
 `hymn-order` previews automatic selection without playing audio. `test` renders representative bells, signals, chants, and hymns. Native playback requires a working local audio backend and is separate from the Home Assistant and Docker playback path.
@@ -86,7 +86,7 @@ node dist/cli/index.js schedule show
 | Command or script                     | Purpose                                                                                                                                                            |
 | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `pnpm dev`                            | Run the TypeScript server directly through `tsx`.                                                                                                                  |
-| `pnpm build`                          | Clear the render cache and build `dist/`.                                                                                                                          |
+| `pnpm build`                          | Clear the render cache and build `engine/dist/`, failing if the compiler fails.                                                                                    |
 | `pnpm test`                           | Run the automated tests once.                                                                                                                                      |
 | `pnpm test:watch`                     | Re-run tests while developing.                                                                                                                                     |
 | `pnpm typecheck`                      | Run TypeScript without emitting files.                                                                                                                             |
@@ -100,7 +100,7 @@ node dist/cli/index.js schedule show
 
 ### `scripts/push-live.sh`
 
-This script deploys the current working tree’s engine and Home Assistant integration to a remote Docker-based installation. It runs pnpm typecheck, archives the integration, builds the engine image on the remote host for its architecture, and force-recreates the engine through its existing Compose project. It then restarts Home Assistant and waits for the Home Assistant health check. The engine’s persistent data volume is preserved and not modified. This is useful for live-testing the integration, though a local Home Assistant instance may also be used. The first run may take several minutes because the image installs FFmpeg and its dependencies.
+This script deploys the current working tree’s engine and Home Assistant integration to a remote Docker-based installation. It runs pnpm typecheck, archives `homeassistant/integration/virtual_carillon`, installs it into Home Assistant’s runtime `/config/custom_components/virtual_carillon` location, builds the engine image on the remote host for its architecture, and force-recreates the engine through its existing Compose project. It then restarts Home Assistant and waits for the Home Assistant health check. The engine’s persistent data volume is preserved and not modified. This is useful for live-testing the integration, though a local Home Assistant instance may also be used. The first run may take several minutes because the image installs FFmpeg and its dependencies.
 
 Create a local, ignored `dev.env` with at least:
 
@@ -168,7 +168,7 @@ Keep the major boundaries intact: audio synthesis, the asset library, persistenc
 The project version is duplicated intentionally for the package, Home Assistant integration, Home Assistant app, and container metadata. These values must agree in:
 
 - `package.json` (`version`);
-- `custom_components/virtual_carillon/manifest.json` (`version`);
+- `homeassistant/integration/virtual_carillon/manifest.json` (`version`);
 - `homeassistant/app/config.yaml` (`version`); and
 - `Dockerfile` (`ARG BUILD_VERSION`).
 
@@ -199,7 +199,7 @@ Do not commit:
 - `.env`, `dev.env`, credentials, API tokens, or private URLs;
 - `.data/`, SQLite databases, WAL files, or runtime caches;
 - imported or private recordings;
-- `dist/`, `node_modules/`, Python bytecode, coverage output, or editor files; or
+- `engine/dist/`, `node_modules/`, Python bytecode, coverage output, or editor files; or
 - generated WAV files.
 
 The repository’s ignore rules cover the usual cases, but check `git status` before committing.

@@ -30,8 +30,8 @@ async function check(label, callback) {
 }
 
 function checkPythonMetadata() {
-  run('python3', ['-m', 'compileall', '-q', 'custom_components/virtual_carillon']);
-  run('python3', ['-m', 'json.tool', 'custom_components/virtual_carillon/manifest.json']);
+  run('python3', ['-m', 'compileall', '-q', 'homeassistant/integration/virtual_carillon']);
+  run('python3', ['-m', 'json.tool', 'homeassistant/integration/virtual_carillon/manifest.json']);
   run('python3', ['-m', 'json.tool', 'hacs.json']);
 }
 

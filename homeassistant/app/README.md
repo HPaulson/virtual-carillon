@@ -12,4 +12,4 @@ The app stores its database, rendered audio, LitCal cache, and imported recordin
 
 Home Assistant remains responsible for speaker configuration and playback. The integration sends the generated audio to the media players you select.
 
-For the app’s settings, see [DOCS.md](DOCS.md). For the complete integration guide, see [Home Assistant](../../doc/home-assistant.md).
+For the app’s settings, see [DOCS.md](DOCS.md). For the complete integration guide, see [Home Assistant](../../docs/home-assistant.md).

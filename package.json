@@ -1,6 +1,6 @@
 {
   "name": "virtual-carillon",
-  "version": "0.1.0-beta.1",
+  "version": "0.1.0-beta.2",
   "description": "A virtual carillon with Catholic bells, hymn arrangements, and Home Assistant integration.",
   "license": "MIT",
   "repository": {
@@ -21,12 +21,12 @@
   "type": "module",
   "packageManager": "pnpm@10.29.2",
   "bin": {
-    "virtual-carillon": "bin/virtual-carillon.mjs"
+    "virtual-carillon": "engine/bin/virtual-carillon.mjs"
   },
   "files": [
-    "dist",
-    "bin",
-    "custom_components",
+    "engine/dist",
+    "engine/bin",
+    "homeassistant",
     "README.md",
     "LICENSE"
   ],
@@ -35,8 +35,8 @@
   },
   "scripts": {
     "build": "node scripts/build.mjs",
-    "dev": "tsx src/cli/index.ts server",
-    "start": "node dist/cli/index.js server",
+    "dev": "tsx engine/src/cli/index.ts server",
+    "start": "node engine/dist/cli/index.js server",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",

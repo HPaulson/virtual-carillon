@@ -14,7 +14,7 @@ if (packageJson.version !== expectedVersion) {
 }
 
 const manifest = JSON.parse(
-  await readFile('custom_components/virtual_carillon/manifest.json', 'utf8'),
+  await readFile('homeassistant/integration/virtual_carillon/manifest.json', 'utf8'),
 );
 if (manifest.version !== expectedVersion) {
   failures.push(`Home Assistant manifest is ${manifest.version}, expected ${expectedVersion}`);

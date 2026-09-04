@@ -61,7 +61,7 @@ jobs:
         run: pnpm release:check -- "${RELEASE_VERSION#v}"
 
       - name: Validate Home Assistant integration syntax
-        run: python3 -m compileall -q custom_components/virtual_carillon
+        run: python3 -m compileall -q homeassistant/integration/virtual_carillon
 
       - name: Log in to GHCR
         uses: docker/login-action@v3

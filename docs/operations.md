@@ -66,8 +66,8 @@ If no suitable hymn is available, the log identifies the routine and date. Check
 Native playback is an advanced standalone path, not the supported Home Assistant speaker path. Run:
 
 ```bash
-node dist/cli/index.js doctor
-node dist/cli/index.js devices
+node engine/dist/cli/index.js doctor
+node engine/dist/cli/index.js devices
 ```
 
 Use the returned device information with the CLI or API if your setup requires it. Virtual Carillon does not provide configuration guidance for audio drivers, Bluetooth pairing, or particular speaker hardware. For ordinary use, send the audio through a working Home Assistant `media_player`. The standard Docker/Home Assistant deployment does not provide native audio devices to the container.

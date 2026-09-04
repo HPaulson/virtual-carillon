@@ -23,11 +23,11 @@ The test suite covers bell synthesis and distance rendering, hymn notation and a
 Build first, then run:
 
 ```bash
-node dist/cli/index.js doctor
-node dist/cli/index.js assets
-node dist/cli/index.js test
-node dist/cli/index.js shuffle-hymns --count 1
-node dist/cli/index.js hymn-order --count 3
+node engine/dist/cli/index.js doctor
+node engine/dist/cli/index.js assets
+node engine/dist/cli/index.js test
+node engine/dist/cli/index.js shuffle-hymns --count 1
+node engine/dist/cli/index.js hymn-order --count 3
 ```
 
 `test` renders representative bells, signals, chant, and hymns. Confirm that WAV files appear under the configured data directory’s `cache/` folder. Native playback needs a working local audio backend and is not part of the Docker/Home Assistant smoke path.
@@ -37,7 +37,7 @@ node dist/cli/index.js hymn-order --count 3
 Start the server with an API token, then query it:
 
 ```bash
-VIRTUAL_CARILLON_API_TOKEN=test-token node dist/cli/index.js server
+VIRTUAL_CARILLON_API_TOKEN=test-token node engine/dist/cli/index.js server
 ```
 
 In another terminal:

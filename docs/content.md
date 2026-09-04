@@ -13,7 +13,7 @@ Virtual Carillon keeps its bundled material and your own recordings separate.
 For an advanced standalone engine, use the command line to copy a local recording into the persistent library:
 
 ```bash
-node dist/cli/index.js import \
+node engine/dist/cli/index.js import \
   --name "Custom Angelus" \
   --file /path/to/custom-angelus.wav \
   --id custom-angelus
