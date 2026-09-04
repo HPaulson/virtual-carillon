@@ -1,7 +1,7 @@
 # Virtual Carillon
 
 <p align="center">
-  <img src="homeassistant/integration/brand/logo@2x.png" alt="Virtual Carillon" width="480">
+  <img src="custom_components/virtual_carillon/brand/logo@2x.png" alt="Virtual Carillon" width="480">
 </p>
 
 Virtual Carillon turns your speakers into a programmable Church carillon.
@@ -20,7 +20,7 @@ You can also run the carillon on its own from the command line or connect to it 
 
 Most people will use Virtual Carillon with [Home Assistant](https://www.home-assistant.io/getting-started/), a free, self-hosted home-automation system. The included Home Assistant Integration provides a user-friendly GUI to interact with Virtual Carillon. We also provide Virtual Carillon as a standalone app for advanced users who are comfortable working from the command line and don't want to use Home Assistant.
 
-[HACS](https://hacs.xyz/docs/use/) (Home Assistant Community Store) is the recommended way to install the Home Assistant integration. Releases include the HACS package; the repository keeps its source under `homeassistant/integration` so no HACS-specific top-level source directory is needed. If HACS is unavailable, use the manual installation fallback below.
+[HACS](https://hacs.xyz/docs/use/) (Home Assistant Community Store) is the recommended way to install the Home Assistant integration. The integration is stored in the standard top-level `custom_components/virtual_carillon` directory, and releases include the HACS package. If HACS is unavailable, use the manual installation fallback below.
 
 For either Home Assistant path, you must have at least one working Home Assistant `media_player` (speaker) before setting up Virtual Carillon.
 
@@ -46,7 +46,7 @@ Use this path when your Home Assistant installation has **Settings → Apps**. I
    - Add `https://github.com/HPaulson/virtual-carillon` as an **Integration**, then choose **Download** for the latest release.
    - Restart Home Assistant when HACS asks.
 
-   If HACS is unavailable, manually copy this repository’s `homeassistant/integration` directory to `/config/custom_components/virtual_carillon/`, then restart Home Assistant.
+   If HACS is unavailable, manually copy this repository’s `custom_components/virtual_carillon` directory to `/config/custom_components/virtual_carillon/`, then restart Home Assistant.
 
 5. Open **Settings → Devices & services → Add integration**, search for **Virtual Carillon**, and enter:
 
@@ -90,7 +90,7 @@ Use this path when Home Assistant itself runs in a Docker container. Virtual Car
    - Add `https://github.com/HPaulson/virtual-carillon` as an **Integration**, then choose **Download** for the latest release.
    - Restart Home Assistant when HACS asks.
 
-   If HACS is unavailable, manually copy this repository’s `homeassistant/integration` directory to `/config/custom_components/virtual_carillon/`, then restart Home Assistant.
+   If HACS is unavailable, manually copy this repository’s `custom_components/virtual_carillon` directory to `/config/custom_components/virtual_carillon/`, then restart Home Assistant.
 
 6. Open **Settings → Devices & services → Add integration**, search for **Virtual Carillon**, and enter:
 
