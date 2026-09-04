@@ -1,6 +1,6 @@
 {
   "name": "virtual-carillon",
-  "version": "0.1.0-beta.2",
+  "version": "0.1.0-beta.4",
   "description": "A virtual carillon with Catholic bells, hymn arrangements, and Home Assistant integration.",
   "license": "MIT",
   "repository": {

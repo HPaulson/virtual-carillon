@@ -23,7 +23,7 @@ COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --prod --frozen-lockfile
 
 FROM runtime-deps AS runtime
-ARG BUILD_VERSION=0.1.0-beta.2
+ARG BUILD_VERSION=0.1.0-beta.4
 ARG BUILD_ARCH=amd64
 LABEL \
     io.hass.version="${BUILD_VERSION}" \
