@@ -42,9 +42,15 @@ Use this path when your Home Assistant installation has **Settings → Apps**. I
 3. Open the app’s **Configuration** tab. Set **API token** to a long, unique private value, choose **Save**, and restart the app if Home Assistant asks.
 4. Install the integration through HACS:
 
-   - In HACS, open **Integrations**, choose the three-dot menu, and select **Custom repositories**.
-   - Add `https://github.com/HPaulson/virtual-carillon` as an **Integration**, then choose **Download** for the latest release.
-   - Restart Home Assistant when HACS asks.
+   <details>
+      <summary>Video</summary>
+      <video src="https://github.com/user-attachments/assets/da14241e-d4f5-4054-9cbb-27d17f1dc4ef">
+   </details>
+   <ul>
+      <li>In HACS, open <strong>Integrations</strong>, choose the three-dot menu, and select <strong>Custom repositories</strong>.</li>
+      <li>Add <code>https://github.com/HPaulson/virtual-carillon</code> as an <strong>Integration</strong>, then choose <strong>Download</strong> for the latest release.</li>
+      <li>Restart Home Assistant when HACS asks.</li>
+   </ul>
 
    If HACS is unavailable, manually copy this repository’s `custom_components/virtual_carillon` directory to `/config/custom_components/virtual_carillon/`, then restart Home Assistant.
 
