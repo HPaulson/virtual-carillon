@@ -47,8 +47,8 @@ Use this path when your Home Assistant installation has **Settings → Apps**. I
       <video src="https://github.com/user-attachments/assets/da14241e-d4f5-4054-9cbb-27d17f1dc4ef">
    </details>
    <ul>
-      <li>In HACS, open **Integrations**, choose the three-dot menu, and select **Custom repositories**.</li>
-      <li>Add `https://github.com/HPaulson/virtual-carillon` as an **Integration**, then choose **Download** for the latest release.</li>
+      <li>In HACS, open <strong>Integrations</strong>, choose the three-dot menu, and select <strong>Custom repositories</strong>.</li>
+      <li>Add <code>https://github.com/HPaulson/virtual-carillon</code> as an  <strong>Integration</strong>, then choose <strong>Download</strong> for the latest release.</li>
       <li>Restart Home Assistant when HACS asks.</li>
    </ul>
 
