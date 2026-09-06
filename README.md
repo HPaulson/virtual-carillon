@@ -41,6 +41,13 @@ Use this path when your Home Assistant installation has **Settings → Apps**. I
 2. Search the App store for **Virtual Carillon**, select it, choose **Install**, and then choose **Start**.
 3. Open the app’s **Configuration** tab. Set **API token** to a long, unique private value, choose **Save**, and restart the app if Home Assistant asks.
 4. Install the integration through HACS:
+   
+      <details>
+      <summary>Video</summary>
+      
+      https://github.com/user-attachments/assets/da14241e-d4f5-4054-9cbb-27d17f1dc4ef
+      
+      </details>
 
    - In HACS, open **Integrations**, choose the three-dot menu, and select **Custom repositories**.
    - Add `https://github.com/HPaulson/virtual-carillon` as an **Integration**, then choose **Download** for the latest release.
@@ -48,13 +55,13 @@ Use this path when your Home Assistant installation has **Settings → Apps**. I
 
    If HACS is unavailable, manually copy this repository’s `custom_components/virtual_carillon` directory to `/config/custom_components/virtual_carillon/`, then restart Home Assistant.
 
-5. Open **Settings → Devices & services → Add integration**, search for **Virtual Carillon**, and enter:
+6. Open **Settings → Devices & services → Add integration**, search for **Virtual Carillon**, and enter:
 
    - **Engine URL:** `http://<home-assistant-ip>:9876`
    - **API token:** the value from the app’s Configuration tab
    - **LitCal calendar:** choose the calendar Automatic routines should use
 
-6. Open **Configure** on the new integration. Create a short Manual routine for `test-bell` and one media player to confirm playback before adding regular schedules.
+7. Open **Configure** on the new integration. Create a short Manual routine for `test-bell` and one media player to confirm playback before adding regular schedules.
 
 ### 2. Home Assistant Container with Docker
 
